@@ -1591,100 +1591,102 @@ async function markNotificationsAsRead() {
     </div>
 
     {/* GAMES */}
-    {activePage === "games" && (
-      <div
-        className="
-          flex
-          items-center
-          gap-1.5
-          overflow-x-auto
-          scrollbar-hide
-          pt-1
-        "
-      >
+{activePage === "games" && (
+  <div
+    className="
+      flex
+      items-center
+      gap-2
+      overflow-x-auto
+      scrollbar-hide
+      pt-1
+    "
+  >
 
-        {filteredGames.map(
-          (game) => {
+    {filteredGames.map(
+      (game) => {
 
-            const active =
-              selectedGameFilter ===
-              game.id
+        const active =
+          selectedGameFilter ===
+          game.id
 
-            return (
-              <button
-                key={game.id}
-                onClick={() =>
-                  setSelectedGameFilter(
-                    active
-                      ? ""
-                      : game.id
-                  )
+        return (
+          <button
+            key={game.id}
+            onClick={() =>
+              setSelectedGameFilter(
+                active
+                  ? ""
+                  : game.id
+              )
+            }
+            title={game.name}
+            className={`
+              relative
+              w-[50px]
+              h-[50px]
+              flex
+              items-center
+              justify-center
+              rounded-2xl
+              transition-all
+              duration-200
+              flex-shrink-0
+
+              ${
+                active
+                  ? `
+                    scale-110
+                  `
+                  : `
+                    opacity-55
+                    hover:opacity-100
+                    hover:scale-110
+                  `
+              }
+            `}
+          >
+
+            {active && (
+              <div
+                className="
+                  absolute
+                  inset-0
+                  rounded-2xl
+                "
+              />
+            )}
+
+            <img
+              src={game.logo}
+              alt={game.name}
+              className={`
+                relative
+                z-10
+                w-[34px]
+                h-[34px]
+                object-contain
+
+                ${
+                  active
+                    ? `
+                      border
+                      border-[#D6B36A]
+                      rounded-lg
+                      p-1
+                    `
+                    : ""
                 }
-                title={game.name}
-                className={`
-                  relative
-                  w-[42px]
-                  h-[42px]
-                  flex
-                  items-center
-                  justify-center
-                  rounded-xl
-                  transition-all
-                  duration-200
-                  flex-shrink-0
+              `}
+            />
 
-                  ${
-                    active
-                      ? `
-                        scale-110
-                      `
-                      : `
-                        opacity-55
-                        hover:opacity-100
-                        hover:scale-110
-                      `
-                  }
-                `}
-              >
-
-                {active && (
-                  <div
-                    className="
-                      absolute
-                      inset-0
-                      rounded-xl
-                    "
-                  />
-                )}
-
-                <img
-                  src={game.logo}
-                  alt={game.name}
-                  className={`
-                    relative
-                    z-10
-                    w-[28px]
-                    h-[28px]
-                    object-contain
-
-                    ${
-                      active
-                        ? `
-                          border
-                          border-[#D6B36A]
-                        `
-                        : ""
-                    }
-                  `}
-                />
-
-              </button>
-            )
-          }
-        )}
-
-      </div>
+          </button>
+        )
+      }
     )}
+
+  </div>
+)}
 
   </div>
 )}
