@@ -1,0 +1,903 @@
+import { useState } from "react"
+import {
+  LANGUAGES,
+  type Language,
+} from "../../constants/languages"
+import Select from "react-select"
+import { motion, AnimatePresence } from "framer-motion"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import "../../../src/styling/datepicker-dark.css"
+
+type Props = {
+  showModal: boolean
+
+  setShowModal: (
+    value: boolean
+  ) => void
+
+  isEditing: boolean
+
+  isSavingOrder: boolean
+
+  newOrder: any
+
+  setNewOrder: (
+    value: any
+  ) => void
+
+  toggleLanguage: (
+    language: string
+  ) => void
+
+  selectedOrder: any
+  setSelectedOrder: (
+    order: any
+  ) => void
+  games: any[]
+  fetchGames: () => void
+
+  createOrder: () => void
+
+  updateOrder: () => void
+}
+
+
+export default function OrderModal({
+  showModal,
+  setShowModal,
+  isEditing,
+  isSavingOrder,
+  newOrder,
+  setNewOrder,
+  toggleLanguage,
+  selectedOrder,
+  setSelectedOrder,
+  createOrder,
+  games,
+  fetchGames,
+  updateOrder,
+}: Props) {
+  if (!showModal) {
+    return null
+  }
+  function handleClose() {
+  setShowModal(false)
+
+  setNewOrder({
+    title: "",
+    game: "",
+    type: "Broadcast",
+
+    status: "PENDING",
+    priority: "MEDIUM",
+
+    sourceLanguage: [],
+
+    targetLanguages: [],
+
+    format: "SRT",
+
+    deadline: "",
+
+    sourceFileLink: "",
+
+    estimatedMinutes: "",
+
+    deliveryDate: "",
+  })
+}
+
+const [languageSearch, setLanguageSearch] =
+  useState("");
+
+  const darkSelectStyles = {
+  control: (base: any) => ({
+    ...base,
+    backgroundColor: "#000000",
+    borderColor: "#3f3f46",
+    minHeight: 52,
+    borderRadius: 16,
+    boxShadow: "none",
+
+    ":hover": {
+      borderColor: "#52525b",
+    },
+  }),
+
+  menu: (base: any) => ({
+    ...base,
+    backgroundColor: "#09090b",
+    border: "1px solid #27272a",
+    borderRadius: 16,
+    overflow: "hidden",
+    zIndex: 9999,
+  }),
+
+  menuList: (base: any) => ({
+    ...base,
+    backgroundColor: "#09090b",
+    padding: 8,
+  }),
+
+  option: (
+    base: any,
+    state: any
+  ) => ({
+    ...base,
+    backgroundColor: state.isFocused
+      ? "#18181b"
+      : "#09090b",
+    color: "white",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 14,
+    marginBottom: 4,
+  }),
+
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#18181b",
+    border: "1px solid #27272a",
+    borderRadius: 10,
+    paddingLeft: 4,
+  }),
+
+  multiValueLabel: (
+    base: any
+  ) => ({
+    ...base,
+    color: "white",
+    fontSize: 12,
+    fontWeight: 500,
+  }),
+
+  multiValueRemove: (
+    base: any
+  ) => ({
+    ...base,
+    color: "#a1a1aa",
+
+    ":hover": {
+      backgroundColor: "#27272a",
+      color: "white",
+    },
+  }),
+
+  input: (base: any) => ({
+    ...base,
+    color: "white",
+  }),
+
+  placeholder: (
+    base: any
+  ) => ({
+    ...base,
+    color: "#71717a",
+  }),
+
+  singleValue: (
+    base: any
+  ) => ({
+    ...base,
+    color: "white",
+  }),
+}
+
+const today = new Date()
+
+today.setHours(0, 0, 0, 0)
+
+
+  return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<motion.div
+  layout
+  transition={{
+  layout: {
+    duration: 0.6,
+    ease: [0.22, 1, 0.36, 1],
+  },
+}}
+  className={`bg-[#0E0E0E] border border-zinc-800 rounded-3xl flex flex-col max-h-[90vh] ${
+    newOrder.deliveries?.length > 0
+      ? "w-[1200px]"
+      : "w-[700px]"
+  }`}
+>
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-8 pt-8 pb-5 border-b border-zinc-800">
+        <h2 className="text-2xl font-bold">
+  {isEditing
+    ? "Edit Order"
+    : "Create Order"}
+</h2>
+
+        <button
+          onClick={handleClose}
+          className="text-zinc-500 hover:text-white transition"
+        >
+          ✕
+        </button>
+      </div>
+<div className="flex-1 overflow-auto p-8">
+      {/* FORM */}
+  {/* FORM */}
+<div
+  className={`grid gap-6 ${
+    newOrder.deliveries?.length > 0
+      ? "grid-cols-[1fr_380px]"
+      : "grid-cols-1"
+  }`}
+>
+
+  {/* LEFT SIDE */}
+  <div className="space-y-6">
+
+    {/* GENERAL */}
+    <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+
+      <h3 className="text-lg font-semibold mb-5">
+        General Information
+      </h3>
+
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* TITLE */}
+        <div className="col-span-2">
+          <label className="text-sm text-zinc-400 mb-2 block">
+            Order Title
+          </label>
+
+          <input
+            value={newOrder.title}
+            onChange={(e) =>
+              setNewOrder({
+                ...newOrder,
+                title: e.target.value,
+              })
+            }
+            placeholder="Enter title"
+            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+          />
+        </div>
+
+        {/* TYPE */}
+        <div>
+          <label className="text-sm text-zinc-400 mb-2 block">
+            Order Type
+          </label>
+
+          <select
+            value={newOrder.type}
+            onChange={(e) =>
+              setNewOrder({
+                ...newOrder,
+                type: e.target.value,
+              })
+            }
+            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+          >
+            <option>Broadcast</option>
+            <option>Marketing</option>
+          </select>
+        </div>
+
+        {/* STATUS */}
+        <div>
+          <label className="text-sm text-zinc-400 mb-2 block">
+            Status
+          </label>
+
+          <select
+            value={
+              newOrder.status ||
+              "PENDING"
+            }
+            onChange={(e) =>
+              setNewOrder({
+                ...newOrder,
+                status:
+                  e.target.value,
+              })
+            }
+            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+          >
+            <option value="PENDING">
+              Pending
+            </option>
+
+            <option value="IN_PROGRESS">
+              In Progress
+            </option>
+
+            <option value="COMPLETED">
+              Completed
+            </option>
+          </select>
+        </div>
+
+        <div>
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Priority
+  </label>
+
+  <select
+    value={newOrder.priority}
+    onChange={(e) =>
+      setNewOrder({
+        ...newOrder,
+        priority: e.target.value,
+      })
+    }
+    className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+  >
+    <option value="LOW">
+      Low
+    </option>
+
+    <option value="MEDIUM">
+      Medium
+    </option>
+
+    <option value="HIGH">
+      High
+    </option>
+  </select>
+</div>
+
+      </div>
+
+    </div>
+
+    {/* BROADCAST */}
+    {newOrder.type ===
+      "Broadcast" && (
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+
+        <h3 className="text-lg font-semibold mb-5">
+          Broadcast Details
+        </h3>
+
+        <div className="grid grid-cols-2 gap-4">
+
+          {/* GAME */}
+          <div>
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Game
+  </label>
+
+  <Select
+    options={games.map(
+      (game: any) => ({
+        value: game.name,
+        label: game.name,
+      })
+    )}
+
+    value={
+      newOrder.game
+        ? {
+            value:
+              newOrder.game,
+            label:
+              newOrder.game,
+          }
+        : null
+    }
+
+    onChange={(selected) =>
+      setNewOrder({
+        ...newOrder,
+
+        game:
+          selected?.value ||
+          "",
+      })
+    }
+
+    placeholder="Search game..."
+
+    styles={darkSelectStyles}
+
+    className="text-sm"
+  />
+</div>
+
+          {/* MINUTES */}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Estimated Minutes
+            </label>
+
+            <input
+              type="number"
+              value={
+                newOrder.estimatedMinutes
+              }
+              onChange={(e) =>
+                setNewOrder({
+                  ...newOrder,
+                  estimatedMinutes:
+                    e.target.value,
+                })
+              }
+              className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+            />
+          </div>
+
+          {/* SOURCE LANGUAGES */}
+          <div className="col-span-2">
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Source Languages
+            </label>
+
+            <Select
+              isMulti
+              styles={darkSelectStyles}
+              options={LANGUAGES.map(
+                (
+                  language: Language
+                ) => ({
+                  value:
+                    language.name,
+                  label:
+                    language.name,
+                })
+              )}
+
+              value={
+                newOrder.sourceLanguage?.map(
+                  (
+                    language: string
+                  ) => ({
+                    value:
+                      language,
+                    label:
+                      language,
+                  })
+                ) || []
+              }
+
+              onChange={(
+                selected
+              ) =>
+                setNewOrder({
+                  ...newOrder,
+
+                  sourceLanguage:
+                    selected.map(
+                      (
+                        item: any
+                      ) =>
+                        item.value
+                    ),
+                })
+              }
+
+              placeholder="Search source languages..."
+              className="text-sm"
+            />
+          </div>
+
+          {/* TARGET LANGUAGES */}
+          <div className="col-span-2">
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Translate To
+            </label>
+
+            <Select
+              isMulti
+              styles={darkSelectStyles}
+              options={LANGUAGES.map(
+                (
+                  language: Language
+                ) => ({
+                  value:
+                    language.name,
+                  label:
+                    language.name,
+                })
+              )}
+
+              value={
+                newOrder.targetLanguages?.map(
+                  (
+                    language: string
+                  ) => ({
+                    value:
+                      language,
+                    label:
+                      language,
+                  })
+                ) || []
+              }
+
+            onChange={(selected) => {
+  const selectedLanguages =
+    selected.map(
+      (item: any) => item.value
+    )
+
+  const existingDeliveries =
+    newOrder.deliveries || []
+
+  const updatedDeliveries =
+    selectedLanguages.map(
+      (language: string) => {
+        const existing =
+          existingDeliveries.find(
+            (d: any) =>
+              d.language === language
+          )
+
+        return existing
+          ? existing
+          : {
+              language,
+              deliveryLink: "",
+            }
+      }
+    )
+
+  setNewOrder({
+    ...newOrder,
+
+    targetLanguages:
+      selectedLanguages,
+
+    deliveries:
+      updatedDeliveries,
+  })
+}}
+
+              placeholder="Search target languages..."
+              className="text-sm"
+            />
+          </div>
+
+        {/* FORMAT */}
+<div>
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Delivery Format
+  </label>
+
+  <select
+    value={newOrder.format}
+    onChange={(e) =>
+      setNewOrder({
+        ...newOrder,
+        format:
+          e.target.value,
+      })
+    }
+    className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+  >
+    {/* AVAILABLE FOR BOTH */}
+    <option>
+      SRT
+    </option>
+
+    <option>
+      BURNED_IN
+    </option>
+
+    {/* MARKETING ONLY */}
+    {newOrder.type ===
+      "Marketing" && (
+      <option>
+        Text
+      </option>
+    )}
+  </select>
+</div>
+
+          {/* SOURCE FILE */}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Source File
+            </label>
+
+            <input
+              value={
+                newOrder.sourceFileLink
+              }
+              onChange={(e) =>
+                setNewOrder({
+                  ...newOrder,
+                  sourceFileLink:
+                    e.target.value,
+                })
+              }
+              className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+            />
+          </div>
+
+          {/* DELIVERY DATE */}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Delivery Date
+            </label>
+
+            <DatePicker
+  selected={
+    newOrder.deliveryDate
+      ? new Date(
+          newOrder.deliveryDate
+        )
+      : null
+  }
+  onChange={(date: Date | null ) =>
+    setNewOrder({
+      ...newOrder,
+      deliveryDate:
+        date
+          ?.toISOString()
+          .split("T")[0] || "",
+    })
+  }
+  minDate={today}
+  dateFormat="yyyy-MM-dd"
+  placeholderText="Select delivery date"
+  className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3 outline-none text-white"
+/>
+          </div>
+
+          {/* DEADLINE */}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Deadline
+            </label>
+
+            <DatePicker
+  selected={
+    newOrder.deadline
+      ? new Date(
+          newOrder.deadline
+        )
+      : null
+  }
+  onChange={(date: Date | null) =>
+    setNewOrder({
+      ...newOrder,
+      deadline:
+        date
+          ?.toISOString()
+          .split("T")[0] || "",
+    })
+  }
+  minDate={today}
+  dateFormat="yyyy-MM-dd"
+  placeholderText="Select deadline"
+  className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3 outline-none text-white"
+/>
+          </div>
+
+        </div>
+
+      </div>
+    )}
+
+{/* MARKETING */}
+{newOrder.type ===
+  "Marketing" && (
+  <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+
+    <h3 className="text-lg font-semibold mb-5">
+      Marketing Details
+    </h3>
+
+    <div className="grid grid-cols-2 gap-4">
+
+      {/* FORMAT */}
+      <div>
+        <label className="text-sm text-zinc-400 mb-2 block">
+          Delivery Format
+        </label>
+
+        <select
+          value={newOrder.format}
+          onChange={(e) =>
+            setNewOrder({
+              ...newOrder,
+              format:
+                e.target.value,
+            })
+          }
+          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+        >
+          <option>
+            SRT
+          </option>
+
+          <option>
+            BURNED_IN
+          </option>
+
+          <option>
+            Text
+          </option>
+        </select>
+      </div>
+
+      {/* SOURCE FILE */}
+      <div>
+        <label className="text-sm text-zinc-400 mb-2 block">
+          Source File
+        </label>
+
+        <input
+          value={
+            newOrder.sourceFileLink
+          }
+          onChange={(e) =>
+            setNewOrder({
+              ...newOrder,
+              sourceFileLink:
+                e.target.value,
+            })
+          }
+          placeholder="Paste source link..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+        />
+      </div>
+
+      {/* DELIVERED LINK */}
+      <div className="col-span-2">
+        <label className="text-sm text-zinc-400 mb-2 block">
+          Delivered Link
+        </label>
+
+        <input
+          value={
+            newOrder.deliveredLink ||
+            ""
+          }
+          onChange={(e) =>
+            setNewOrder({
+              ...newOrder,
+              deliveredLink:
+                e.target.value,
+            })
+          }
+          placeholder="Paste delivered file link..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+        />
+      </div>
+
+    </div>
+
+  </div>
+)}
+  </div>
+
+{/* RIGHT SIDE */}
+<AnimatePresence>
+{newOrder.deliveries
+  ?.length > 0 && (
+<motion.div
+ initial={{
+  opacity: 0,
+  x: 16,
+}}
+
+animate={{
+  opacity: 1,
+  x: 0,
+}}
+
+exit={{
+  opacity: 0,
+  x: 16,
+}}
+
+transition={{
+  duration: 0.45,
+  ease: [0.22, 1, 0.36, 1],
+}}
+
+  className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6 flex flex-col h-fit sticky top-0"
+>
+
+    <div className="mb-5">
+      <h3 className="text-lg font-semibold">
+        Delivery Links
+      </h3>
+
+      <p className="text-sm text-zinc-500 mt-1">
+        Add links for each language
+      </p>
+    </div>
+
+    <div className="space-y-4 max-h-[650px] overflow-auto pr-1">
+
+      {newOrder.deliveries.map(
+        (
+          delivery: any,
+          index: number
+        ) => (
+          <div
+            key={
+              delivery.language
+            }
+            className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4"
+          >
+
+            <p className="text-sm font-medium mb-3">
+              {
+                delivery.language
+              }
+            </p>
+
+            <input
+              value={
+                delivery.deliveryLink || ""
+              }
+              onChange={(e) => {
+                const updated =
+                  [
+                    ...newOrder.deliveries,
+                  ]
+
+                updated[index] = {
+                  ...updated[index],
+
+                  deliveryLink:
+                    e.target.value,
+                }
+
+                setNewOrder({
+                  ...newOrder,
+
+                  deliveries:
+                    updated,
+                })
+              }}
+
+              placeholder="Paste delivery link..."
+
+              className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none"
+            />
+
+          </div>
+        )
+      )}
+
+    </div>
+
+  </motion.div>
+)}
+</AnimatePresence>
+</div>
+</div>
+{/* BUTTONS */}
+<div className="border-t border-zinc-800 bg-[#0E0E0E] p-6 rounded-b-3xl sticky bottom-0 z-20">
+
+  <button
+    disabled={isSavingOrder}
+    onClick={
+      isEditing
+        ? updateOrder
+        : createOrder
+    }
+    className={`w-full py-4 rounded-2xl font-semibold transition ${
+      isSavingOrder
+        ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+        : "bg-white text-black hover:opacity-90"
+    }`}
+  >
+    {isSavingOrder
+      ? isEditing
+        ? "Saving Changes..."
+        : "Creating Order..."
+      : isEditing
+      ? "Save Changes"
+      : "Create Order"}
+  </button>
+
+</div>
+
+    </motion.div>
+  </div>
+  )
+}
