@@ -19,7 +19,7 @@ export default function SetupPasswordPage() {
       setLoading(true)
 
       const response = await fetch(
-        "http://localhost:4000/auth/set-password",
+        `${import.meta.env.VITE_API_URL}/auth/set-password`,
         {
           method: "POST",
 

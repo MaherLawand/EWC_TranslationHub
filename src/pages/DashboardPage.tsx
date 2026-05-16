@@ -136,7 +136,7 @@ const [
 async function deleteOrder() {
   try {
     const response = await fetch(
-      `http://localhost:4000/orders/${deletingOrderId}`,
+      `${import.meta.env.VITE_API_URL}/orders/${deletingOrderId}`,
       {
         method: "DELETE",
 
@@ -218,7 +218,7 @@ async function createUser() {
     setIsSavingUser(true)
 
     const response = await fetch(
-      "http://localhost:4000/auth/users",
+      `${import.meta.env.VITE_API_URL}/auth/users`,
       {
         method: "POST",
 
@@ -260,7 +260,7 @@ async function createUser() {
 async function updateUser() {
   try {
     const response = await fetch(
-      `http://localhost:4000/auth/users/${selectedUser.id}`,
+      `${import.meta.env.VITE_API_URL}/auth/users/${selectedUser.id}`,
       {
         method: "PATCH",
 
@@ -306,7 +306,7 @@ async function deleteUser(
 ) {
   try {
     const response = await fetch(
-      `http://localhost:4000/auth/users/${userId}`,
+      `${import.meta.env.VITE_API_URL}/auth/users/${userId}`,
       {
         method: "DELETE",
 
@@ -336,7 +336,7 @@ async function deleteUser(
 async function fetchGames() {
   try {
     const response = await fetch(
-      "http://localhost:4000/games",
+      `${import.meta.env.VITE_API_URL}/games`,
       {
         credentials: "include",
       }
@@ -391,7 +391,7 @@ async function saveAssignments() {
     setIsSavingAssignments(true)
 
     await fetch(
-      `http://localhost:4000/auth/users/${selectedUserForGames.id}/games`,
+      `${import.meta.env.VITE_API_URL}/auth/users/${selectedUserForGames.id}/games`,
       {
         method: "POST",
 
@@ -501,7 +501,7 @@ if (
 async function fetchCurrentUser() {
   try {
     const response = await fetch(
-      "http://localhost:4000/auth/me",
+      `${import.meta.env.VITE_API_URL}/auth/me`,
       {
         credentials: "include",
       }
@@ -527,7 +527,7 @@ async function fetchCurrentUser() {
 async function fetchUsers() {
   try {
     const response = await fetch(
-      "http://localhost:4000/auth/getAllUsers",
+      `${import.meta.env.VITE_API_URL}/auth/getAllUsers`,
       {
         credentials: "include",
       }
@@ -584,7 +584,7 @@ const [editingOrderId, setEditingOrderId] =
 async function fetchOrders() {
   try {
     const response = await fetch(
-      "http://localhost:4000/orders"
+      `${import.meta.env.VITE_API_URL}/orders`
     )
 
     const data = await response.json()
@@ -749,7 +749,7 @@ async function createOrder() {
   try {
     setIsSavingOrder(true)
     const response = await fetch(
-      "http://localhost:4000/orders",
+      `${import.meta.env.VITE_API_URL}/orders`,
       {
         method: "POST",
 
@@ -810,7 +810,7 @@ async function updateOrder() {
   try {
         setIsSavingOrder(true)
     const response = await fetch(
-      `http://localhost:4000/orders/${editingOrderId}`,
+      `${import.meta.env.VITE_API_URL}/orders/${editingOrderId}`,
       {
         method: "PATCH",
 
@@ -905,7 +905,7 @@ function EditableField({
 async function logout() {
   try {
     await fetch(
-      "http://localhost:4000/auth/logout",
+      `${import.meta.env.VITE_API_URL}/auth/logout`,
       {
         method: "POST",
         credentials: "include",
@@ -925,7 +925,7 @@ async function updateOrderStatus(
 ) {
   try {
     const response = await fetch(
-      `http://localhost:4000/orders/${orderId}/status`,
+      `${import.meta.env.VITE_API_URL}/orders/${orderId}/status`,
       {
         method: "PATCH",
 
@@ -1057,8 +1057,8 @@ const filteredGames =
 async function markNotificationsAsRead() {
   try {
     await fetch(
-  "http://localhost:4000/orders/notifications/read",
-        {
+      `${import.meta.env.VITE_API_URL}/orders/notifications/read`,
+      {
         method: "PATCH",
 
         credentials: "include",

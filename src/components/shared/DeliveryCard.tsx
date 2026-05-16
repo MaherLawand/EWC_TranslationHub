@@ -20,7 +20,7 @@ export default function DeliveryCard({
       setSaving(true)
 
       const response = await fetch(
-        `http://localhost:4000/orders/deliveries/${delivery.id}`,
+        `${import.meta.env.VITE_API_URL}/orders/deliveries/${delivery.id}`,
         {
           method: "PATCH",
 
