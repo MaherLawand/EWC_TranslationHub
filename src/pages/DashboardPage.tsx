@@ -1595,10 +1595,9 @@ async function markNotificationsAsRead() {
   <div
     className="
       flex
+      flex-wrap
       items-center
-      gap-2
-      overflow-x-auto
-      scrollbar-hide
+      gap-3
       pt-1
     "
   >
@@ -1631,7 +1630,6 @@ async function markNotificationsAsRead() {
               rounded-2xl
               transition-all
               duration-200
-              flex-shrink-0
 
               ${
                 active
