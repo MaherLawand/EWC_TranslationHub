@@ -1623,8 +1623,8 @@ async function markNotificationsAsRead() {
             title={game.name}
             className={`
               relative
-              w-[50px]
-              h-[50px]
+              w-[70px]
+              h-[70px]
               flex
               items-center
               justify-center
@@ -1663,8 +1663,8 @@ async function markNotificationsAsRead() {
               className={`
                 relative
                 z-10
-                w-[34px]
-                h-[34px]
+                w-[50px]
+                h-[50px]
                 object-contain
 
                 ${
