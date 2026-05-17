@@ -17,6 +17,7 @@ import UserModal from "../components/users/UserModal"
 import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
 import NotificationsPage from "../components/pages/NotificationsPage"
+import { api } from "../lib/api"
 
 export default function App() {
   const [currentUser, setCurrentUser] = React.useState<any>(null)
@@ -904,15 +905,10 @@ function EditableField({
 
 async function logout() {
   try {
-    await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/logout`,
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    )
+    await api.post("/auth/logout")
 
-    window.location.href = "/login"
+    window.location.href =
+      "/login"
 
   } catch (error) {
     console.error(error)
