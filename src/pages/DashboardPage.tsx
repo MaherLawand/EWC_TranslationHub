@@ -908,7 +908,7 @@ async function logout() {
   try {
     await api.post("/auth/logout")
 
-   navigate("/login")
+    window.location.replace("/login")
 
   } catch (error) {
     console.error(error)
