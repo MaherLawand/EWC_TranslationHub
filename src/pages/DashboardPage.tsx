@@ -46,6 +46,7 @@ const [activePage, setActivePage] =
 
   const [newOrder, setNewOrder] = React.useState({
   title: "",
+  contentTitle: "",
   game: "",
   type: "Broadcast",
 
@@ -421,7 +422,7 @@ async function saveAssignments() {
   }
 }
 
-
+//change later
 React.useEffect(() => {
   fetchOrders()
   fetchCurrentUser()
@@ -561,6 +562,7 @@ const [editingOrderId, setEditingOrderId] =
   function resetOrderState() {
   setNewOrder({
     title: "",
+    contentTitle: "",
     game: "",
     type: "Broadcast",
 

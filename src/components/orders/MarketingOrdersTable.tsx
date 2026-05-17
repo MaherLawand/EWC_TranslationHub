@@ -1,5 +1,7 @@
 import React from "react"
-
+import {
+  LANGUAGES,
+} from "../../constants/languages"
 import StatusBadge from "../shared/StatusBadge"
 
 type Props = {
@@ -57,7 +59,20 @@ export default function MarketingOrdersTable({
       setPage(1)
     }
   }, [orders])
-
+function getLanguageCode(
+  languageName: string
+) {
+  return (
+    LANGUAGES.find(
+      (l) =>
+        l.name ===
+        languageName
+    )?.code.toUpperCase() ||
+    languageName
+      .slice(0, 2)
+      .toUpperCase()
+  )
+}
   return (
     <div
       className="
@@ -130,31 +145,31 @@ export default function MarketingOrdersTable({
 
           <tr>
 
-            <th className="text-left px-6 py-5">
-              Order
-            </th>
+  <th className="text-left px-6 py-5">
+    Order
+  </th>
 
-            <th className="text-left px-6 py-5">
-              Format
-            </th>
+  <th className="text-left px-6 py-5">
+    Content
+  </th>
 
-            <th className="text-left px-6 py-5">
-              Source File
-            </th>
+  <th className="text-left px-6 py-5">
+    Languages
+  </th>
 
-            <th className="text-left px-6 py-5">
-              Delivered Link
-            </th>
+  <th className="text-left px-6 py-5">
+    Format
+  </th>
 
-            <th className="text-left px-6 py-5">
-              Status
-            </th>
+  <th className="text-left px-6 py-5">
+    Status
+  </th>
 
-            <th className="text-left px-6 py-5">
-              Priority
-            </th>
+  <th className="text-left px-6 py-5">
+    Priority
+  </th>
 
-          </tr>
+</tr>
 
         </thead>
 
@@ -167,171 +182,201 @@ export default function MarketingOrdersTable({
               order.marketing
 
             return (
-              <tr
-                key={order.id}
-                onClick={() => {
-                  setSelectedOrder(order)
+             <tr
+  key={order.id}
+  onClick={() => {
+    setSelectedOrder(order)
 
-                  setEditedOrder(
-                    JSON.parse(
-                      JSON.stringify(order)
-                    )
-                  )
-                }}
-                className="
-                  border-b
-                  border-[#1F1F1F]
-                  hover:bg-[rgba(214,179,106,0.03)]
-                  cursor-pointer
-                  transition-all
-                  duration-300
-                "
-              >
+    setEditedOrder(
+      JSON.parse(
+        JSON.stringify(order)
+      )
+    )
+  }}
+  className="
+    border-b
+    border-[#1F1F1F]
+    hover:bg-[rgba(214,179,106,0.03)]
+    hover:shadow-[inset_0_0_0_1px_rgba(214,179,106,0.04)]
+    cursor-pointer
+    transition-all
+    duration-300
+  "
+>
 
-                {/* ORDER */}
-                <td className="px-6 py-6 align-center">
+  {/* ORDER */}
+  <td className="px-6 py-6 align-center">
 
-                  <div>
+    <div>
 
-                    <p className="font-semibold text-[#F5F1E8]">
-                      {order.title}
-                    </p>
+      <p className="font-semibold text-[#F5F1E8]">
+        {order.title}
+      </p>
 
-                    <p className="text-sm text-zinc-500 mt-1">
-                      {order.id}
-                    </p>
+      <p className="text-sm text-zinc-500 mt-1">
+        {order.id}
+      </p>
 
-                  </div>
+    </div>
 
-                </td>
+  </td>
 
-                {/* FORMAT */}
-                <td className="px-6 py-6 align-center">
+  {/* CONTENT TITLE */}
+  <td className="px-6 py-6 align-center">
 
-                  <span
-                    className="
-                      border
-                      border-[#2B2B2B]
-                      bg-[#171717]
-                      px-3
-                      py-1.5
-                      rounded-xl
-                      text-xs
-                      font-semibold
-                      tracking-wide
-                      text-[#F5F1E8]
-                    "
-                  >
-                    {
-                      marketing?.deliveryFormat
-                    }
-                  </span>
+    <div>
 
-                </td>
+      <p className="text-[#F5F1E8] font-medium">
+        {
+          marketing?.contentTitle ||
+          "-"
+        }
+      </p>
 
-                {/* SOURCE FILE */}
-                <td className="px-6 py-6 align-center">
+    </div>
 
-                  {marketing?.sourceFileLink ? (
-                    <a
-                      href={
-                        marketing.sourceFileLink
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) =>
-                        e.stopPropagation()
-                      }
-                      className="
-                        text-[#D6B36A]
-                        text-sm
-                        underline
-                        break-all
-                        hover:text-[#E7C987]
-                        transition
-                      "
-                    >
-                      Source File
-                    </a>
-                  ) : (
-                    <span className="text-zinc-600">
-                      -
-                    </span>
-                  )}
+  </td>
 
-                </td>
+  {/* LANGUAGES */}
+  <td className="px-6 py-6 align-center">
 
-                {/* DELIVERED LINK */}
-                <td className="px-6 py-6 align-center">
+    <div className="flex flex-wrap items-center gap-2">
 
-                  {marketing?.deliveredLink ? (
-                    <a
-                      href={
-                        marketing.deliveredLink
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) =>
-                        e.stopPropagation()
-                      }
-                      className="
-                        text-[#D6B36A]
-                        text-sm
-                        underline
-                        break-all
-                        hover:text-[#E7C987]
-                        transition
-                      "
-                    >
-                      Delivered File
-                    </a>
-                  ) : (
-                    <span className="text-zinc-600">
-                      -
-                    </span>
-                  )}
+      <div className="flex flex-wrap gap-1">
 
-                </td>
+        {marketing?.sourceLanguage?.map(
+          (
+            lang: string
+          ) => (
+            <span
+              key={lang}
+              className="
+                min-w-[34px]
+                h-[28px]
+                inline-flex
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-[#2D2D2D]
+                bg-[#1A1A1A]
+                text-[#EAEAEA]
+                text-[10px]
+                font-bold
+                tracking-[0.12em]
+                px-2
+              "
+            >
+              {getLanguageCode(
+                lang
+              )}
+            </span>
+          )
+        )}
 
-                {/* STATUS */}
-                <td className="px-6 py-6 align-center">
+      </div>
 
-                  <div className="relative w-fit">
+      <span className="text-zinc-500">
+        →
+      </span>
 
-                    <button
-                      onClick={(e) =>
-                        e.stopPropagation()
-                      }
-                      className="rounded-xl transition hover:scale-[1.02]"
-                    >
-                      <StatusBadge
-                        status={order.status}
-                      />
-                    </button>
+      {marketing?.targetLanguages?.map(
+        (
+          lang: string
+        ) => (
+          <span
+            key={lang}
+            className="
+              min-w-[34px]
+              h-[28px]
+              inline-flex
+              items-center
+              justify-center
+              rounded-full
+              bg-[#F5F1E8]
+              text-black
+              text-[10px]
+              font-bold
+              tracking-[0.12em]
+              px-2
+              shadow-[0_0_15px_rgba(245,241,232,0.08)]
+            "
+          >
+            {getLanguageCode(
+              lang
+            )}
+          </span>
+        )
+      )}
 
-                  </div>
+    </div>
 
-                </td>
+  </td>
 
-                {/* PRIORITY */}
-                <td className="px-6 py-6 align-center">
+  {/* FORMAT */}
+  <td className="px-6 py-6 align-center">
 
-                  <span
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-                      order.priority === "HIGH"
-                        ? "bg-red-500/10 text-red-400 border-red-500/20"
-                        : order.priority ===
-                          "MEDIUM"
-                        ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-                        : "bg-green-500/10 text-green-400 border-green-500/20"
-                    }`}
-                  >
-                    {order.priority}
-                  </span>
+    <span
+      className="
+        border
+        border-[#2B2B2B]
+        bg-[#171717]
+        px-3
+        py-1.5
+        rounded-xl
+        text-xs
+        font-semibold
+        tracking-wide
+        text-[#F5F1E8]
+      "
+    >
+      {
+        marketing?.deliveryFormat
+      }
+    </span>
 
-                </td>
+  </td>
 
-              </tr>
+  {/* STATUS */}
+  <td className="px-6 py-6 align-center">
+
+    <div className="relative group/status w-fit">
+
+      <button
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+        className="rounded-xl transition hover:scale-[1.02]"
+      >
+        <StatusBadge
+          status={order.status}
+        />
+      </button>
+
+    </div>
+
+  </td>
+
+  {/* PRIORITY */}
+  <td className="px-6 py-6 align-center">
+
+    <span
+      className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
+        order.priority ===
+        "HIGH"
+          ? "bg-red-500/10 text-red-400 border-red-500/20"
+          : order.priority ===
+            "MEDIUM"
+          ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+          : "bg-green-500/10 text-green-400 border-green-500/20"
+      }`}
+    >
+      {order.priority}
+    </span>
+
+  </td>
+
+</tr>
             )
           })}
 

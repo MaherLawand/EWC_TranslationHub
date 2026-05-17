@@ -64,28 +64,34 @@ export default function OrderModal({
   function handleClose() {
   setShowModal(false)
 
-  setNewOrder({
-    title: "",
-    game: "",
-    type: "Broadcast",
+setNewOrder({
+  title: "",
+  contentTitle: "",
 
-    status: "PENDING",
-    priority: "MEDIUM",
+  game: "",
 
-    sourceLanguage: [],
+  type: "Broadcast",
 
-    targetLanguages: [],
+  status: "PENDING",
 
-    format: "SRT",
+  priority: "MEDIUM",
 
-    deadline: "",
+  sourceLanguage: [],
 
-    sourceFileLink: "",
+  targetLanguages: [],
 
-    estimatedMinutes: "",
+  format: "SRT",
 
-    deliveryDate: "",
-  })
+  deadline: "",
+
+  sourceFileLink: "",
+
+  estimatedMinutes: "",
+
+  deliveryDate: "",
+
+  deliveries: [],
+})
 }
 
 const [languageSearch, setLanguageSearch] =
@@ -582,13 +588,6 @@ today.setHours(0, 0, 0, 0)
       BURNED_IN
     </option>
 
-    {/* MARKETING ONLY */}
-    {newOrder.type ===
-      "Marketing" && (
-      <option>
-        Text
-      </option>
-    )}
   </select>
 </div>
 
@@ -689,6 +688,62 @@ today.setHours(0, 0, 0, 0)
 
     <div className="grid grid-cols-2 gap-4">
 
+      {/* CONTENT TITLE */}
+<div className="col-span-2">
+
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Content Title
+  </label>
+
+  <select
+    value={
+      newOrder.contentTitle || ""
+    }
+
+    onChange={(e) =>
+      setNewOrder({
+        ...newOrder,
+
+        contentTitle:
+          e.target.value,
+      })
+    }
+
+    className="
+      w-full
+      bg-black
+      border
+      border-zinc-700
+      rounded-2xl
+      px-4
+      py-3
+    "
+  >
+
+    <option value="">
+      Select content
+    </option>
+
+    <option value="Content 1">
+      Content 1
+    </option>
+
+    <option value="Content 2">
+      Content 2
+    </option>
+
+    <option value="Content 3">
+      Content 3
+    </option>
+
+    <option value="Others">
+      Others
+    </option>
+
+  </select>
+
+</div>
+
       {/* FORMAT */}
       <div>
         <label className="text-sm text-zinc-400 mb-2 block">
@@ -715,10 +770,132 @@ today.setHours(0, 0, 0, 0)
           </option>
 
           <option>
-            Text
+            TEXT
           </option>
         </select>
       </div>
+      {/* SOURCE LANGUAGES */}
+<div className="col-span-2">
+
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Source Languages
+  </label>
+
+  <Select
+    isMulti
+    styles={darkSelectStyles}
+
+    options={LANGUAGES.map(
+      (language: Language) => ({
+        value: language.name,
+        label: language.name,
+      })
+    )}
+
+    value={
+      newOrder.sourceLanguage?.map(
+        (language: string) => ({
+          value: language,
+          label: language,
+        })
+      ) || []
+    }
+
+    onChange={(selected) =>
+      setNewOrder({
+        ...newOrder,
+
+        sourceLanguage:
+          selected.map(
+            (item: any) =>
+              item.value
+          ),
+      })
+    }
+
+    placeholder="Search source languages..."
+
+    className="text-sm"
+  />
+
+</div>
+
+{/* TARGET LANGUAGES */}
+<div className="col-span-2">
+
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Translate To
+  </label>
+
+  <Select
+    isMulti
+
+    styles={darkSelectStyles}
+
+    options={LANGUAGES.map(
+      (language: Language) => ({
+        value: language.name,
+        label: language.name,
+      })
+    )}
+
+    value={
+      newOrder.targetLanguages?.map(
+        (language: string) => ({
+          value: language,
+          label: language,
+        })
+      ) || []
+    }
+
+    onChange={(selected) => {
+
+      const selectedLanguages =
+        selected.map(
+          (item: any) =>
+            item.value
+        )
+
+      const existingDeliveries =
+        newOrder.deliveries || []
+
+      const updatedDeliveries =
+        selectedLanguages.map(
+          (language: string) => {
+
+            const existing =
+              existingDeliveries.find(
+                (d: any) =>
+                  d.language ===
+                  language
+              )
+
+            return existing
+              ? existing
+              : {
+                  language,
+                  deliveryLink: "",
+                }
+          }
+        )
+
+      setNewOrder({
+        ...newOrder,
+
+        targetLanguages:
+          selectedLanguages,
+
+        deliveries:
+          updatedDeliveries,
+      })
+    }}
+
+    placeholder="Search target languages..."
+
+    className="text-sm"
+  />
+
+</div>
 
       {/* SOURCE FILE */}
       <div>
@@ -742,7 +919,7 @@ today.setHours(0, 0, 0, 0)
         />
       </div>
 
-      {/* DELIVERED LINK */}
+      {/* DELIVERED LINK
       <div className="col-span-2">
         <label className="text-sm text-zinc-400 mb-2 block">
           Delivered Link
@@ -763,7 +940,7 @@ today.setHours(0, 0, 0, 0)
           placeholder="Paste delivered file link..."
           className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
         />
-      </div>
+      </div> */}
 
     </div>
 

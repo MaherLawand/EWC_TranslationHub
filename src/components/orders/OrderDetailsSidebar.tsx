@@ -1,8 +1,5 @@
 import StatusBadge from "../shared/StatusBadge"
 import SectionTitle from "../shared/SectionTitle"
-import CompactDetailCard from "../shared/CompactDetailCard"
-import DetailRow from "../shared/DetailRow"
-import { HardDrive, Triangle } from "lucide-react"
 import { LANGUAGES } from "../../constants/languages"
 
 type Props = {
@@ -105,6 +102,7 @@ export default function OrderDetailsSidebar({
   <h1 className="text-[34px] font-bold tracking-tight text-[#F5F1E8] leading-tight max-w-[280px]">
     {selectedOrder.title}
   </h1>
+
 
   {/* STATUS */}
   <div className="mt-5 flex items-center gap-3">
@@ -652,6 +650,33 @@ export default function OrderDetailsSidebar({
 
     <div className="space-y-5">
 
+      {/* CONTENT TITLE */}
+<div
+  className="
+    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
+    bg-[#111111]
+    border
+    border-[#242424]
+    rounded-[28px]
+    p-6
+    shadow-[0_0_40px_rgba(0,0,0,0.35)]
+  "
+>
+
+  <p className="text-zinc-500 text-sm">
+    Content Title
+  </p>
+
+  <p className="mt-2 text-[#F5F1E8] font-semibold">
+    {
+      editedOrder
+        .marketing
+        ?.contentTitle || "-"
+    }
+  </p>
+
+</div>
+
       {/* FORMAT */}
       <div
         className="
@@ -703,6 +728,55 @@ export default function OrderDetailsSidebar({
         </div>
 
       </div>
+
+      {/* SOURCE LANGUAGES */}
+<div
+  className="
+    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
+    bg-[#111111]
+    border
+    border-[#242424]
+    rounded-[28px]
+    p-6
+    shadow-[0_0_40px_rgba(0,0,0,0.35)]
+  "
+>
+
+  <p className="text-zinc-500 text-sm mb-4">
+    Source Languages
+  </p>
+
+  <div className="flex flex-wrap gap-2">
+
+    {editedOrder.marketing?.sourceLanguage?.map(
+      (lang: string) => (
+        <div
+          key={lang}
+          className="
+            min-w-[46px]
+            h-[34px]
+            inline-flex
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-[#2D2D2D]
+            bg-[#1B1B1B]
+            px-3
+            text-xs
+            font-semibold
+            tracking-wide
+            text-white
+          "
+        >
+          {getLanguageCode(lang)}
+        </div>
+      )
+    )}
+
+  </div>
+
+</div>
 
       {/* SOURCE FILE */}
       <div
@@ -763,7 +837,127 @@ export default function OrderDetailsSidebar({
 
       </div>
 
-      {/* DELIVERED FILE */}
+      {/* TARGET LANGUAGES */}
+<div
+  className="
+    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
+    bg-[#111111]
+    border
+    border-[#242424]
+    rounded-[28px]
+    p-6
+    shadow-[0_0_40px_rgba(0,0,0,0.35)]
+  "
+>
+
+  <p className="text-zinc-500 text-sm mb-4">
+    Target Languages
+  </p>
+
+  <div className="flex flex-wrap gap-2">
+
+    {editedOrder.marketing?.targetLanguages?.map(
+      (lang: string) => (
+        <div
+          key={lang}
+          className="
+            min-w-[46px]
+            h-[34px]
+            inline-flex
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-[#F5F1E8]
+            bg-[#F5F1E8]
+            px-3
+            text-xs
+            font-bold
+            tracking-wide
+            text-black
+          "
+        >
+          {getLanguageCode(lang)}
+        </div>
+      )
+    )}
+
+  </div>
+
+</div>
+
+{/* DELIVERY ASSETS */}
+<div className="space-y-4">
+
+  {editedOrder.marketing?.deliveries?.map(
+    (delivery: any) => (
+
+      <div
+        key={delivery.id}
+        className="
+          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
+          bg-[#111111]
+          border
+          border-[#242424]
+          rounded-[24px]
+          p-5
+          shadow-[0_0_30px_rgba(0,0,0,0.35)]
+        "
+      >
+
+        <div className="flex items-start gap-3">
+
+          <img
+            src="/google-drive.png"
+            alt="Drive"
+            className="w-5 h-5 mt-[2px]"
+          />
+
+          <div>
+
+            <p className="text-[#F5F1E8] font-semibold">
+              {delivery.language}
+            </p>
+
+            {delivery.deliveryLink ? (
+
+              <a
+                href={
+                  delivery.deliveryLink
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="
+                  text-[#D6B36A]
+                  underline
+                  text-sm
+                  break-all
+                  mt-1
+                  block
+                "
+              >
+                {delivery.deliveryLink}
+              </a>
+
+            ) : (
+
+              <p className="text-sm text-zinc-600 mt-1">
+                No delivery link added yet
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+    )
+  )}
+
+</div>
+
+      {/* DELIVERED FILE
       <div
         className="
           bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
@@ -832,7 +1026,7 @@ export default function OrderDetailsSidebar({
 
         </div>
 
-      </div>
+      </div> */}
 
     </div>
 
@@ -857,85 +1051,114 @@ export default function OrderDetailsSidebar({
           selectedOrder.id
         )
 
-        setNewOrder({
-          title:
-            selectedOrder.title,
+       setNewOrder({
+  title:
+    selectedOrder.title,
 
-          game:
-            selectedOrder
-              .broadcast?.game
-              ?.name || "",
+  contentTitle:
+    selectedOrder.marketing
+      ?.contentTitle || "",
 
-          type:
-            selectedOrder.type ===
-            "MARKETING"
-              ? "Marketing"
-              : "Broadcast",
+  game:
+    selectedOrder.broadcast
+      ?.game?.name || "",
 
-          status:
-            selectedOrder.status,
+  type:
+    selectedOrder.type ===
+    "MARKETING"
+      ? "Marketing"
+      : "Broadcast",
 
-          sourceLanguage:
-            selectedOrder
-              .broadcast
-              ?.sourceLanguage ||
-            [],
+  status:
+    selectedOrder.status,
 
-          targetLanguages:
-            selectedOrder
-              .broadcast
-              ?.targetLanguages ||
-            [],
+  priority:
+    selectedOrder.priority,
 
-          format:
-            selectedOrder
-              .broadcast
-              ?.deliveryFormat ||
-            selectedOrder
-              .marketing
-              ?.deliveryFormat,
+  sourceLanguage:
+    selectedOrder.type ===
+    "MARKETING"
+      ? selectedOrder
+          .marketing
+          ?.sourceLanguage || []
+      : selectedOrder
+          .broadcast
+          ?.sourceLanguage || [],
 
-          deadline:
-            selectedOrder
-              .broadcast
-              ?.deadlineDate?.split(
-                "T"
-              )[0] || "",
+  targetLanguages:
+    selectedOrder.type ===
+    "MARKETING"
+      ? selectedOrder
+          .marketing
+          ?.targetLanguages || []
+      : selectedOrder
+          .broadcast
+          ?.targetLanguages || [],
 
-          deliveryDate:
-            selectedOrder
-              .broadcast
-              ?.deliveryDate?.split(
-                "T"
-              )[0] || "",
+  format:
+    selectedOrder.type ===
+    "MARKETING"
+      ? selectedOrder
+          .marketing
+          ?.deliveryFormat
+      : selectedOrder
+          .broadcast
+          ?.deliveryFormat,
 
-          sourceFileLink:
-            selectedOrder
-              .broadcast
-              ?.sourceFileLink ||
-            selectedOrder
-              .marketing
-              ?.sourceFileLink ||
-            "",
+  deadline:
+    selectedOrder.broadcast
+      ?.deadlineDate?.split(
+        "T"
+      )[0] || "",
 
-          estimatedMinutes:
-            String(
-              selectedOrder
-                .broadcast
-                ?.estimatedMinutes ||
-                ""
-            ),
+  deliveryDate:
+    selectedOrder.broadcast
+      ?.deliveryDate?.split(
+        "T"
+      )[0] || "",
 
-          deliveries:
-  selectedOrder.broadcast?.deliveries?.map(
-    (delivery: any) => ({
-      id: delivery.id,
-      language: delivery.language,
-      deliveryLink:
-        delivery.deliveryLink || "",
-    })
-  ) || [],
-        })
+  sourceFileLink:
+    selectedOrder.type ===
+    "MARKETING"
+      ? selectedOrder
+          .marketing
+          ?.sourceFileLink || ""
+      : selectedOrder
+          .broadcast
+          ?.sourceFileLink || "",
+
+  estimatedMinutes:
+    String(
+      selectedOrder.broadcast
+        ?.estimatedMinutes || ""
+    ),
+
+  deliveries:
+    selectedOrder.type ===
+    "MARKETING"
+      ? selectedOrder
+          .marketing
+          ?.deliveries?.map(
+            (delivery: any) => ({
+              id: delivery.id,
+              language:
+                delivery.language,
+              deliveryLink:
+                delivery.deliveryLink || "",
+            })
+          ) || []
+      : selectedOrder
+          .broadcast
+          ?.deliveries?.map(
+            (delivery: any) => ({
+              id: delivery.id,
+              language:
+                delivery.language,
+              deliveryLink:
+                delivery.deliveryLink || "",
+            })
+          ) || [],
+})
 
         setShowModal(true)
       }}
