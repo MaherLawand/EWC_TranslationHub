@@ -1,4 +1,5 @@
 import React, { act } from "react"
+import { useNavigate } from "react-router-dom"
 import  SidebarItem  from "../components/shared/SidebarItem"
 import  StatCard  from "../components/shared/StatCard"
 import  StatusBadge  from "../components/shared/StatusBadge"
@@ -22,7 +23,7 @@ import { api } from "../lib/api"
 export default function App() {
   const [currentUser, setCurrentUser] = React.useState<any>(null)
   const [users, setUsers] = React.useState<any[]>([])
-
+  const navigate = useNavigate()
   const [orders, setOrders] = React.useState<any[]>([])
 
   const [isCreating, setIsCreating] =React.useState(false)
@@ -907,8 +908,7 @@ async function logout() {
   try {
     await api.post("/auth/logout")
 
-    window.location.href =
-      "/login"
+   navigate("/login")
 
   } catch (error) {
     console.error(error)

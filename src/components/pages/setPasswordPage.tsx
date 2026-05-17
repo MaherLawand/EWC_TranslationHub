@@ -1,10 +1,11 @@
 import React from "react"
 import { useSearchParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 export default function SetupPasswordPage() {
   const [searchParams] =
     useSearchParams()
-
+const navigate = useNavigate()
   const token =
     searchParams.get("token")
 
@@ -47,8 +48,7 @@ export default function SetupPasswordPage() {
         "Password set successfully"
       )
 
-      window.location.href =
-        "/login"
+      navigate("/login")
 
     } catch (error) {
       console.error(error)
