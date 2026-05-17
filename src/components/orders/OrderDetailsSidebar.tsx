@@ -644,152 +644,146 @@ export default function OrderDetailsSidebar({
         {/* MARKETING */}
 {/* MARKETING */}
 {editedOrder?.marketing && (
-  <div className="mt-10">
+  <>
 
-    <SectionTitle title="Marketing Details" />
+    {/* BASIC INFORMATION */}
+    <div className="mt-10">
 
-    <div className="space-y-5">
+      <SectionTitle title="Basic Information" />
 
-      {/* CONTENT TITLE */}
-<div
-  className="
-    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-    bg-[#111111]
-    border
-    border-[#242424]
-    rounded-[28px]
-    p-6
-    shadow-[0_0_40px_rgba(0,0,0,0.35)]
-  "
->
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-5">
 
-  <p className="text-zinc-500 text-sm">
-    Content Title
-  </p>
+        <div className="flex justify-between items-center">
 
-  <p className="mt-2 text-[#F5F1E8] font-semibold">
-    {
-      editedOrder
-        .marketing
-        ?.contentTitle || "-"
-    }
-  </p>
+          <p className="text-zinc-500 text-sm">
+            Content Title
+          </p>
 
-</div>
+          <p className="text-[#F5F1E8] font-medium">
+            {
+              editedOrder
+                .marketing
+                ?.contentTitle || "-"
+            }
+          </p>
 
-      {/* FORMAT */}
-      <div
-        className="
-          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-          bg-[#111111]
-          border
-          border-[#242424]
-          rounded-[28px]
-          p-6
-          shadow-[0_0_40px_rgba(0,0,0,0.35)]
-        "
-      >
+        </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
 
-          <div>
+          <p className="text-zinc-500 text-sm">
+            Delivery Format
+          </p>
 
-            <p className="text-zinc-500 text-sm">
-              Delivery Format
-            </p>
+          <p className="text-[#F5F1E8] font-medium">
+            {
+              editedOrder
+                .marketing
+                ?.deliveryFormat
+            }
+          </p>
 
-            <p className="mt-2 text-[#F5F1E8] font-semibold">
-              {
-                editedOrder
-                  .marketing
-                  ?.deliveryFormat
-              }
-            </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    {/* TRANSLATION DETAILS */}
+    <div className="mt-10">
+
+      <SectionTitle title="Translation Details" />
+
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-6">
+
+        {/* SOURCE LANGUAGES */}
+        <div className="flex flex-col gap-3">
+
+          <p className="text-zinc-500 text-sm">
+            Translated From
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+
+            {editedOrder.marketing?.sourceLanguage?.map(
+              (lang: string) => (
+                <div
+                  key={lang}
+                  className="
+                    min-w-[46px]
+                    h-[34px]
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-[#2D2D2D]
+                    bg-[#1B1B1B]
+                    px-3
+                    text-xs
+                    font-semibold
+                    tracking-wide
+                    text-white
+                  "
+                >
+                  {getLanguageCode(lang)}
+                </div>
+              )
+            )}
 
           </div>
 
-          <div
-            className="
-              px-3
-              py-1.5
-              rounded-xl
-              border
-              border-[#2B2B2B]
-              bg-[#171717]
-              text-xs
-              font-semibold
-              tracking-wide
-              text-[#F5F1E8]
-            "
-          >
-            FORMAT
+        </div>
+
+        {/* TARGET LANGUAGES */}
+        <div className="flex flex-col gap-3">
+
+          <p className="text-zinc-500 text-sm">
+            To Be Translated To
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+
+            {editedOrder.marketing?.targetLanguages?.map(
+              (lang: string) => (
+                <div
+                  key={lang}
+                  className="
+                    min-w-[46px]
+                    h-[34px]
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-[#F5F1E8]
+                    bg-[#F5F1E8]
+                    px-3
+                    text-xs
+                    font-bold
+                    tracking-wide
+                    text-black
+                  "
+                >
+                  {getLanguageCode(lang)}
+                </div>
+              )
+            )}
+
           </div>
 
         </div>
 
       </div>
 
-      {/* SOURCE LANGUAGES */}
-<div
-  className="
-    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-    bg-[#111111]
-    border
-    border-[#242424]
-    rounded-[28px]
-    p-6
-    shadow-[0_0_40px_rgba(0,0,0,0.35)]
-  "
->
+    </div>
 
-  <p className="text-zinc-500 text-sm mb-4">
-    Source Languages
-  </p>
+    {/* LINKS */}
+    <div className="mt-10">
 
-  <div className="flex flex-wrap gap-2">
+      <SectionTitle title="Links" />
 
-    {editedOrder.marketing?.sourceLanguage?.map(
-      (lang: string) => (
-        <div
-          key={lang}
-          className="
-            min-w-[46px]
-            h-[34px]
-            inline-flex
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-[#2D2D2D]
-            bg-[#1B1B1B]
-            px-3
-            text-xs
-            font-semibold
-            tracking-wide
-            text-white
-          "
-        >
-          {getLanguageCode(lang)}
-        </div>
-      )
-    )}
-
-  </div>
-
-</div>
-
-      {/* SOURCE FILE */}
-      <div
-        className="
-          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-          bg-[#111111]
-          border
-          border-[#242424]
-          rounded-[28px]
-          p-6
-          shadow-[0_0_40px_rgba(0,0,0,0.35)]
-        "
-      >
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
 
         <div className="flex items-start gap-4">
 
@@ -837,200 +831,84 @@ export default function OrderDetailsSidebar({
 
       </div>
 
-      {/* TARGET LANGUAGES */}
-<div
-  className="
-    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-    bg-[#111111]
-    border
-    border-[#242424]
-    rounded-[28px]
-    p-6
-    shadow-[0_0_40px_rgba(0,0,0,0.35)]
-  "
->
+    </div>
 
-  <p className="text-zinc-500 text-sm mb-4">
-    Target Languages
-  </p>
+    {/* DELIVERY ASSETS */}
+    <div className="mt-10">
 
-  <div className="flex flex-wrap gap-2">
+      <SectionTitle title="Delivery Assets" />
 
-    {editedOrder.marketing?.targetLanguages?.map(
-      (lang: string) => (
-        <div
-          key={lang}
-          className="
-            min-w-[46px]
-            h-[34px]
-            inline-flex
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-[#F5F1E8]
-            bg-[#F5F1E8]
-            px-3
-            text-xs
-            font-bold
-            tracking-wide
-            text-black
-          "
-        >
-          {getLanguageCode(lang)}
-        </div>
-      )
-    )}
+      <div className="space-y-4">
 
-  </div>
+        {editedOrder.marketing?.deliveries?.map(
+          (delivery: any) => (
 
-</div>
+            <div
+              key={delivery.id}
+              className="
+                bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
+                bg-[#111111]
+                border
+                border-[#242424]
+                rounded-[24px]
+                p-5
+                shadow-[0_0_30px_rgba(0,0,0,0.35)]
+              "
+            >
 
-{/* DELIVERY ASSETS */}
-<div className="space-y-4">
+              <div className="flex items-start gap-3">
 
-  {editedOrder.marketing?.deliveries?.map(
-    (delivery: any) => (
+                <img
+                  src="/google-drive.png"
+                  alt="Drive"
+                  className="w-5 h-5 mt-[2px]"
+                />
 
-      <div
-        key={delivery.id}
-        className="
-          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-          bg-[#111111]
-          border
-          border-[#242424]
-          rounded-[24px]
-          p-5
-          shadow-[0_0_30px_rgba(0,0,0,0.35)]
-        "
-      >
+                <div>
 
-        <div className="flex items-start gap-3">
+                  <p className="text-[#F5F1E8] font-semibold">
+                    {delivery.language}
+                  </p>
 
-          <img
-            src="/google-drive.png"
-            alt="Drive"
-            className="w-5 h-5 mt-[2px]"
-          />
+                  {delivery.deliveryLink ? (
 
-          <div>
+                    <a
+                      href={delivery.deliveryLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="
+                        text-[#D6B36A]
+                        underline
+                        text-sm
+                        break-all
+                        mt-1
+                        block
+                      "
+                    >
+                      {delivery.deliveryLink}
+                    </a>
 
-            <p className="text-[#F5F1E8] font-semibold">
-              {delivery.language}
-            </p>
+                  ) : (
 
-            {delivery.deliveryLink ? (
+                    <p className="text-sm text-zinc-600 mt-1">
+                      No delivery link added yet
+                    </p>
 
-              <a
-                href={
-                  delivery.deliveryLink
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="
-                  text-[#D6B36A]
-                  underline
-                  text-sm
-                  break-all
-                  mt-1
-                  block
-                "
-              >
-                {delivery.deliveryLink}
-              </a>
+                  )}
 
-            ) : (
+                </div>
 
-              <p className="text-sm text-zinc-600 mt-1">
-                No delivery link added yet
-              </p>
+              </div>
 
-            )}
-
-          </div>
-
-        </div>
+            </div>
+          )
+        )}
 
       </div>
-    )
-  )}
-
-</div>
-
-      {/* DELIVERED FILE
-      <div
-        className="
-          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)]
-          bg-[#111111]
-          border
-          border-[#242424]
-          rounded-[28px]
-          p-6
-          shadow-[0_0_40px_rgba(0,0,0,0.35)]
-        "
-      >
-
-        <div className="flex items-start gap-4">
-
-          <img
-            src="/google-drive.png"
-            alt="Drive"
-            className="w-5 h-5 mt-[2px]"
-          />
-
-          <div className="flex-1 min-w-0">
-
-            <p className="text-zinc-500 text-sm">
-              Delivered Asset
-            </p>
-
-            {editedOrder
-              .marketing
-              ?.deliveredLink ? (
-
-              <a
-                href={
-                  editedOrder
-                    .marketing
-                    ?.deliveredLink
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="
-                  mt-2
-                  block
-                  text-sm
-                  text-[#D6B36A]
-                  hover:text-[#E7C989]
-                  underline
-                  transition-colors
-                  break-all
-                "
-              >
-                {
-                  editedOrder
-                    .marketing
-                    ?.deliveredLink
-                }
-              </a>
-
-            ) : (
-
-              <p className="mt-2 text-sm text-zinc-600">
-                No delivered asset added yet
-              </p>
-
-            )}
-
-          </div>
-
-        </div>
-
-      </div> */}
 
     </div>
 
-  </div>
+  </>
 )}
 
       </div>

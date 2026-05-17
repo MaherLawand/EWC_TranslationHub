@@ -16,10 +16,10 @@ export default function Topbar({
   function getTitle() {
     switch (activePage) {
       case "broadcast":
-        return "Broadcast Orders"
+        return "Broadcast"
 
       case "marketing":
-        return "Marketing Orders"
+        return "Marketing"
 
       case "games":
         return "Games"

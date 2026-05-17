@@ -23,20 +23,30 @@ export default function App() {
     useState(null)
 
   useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res =
-          await api.get("/auth/me")
+async function fetchUser() {
+  try {
+    console.log("FETCHING USER")
 
-        setUser(res.data)
+    const res =
+      await api.get("/auth/me")
 
-      } catch {
-        setUser(null)
+    console.log("USER RESPONSE", res.data)
 
-      } finally {
-        setLoading(false)
-      }
-    }
+    setUser(res.data)
+
+  } catch (error) {
+
+    console.log("AUTH ERROR", error)
+
+    setUser(null)
+
+  } finally {
+
+    console.log("DONE LOADING")
+
+    setLoading(false)
+  }
+}
 
     fetchUser()
   }, [])

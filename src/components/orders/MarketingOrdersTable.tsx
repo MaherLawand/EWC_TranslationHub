@@ -35,7 +35,7 @@ export default function MarketingOrdersTable({
   updateOrderStatus,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 6
+  const ITEMS_PER_PAGE = 50
 
   const [page, setPage] =
     React.useState(1)
@@ -337,25 +337,142 @@ function getLanguageCode(
 
   </td>
 
-  {/* STATUS */}
-  <td className="px-6 py-6 align-center">
+ {/* STATUS */}
+                <td className="px-6 py-6 align-center whitespace-nowrap">
 
-    <div className="relative group/status w-fit">
+                  <div className="relative group/status inline-flex flex-shrink-0">
 
-      <button
-        onClick={(e) =>
-          e.stopPropagation()
-        }
-        className="rounded-xl transition hover:scale-[1.02]"
-      >
-        <StatusBadge
-          status={order.status}
-        />
-      </button>
+                    <button
+                      onClick={(e) =>
+                        e.stopPropagation()
+                      }
+                      className="rounded-xl transition hover:scale-[1.02]"
+                    >
+                      <div className="whitespace-nowrap">
+  <StatusBadge
+    status={order.status}
+  />
+</div>
+    </button>
+
+    {/* DROPDOWN */}
+    <div
+      className="
+        absolute
+        bottom-full
+        left-0
+        mb-3
+        w-48
+        bg-[#101010]/95
+        backdrop-blur-xl
+        border
+        border-[#242424]
+        rounded-2xl
+        p-2
+        opacity-0
+        invisible
+        translate-y-2
+        group-hover/status:translate-y-0
+        group-hover/status:opacity-100
+        group-hover/status:visible
+        transition-all
+        duration-200
+        z-[9999]
+        shadow-[0_0_40px_rgba(0,0,0,0.55)]
+      "
+    >
+
+      {order.status ===
+        "PENDING" && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+
+              updateOrderStatus(
+                order.id,
+                "IN_PROGRESS"
+              )
+            }}
+            className="
+              w-full
+              text-left
+              px-3
+              py-2
+              rounded-xl
+              hover:bg-zinc-800
+              text-sm
+              transition
+            "
+          >
+            Start Progress
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+
+              updateOrderStatus(
+                order.id,
+                "COMPLETED"
+              )
+            }}
+            className="
+              w-full
+              text-left
+              px-3
+              py-2
+              rounded-xl
+              hover:bg-zinc-800
+              text-sm
+              text-green-400
+              transition
+            "
+          >
+            Mark Completed
+          </button>
+        </>
+      )}
+
+      {order.status ===
+        "IN_PROGRESS" && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+
+            updateOrderStatus(
+              order.id,
+              "COMPLETED"
+            )
+          }}
+          className="
+            w-full
+            text-left
+            px-3
+            py-2
+            rounded-xl
+            hover:bg-zinc-800
+            text-sm
+            text-green-400
+            transition
+          "
+        >
+          Mark Completed
+        </button>
+      )}
+
+      {order.status ===
+        "COMPLETED" && (
+        <div className="px-3 py-2 text-xs text-zinc-500">
+          No actions available
+        </div>
+      )}
 
     </div>
 
-  </td>
+  </div>
+
+</td>
 
   {/* PRIORITY */}
   <td className="px-6 py-6 align-center">
@@ -386,17 +503,21 @@ function getLanguageCode(
 
       {/* PAGINATION */}
       <div
-        className="
-          px-7
-          py-5
-          border-t
-          border-[#242424]
-          flex
-          items-center
-          justify-between
-          bg-[#101010]
-        "
-      >
+  className="
+    sticky
+    bottom-0
+    z-30
+    px-7
+    py-5
+    border-t
+    border-[#242424]
+    flex
+    items-center
+    justify-between
+    bg-[#101010]/95
+    backdrop-blur-xl
+  "
+>
 
         <p className="text-sm text-zinc-500">
           Page {page} of {totalPages}

@@ -38,7 +38,7 @@ export default function BroadcastOrdersTable({
   getDeadlineInfo,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 6
+  const ITEMS_PER_PAGE = 50
 
   const [page, setPage] =
     React.useState(1)
@@ -375,9 +375,9 @@ export default function BroadcastOrdersTable({
                 </td>
 
                 {/* STATUS */}
-                <td className="px-6 py-6 align-center">
+                <td className="px-6 py-6 align-center whitespace-nowrap">
 
-                  <div className="relative group/status w-fit">
+                  <div className="relative group/status inline-flex flex-shrink-0">
 
                     <button
                       onClick={(e) =>
@@ -385,9 +385,11 @@ export default function BroadcastOrdersTable({
                       }
                       className="rounded-xl transition hover:scale-[1.02]"
                     >
-                      <StatusBadge
-                        status={order.status}
-                      />
+                      <div className="whitespace-nowrap">
+  <StatusBadge
+    status={order.status}
+  />
+</div>
                     </button>
 
                     {/* DROPDOWN */}
@@ -538,17 +540,21 @@ export default function BroadcastOrdersTable({
 
       {/* PAGINATION */}
       <div
-        className="
-          px-7
-          py-5
-          border-t
-          border-[#242424]
-          flex
-          items-center
-          justify-between
-          bg-[#101010]
-        "
-      >
+  className="
+    sticky
+    bottom-0
+    z-30
+    px-7
+    py-5
+    border-t
+    border-[#242424]
+    flex
+    items-center
+    justify-between
+    bg-[#101010]/95
+    backdrop-blur-xl
+  "
+>
 
         <p className="text-sm text-zinc-500">
           Page {page} of {totalPages}

@@ -180,35 +180,36 @@ export default function AssignGamesModal({
         label: game.name,
       }))}
 
-    onChange={(selected) => {
-      const values =
-        selected.map(
-          (item: any) =>
-            item.value
-        )
+onChange={(selected) => {
 
-      // reset all first
-      selectedGames.forEach(
-        (id) => {
-          if (
-            !values.includes(id)
-          ) {
-            toggleGame(id)
-          }
-        }
-      )
+  const values =
+    selected?.map(
+      (item: any) =>
+        item.value
+    ) || []
 
-      // add newly selected
-      values.forEach((id: string) => {
-        if (
-          !selectedGames.includes(
-            id
-          )
-        ) {
-          toggleGame(id)
-        }
-      })
-    }}
+  // remove unselected
+  selectedGames.forEach(
+    (id) => {
+      if (
+        !values.includes(id)
+      ) {
+        toggleGame(id)
+      }
+    }
+  )
+
+  // add newly selected
+  values.forEach(
+    (id: string) => {
+      if (
+        !selectedGames.includes(id)
+      ) {
+        toggleGame(id)
+      }
+    }
+  )
+}}
 
     placeholder="Search games..."
     className="text-sm"

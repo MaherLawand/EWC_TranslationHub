@@ -1081,6 +1081,23 @@ async function markNotificationsAsRead() {
     console.error(error)
   }
 }
+
+const statsOrders =
+  activePage === "marketing"
+    ? orders.filter(
+        (o) =>
+          o.type ===
+          "MARKETING"
+      )
+    : activePage === "games" ||
+      activePage ===
+        "my-games"
+    ? orders.filter(
+        (o) =>
+          o.type ===
+          "BROADCAST"
+      )
+    : orders
  
   return (
 
@@ -1132,13 +1149,15 @@ async function markNotificationsAsRead() {
 
     <StatCard
       title="Total Orders"
-      value={String(orders.length)}
+      value={String(
+        statsOrders.length
+      )}
     />
 
     <StatCard
       title="In Progress"
       value={String(
-        orders.filter(
+        statsOrders.filter(
           (o) =>
             o.status ===
             "IN_PROGRESS"
@@ -1149,7 +1168,7 @@ async function markNotificationsAsRead() {
     <StatCard
       title="Completed"
       value={String(
-        orders.filter(
+        statsOrders.filter(
           (o) =>
             o.status ===
             "COMPLETED"
@@ -1160,7 +1179,7 @@ async function markNotificationsAsRead() {
     <StatCard
       title="Pending"
       value={String(
-        orders.filter(
+        statsOrders.filter(
           (o) =>
             o.status ===
             "PENDING"
