@@ -59,6 +59,11 @@ const assignedUsers =
         )
     )
 
+    console.log(
+  "ASSIGNED USERS:",
+  assignedUsers
+)
+
 const producers =
   assignedUsers.filter(
     (user) =>
