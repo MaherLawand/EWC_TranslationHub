@@ -1270,12 +1270,6 @@ const showFilters =
 
 const [gameSearch, setGameSearch] =
   React.useState("")
-
-  console.log("GAMES:", games)
-console.log(
-  "GAMES ARRAY:",
-  Array.isArray(games)
-)
 const filteredGames =
   Array.isArray(games)
     ? games.filter((game) =>
@@ -2027,13 +2021,28 @@ const statsOrders =
   >
 
 {(
+  console.log(
+  "ASSIGNED GAMES:",
+  currentUser?.assignedGames
+),
+
+console.log(
+  "IS ARRAY:",
+  Array.isArray(
+    currentUser?.assignedGames
+  )
+),
   activePage === "my-games"
     ? filteredGames.filter((game) =>
-        currentUser?.assignedGames?.some(
+      Array.isArray(
+  currentUser?.assignedGames
+) &&
+        currentUser.assignedGames.some(
           (assignment: any) =>
             assignment.gameId ===
             game.id
         )
+        
       )
     : filteredGames
 ).map(
@@ -2145,12 +2154,6 @@ const statsOrders =
 
          {/* TABLE DATA */}
 {(() => {
-
-  console.log("ORDERS:", orders)
-console.log(
-  "IS ARRAY:",
-  Array.isArray(orders)
-)
  const safeOrders =
   Array.isArray(orders)
     ? orders
