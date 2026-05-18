@@ -88,7 +88,7 @@ const unreadNotifications =
 
           <p
             className="
-              text-[11px]
+              text-[13px]
               uppercase
               tracking-[0.28em]
               text-zinc-600

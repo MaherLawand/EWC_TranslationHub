@@ -75,8 +75,9 @@ export default function SidebarItem({
 
         <span
           className="
-            text-sm
-            tracking-[0.01em]
+             text-[15px]
+    tracking-[0.01em]
+    leading-none
           "
         >
           {label}

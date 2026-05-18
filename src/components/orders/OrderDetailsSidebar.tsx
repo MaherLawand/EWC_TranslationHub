@@ -532,7 +532,7 @@ export default function OrderDetailsSidebar({
     {/* LINKS */}
     <div className="mt-10">
 
-      <SectionTitle title="Links" />
+      <SectionTitle title="Source File" />
 
       <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-5">
 
@@ -781,7 +781,7 @@ export default function OrderDetailsSidebar({
     {/* LINKS */}
     <div className="mt-10">
 
-      <SectionTitle title="Links" />
+      <SectionTitle title="Source File" />
 
       <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
 

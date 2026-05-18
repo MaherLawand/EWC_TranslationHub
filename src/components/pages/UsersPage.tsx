@@ -49,7 +49,7 @@ export default function UsersPage({
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name
+      `${user.firstName} ${user.lastName}`
         ?.toLowerCase()
         .includes(
           search.toLowerCase()
@@ -268,7 +268,7 @@ export default function UsersPage({
                     <div className="flex items-center gap-2">
 
                       <p className="font-semibold text-[#F5F1E8]">
-                        {user.name}
+                        {`${user.firstName} ${user.lastName}`}
                       </p>
 
                       {user.isActive ? (

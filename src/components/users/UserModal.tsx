@@ -59,178 +59,254 @@ export default function UserModal({
 
         </div>
 
-        {/* FORM */}
-        <div className="space-y-5">
+{/* FORM */}
+<div className="space-y-5">
 
-          {/* NAME */}
-          <div>
+  {/* FIRST + LAST NAME */}
+  <div className="grid grid-cols-2 gap-4">
 
-            <label className="text-sm text-zinc-400 mb-2 block">
-              Name
-            </label>
+    {/* FIRST NAME */}
+    <div>
 
-            <input
-              value={userForm.name}
-              onChange={(e) =>
-                setUserForm({
-                  ...userForm,
-                  name: e.target.value,
-                })
-              }
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 outline-none"
-            />
+      <label className="text-sm text-zinc-400 mb-2 block">
+        First Name
+      </label>
 
-          </div>
+      <input
+        value={userForm.firstName}
+        onChange={(e) =>
+          setUserForm({
+            ...userForm,
+            firstName: e.target.value,
+          })
+        }
+        placeholder="John"
+        className="
+          w-full
+          bg-zinc-900
+          border
+          border-zinc-700
+          rounded-xl
+          px-4
+          py-3
+          outline-none
+        "
+      />
 
-          {/* EMAIL */}
-          <div>
+    </div>
 
-            <label className="text-sm text-zinc-400 mb-2 block">
-              Email
-            </label>
+    {/* LAST NAME */}
+    <div>
 
-            <input
-  type="email"
-  value={userForm.email}
-  disabled={
-    isEditingUser &&
-    userForm.isActive
-  }
-  onChange={(e) =>
-    setUserForm({
-      ...userForm,
-      email: e.target.value,
-    })
-  }
-  placeholder="user@ewc.com"
-  className={`w-full border rounded-xl px-4 py-3 outline-none ${
-    isEditingUser &&
-    userForm.isActive
-      ? "bg-zinc-800 border-zinc-700 text-zinc-500 cursor-not-allowed"
-      : "bg-zinc-900 border-zinc-700"
-  }`}
-/>
+      <label className="text-sm text-zinc-400 mb-2 block">
+        Last Name
+      </label>
 
-            {!isEditingUser && (
-              <p className="text-xs text-zinc-500 mt-2">
-                User will receive an email to set their password.
-              </p>
-            )}
+      <input
+        value={userForm.lastName}
+        onChange={(e) =>
+          setUserForm({
+            ...userForm,
+            lastName: e.target.value,
+          })
+        }
+        placeholder="Doe"
+        className="
+          w-full
+          bg-zinc-900
+          border
+          border-zinc-700
+          rounded-xl
+          px-4
+          py-3
+          outline-none
+        "
+      />
 
-          </div>
+    </div>
 
-          {/* ROLE */}
-          <div>
+  </div>
 
-            <label className="text-sm text-zinc-400 mb-2 block">
-              Role
-            </label>
+  {/* EMAIL */}
+  <div>
 
-            <select
-              value={userForm.role}
-              onChange={(e) =>
-                setUserForm({
-                  ...userForm,
-                  role: e.target.value,
-                })
-              }
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
-            >
-<option value="">
-                Select Role
-              </option>
-              <option value="ADMIN">
-                ADMIN
-              </option>
+    <label className="text-sm text-zinc-400 mb-2 block">
+      Email
+    </label>
 
-              <option value="EDITOR">
-                EDITOR
-              </option>
+    <input
+      type="email"
+      value={userForm.email}
+      disabled={
+        isEditingUser &&
+        userForm.isActive
+      }
+      onChange={(e) =>
+        setUserForm({
+          ...userForm,
+          email: e.target.value,
+        })
+      }
+      placeholder="user@ewc.com"
+      className={`w-full border rounded-xl px-4 py-3 outline-none ${
+        isEditingUser &&
+        userForm.isActive
+          ? "bg-zinc-800 border-zinc-700 text-zinc-500 cursor-not-allowed"
+          : "bg-zinc-900 border-zinc-700"
+      }`}
+    />
 
-              <option value="VIEWER">
-                VIEWER
-              </option>
+    {!isEditingUser && (
+      <p className="text-xs text-zinc-500 mt-2">
+        User will receive an email to set their password.
+      </p>
+    )}
 
-            </select>
+  </div>
 
-          </div>
+  {/* ROLE */}
+  <div>
 
-          {/* DEPARTMENT */}
-          <div>
+    <label className="text-sm text-zinc-400 mb-2 block">
+      Role
+    </label>
 
-            <label className="text-sm text-zinc-400 mb-2 block">
-              Department
-            </label>
+    <select
+      value={userForm.role}
+      onChange={(e) =>
+        setUserForm({
+          ...userForm,
+          role: e.target.value,
+        })
+      }
+      className="
+        w-full
+        bg-zinc-900
+        border
+        border-zinc-700
+        rounded-xl
+        px-4
+        py-3
+      "
+    >
 
-            <select
-              value={
-                userForm.department
-              }
-              onChange={(e) =>
-                setUserForm({
-                  ...userForm,
-                  department:
-                    e.target.value,
-                })
-              }
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
-            
-            >
-            <option value="">
-                Select Departement
-              </option>
-              <option value="BROADCAST">
-                BROADCAST
-              </option>
+      <option value="">
+        Select Role
+      </option>
 
-              <option value="MARKETING">
-                MARKETING
-              </option>
+      <option value="ADMIN">
+        ADMIN
+      </option>
 
-            </select>
+      <option value="EDITOR">
+        EDITOR
+      </option>
 
-          </div>
+      <option value="VIEWER">
+        VIEWER
+      </option>
 
-          {/* POSITION */}
-          <div>
+    </select>
 
-            <label className="text-sm text-zinc-400 mb-2 block">
-              Position
-            </label>
+  </div>
 
-            <select
-              value={userForm.position}
-              onChange={(e) =>
-                setUserForm({
-                  ...userForm,
-                  position:
-                    e.target.value,
-                })
-              }
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
-            >
+  {/* DEPARTMENT */}
+  <div>
 
-              <option value="">
-                Select Position
-              </option>
+    <label className="text-sm text-zinc-400 mb-2 block">
+      Department
+    </label>
 
-              <option value="PRODUCER">
-                PRODUCER
-              </option>
+    <select
+      value={userForm.department}
+      onChange={(e) =>
+        setUserForm({
+          ...userForm,
+          department: e.target.value,
+        })
+      }
+      className="
+        w-full
+        bg-zinc-900
+        border
+        border-zinc-700
+        rounded-xl
+        px-4
+        py-3
+      "
+    >
 
-              <option value="POST_PRODUCTION_MANAGER">
-                POST_PRODUCTION_MANAGER
-              </option>
+      <option value="">
+        Select Department
+      </option>
 
-              <option value="TRANSLATOR">
-                TRANSLATOR
-              </option>
+      <option value="BROADCAST">
+        BROADCAST
+      </option>
 
-            </select>
+      <option value="MARKETING">
+        MARKETING
+      </option>
 
-          </div>
+    </select>
 
-        </div>
+  </div>
+
+  {/* POSITION */}
+  <div>
+
+    <label className="text-sm text-zinc-400 mb-2 block">
+      Position
+    </label>
+
+    <select
+      value={userForm.position}
+      onChange={(e) =>
+        setUserForm({
+          ...userForm,
+          position: e.target.value,
+        })
+      }
+      className="
+        w-full
+        bg-zinc-900
+        border
+        border-zinc-700
+        rounded-xl
+        px-4
+        py-3
+      "
+    >
+
+      <option value="">
+        Select Position
+      </option>
+
+      <option value="PRODUCER">
+        PRODUCER
+      </option>
+
+      <option value="POST_PRODUCTION_MANAGER">
+        POST_PRODUCTION_MANAGER
+      </option>
+
+      <option value="TRANSLATOR">
+        TRANSLATOR
+      </option>
+
+      <option value="EDITOR">
+        EDITOR
+      </option>
+
+      <option value="VIEWER">
+        VIEWER
+      </option>
+
+    </select>
+
+  </div>
+
+</div>
 
         {/* BUTTON */}
         <button

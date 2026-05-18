@@ -101,7 +101,8 @@ const [isEditingUser, setIsEditingUser] =
 
 const [userForm, setUserForm] =
   React.useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     role: "",
@@ -182,7 +183,8 @@ const [
   setSelectedUser(null)
 
   setUserForm({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     role: "",
@@ -202,7 +204,8 @@ function openEditUserModal(
   setSelectedUser(user)
 
   setUserForm({
-    name: user.name || "",
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
     email: user.email || "",
     password: "",
     role: user.role || "EDITOR",
@@ -1856,6 +1859,7 @@ const statsOrders =
 {(activePage === "dashboard" ||
   activePage === "games") && (
   <BroadcastOrdersTable
+  currentUser={currentUser}
     orders={
   activePage === "games"
     ? filteredBroadcastOrders
@@ -1875,6 +1879,7 @@ const statsOrders =
 {/* MY GAMES */}
 {activePage === "my-games" && (
   <BroadcastOrdersTable
+  currentUser={currentUser}
     orders={myGameOrders}
     setSelectedOrder={
       setSelectedOrder
@@ -1938,6 +1943,7 @@ const statsOrders =
   activePage === "marketing") && (
   <MarketingOrdersTable
     orders={marketingOrders}
+    currentUser={currentUser}
     setSelectedOrder={
       setSelectedOrder
     }

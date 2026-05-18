@@ -8,7 +8,7 @@ import {
 
 type Props = {
   orders: any[]
-
+currentUser: any
   setSelectedOrder: (
     order: any
   ) => void
@@ -36,10 +36,24 @@ export default function BroadcastOrdersTable({
   setEditedOrder,
   updateOrderStatus,
   getDeadlineInfo,
+  currentUser,
 }: Props) {
 
   const ITEMS_PER_PAGE = 50
+const canUpdateStatus =
+  currentUser?.role === "ADMIN" ||
 
+  currentUser?.position ===
+    "PRODUCER" ||
+
+  currentUser?.position ===
+    "POST_PRODUCTION_MANAGER" ||
+
+  currentUser?.position ===
+    "TRANSLATOR" ||
+
+  currentUser?.position ===
+    "EDITOR"
   const [page, setPage] =
     React.useState(1)
 
@@ -374,144 +388,156 @@ export default function BroadcastOrdersTable({
 
                 </td>
 
-                {/* STATUS */}
-                <td className="px-6 py-6 align-center whitespace-nowrap">
+{/* STATUS */}
+<td className="px-6 py-6 align-center whitespace-nowrap">
 
-                  <div className="relative group/status inline-flex flex-shrink-0">
+  {!canUpdateStatus ? (
 
-                    <button
-                      onClick={(e) =>
-                        e.stopPropagation()
-                      }
-                      className="rounded-xl transition hover:scale-[1.02]"
-                    >
-                      <div className="whitespace-nowrap">
-  <StatusBadge
-    status={order.status}
-  />
-</div>
-                    </button>
+    <div className="whitespace-nowrap">
+      <StatusBadge
+        status={order.status}
+      />
+    </div>
 
-                    {/* DROPDOWN */}
-<div
-  className="
-    absolute
-    bottom-full
-    left-0
-    mb-3
-    w-48
-    flex
-    flex-col
-    bg-[#101010]/95
-    backdrop-blur-xl
-    border
-    border-[#242424]
-    rounded-2xl
-    p-2
-    opacity-0
-    invisible
-    translate-y-2
-    group-hover/status:translate-y-0
-    group-hover/status:opacity-100
-    group-hover/status:visible
-    transition-all
-    duration-200
-    z-[9999]
-    shadow-[0_0_40px_rgba(0,0,0,0.55)]
-  "
->
+  ) : (
 
-                      {order.status ===
-                        "PENDING" && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
+    <div className="relative group/status inline-flex flex-shrink-0">
 
-                              updateOrderStatus(
-                                order.id,
-                                "IN_PROGRESS"
-                              )
-                            }}
-                            className="
-                              w-full
-                              text-left
-                              px-3
-                              py-2
-                              rounded-xl
-                              hover:bg-zinc-800
-                              text-sm
-                              transition
-                            "
-                          >
-                            Start Progress
-                          </button>
+      <button
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+        className="rounded-xl transition hover:scale-[1.02]"
+      >
+        <div className="whitespace-nowrap">
+          <StatusBadge
+            status={order.status}
+          />
+        </div>
+      </button>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
+      {/* DROPDOWN */}
+      <div
+        className="
+          absolute
+          bottom-full
+          left-0
+          mb-3
+          w-48
+          flex
+          flex-col
+          bg-[#101010]/95
+          backdrop-blur-xl
+          border
+          border-[#242424]
+          rounded-2xl
+          p-2
+          opacity-0
+          invisible
+          translate-y-2
+          group-hover/status:translate-y-0
+          group-hover/status:opacity-100
+          group-hover/status:visible
+          transition-all
+          duration-200
+          z-[9999]
+          shadow-[0_0_40px_rgba(0,0,0,0.55)]
+        "
+      >
 
-                              updateOrderStatus(
-                                order.id,
-                                "COMPLETED"
-                              )
-                            }}
-                            className="
-                              w-full
-                              text-left
-                              px-3
-                              py-2
-                              rounded-xl
-                              hover:bg-zinc-800
-                              text-sm
-                              text-green-400
-                              transition
-                            "
-                          >
-                            Mark Completed
-                          </button>
-                        </>
-                      )}
+        {order.status ===
+          "PENDING" && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
 
-                      {order.status ===
-                        "IN_PROGRESS" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
+                updateOrderStatus(
+                  order.id,
+                  "IN_PROGRESS"
+                )
+              }}
+              className="
+                w-full
+                text-left
+                px-3
+                py-2
+                rounded-xl
+                hover:bg-zinc-800
+                text-sm
+                transition
+              "
+            >
+              Start Progress
+            </button>
 
-                            updateOrderStatus(
-                              order.id,
-                              "COMPLETED"
-                            )
-                          }}
-                          className="
-                            w-full
-                            text-left
-                            px-3
-                            py-2
-                            rounded-xl
-                            hover:bg-zinc-800
-                            text-sm
-                            text-green-400
-                            transition
-                          "
-                        >
-                          Mark Completed
-                        </button>
-                      )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
 
-                      {order.status ===
-                        "COMPLETED" && (
-                        <div className="px-3 py-2 text-xs text-zinc-500">
-                          No actions available
-                        </div>
-                      )}
+                updateOrderStatus(
+                  order.id,
+                  "COMPLETED"
+                )
+              }}
+              className="
+                w-full
+                text-left
+                px-3
+                py-2
+                rounded-xl
+                hover:bg-zinc-800
+                text-sm
+                text-green-400
+                transition
+              "
+            >
+              Mark Completed
+            </button>
+          </>
+        )}
 
-                    </div>
+        {order.status ===
+          "IN_PROGRESS" && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
 
-                  </div>
+              updateOrderStatus(
+                order.id,
+                "COMPLETED"
+              )
+            }}
+            className="
+              w-full
+              text-left
+              px-3
+              py-2
+              rounded-xl
+              hover:bg-zinc-800
+              text-sm
+              text-green-400
+              transition
+            "
+          >
+            Mark Completed
+          </button>
+        )}
 
-                </td>
+        {order.status ===
+          "COMPLETED" && (
+          <div className="px-3 py-2 text-xs text-zinc-500">
+            No actions available
+          </div>
+        )}
+
+      </div>
+
+    </div>
+
+  )}
+
+</td>
 
                 {/* PRIORITY */}
                 <td className="px-6 py-6 align-center">
