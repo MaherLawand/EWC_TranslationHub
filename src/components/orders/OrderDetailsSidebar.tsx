@@ -4,7 +4,7 @@ import { LANGUAGES } from "../../constants/languages"
 
 type Props = {
   selectedOrder: any
-
+  currentUser: any
   editedOrder: any
 
   setSelectedOrder: (
@@ -54,6 +54,7 @@ type Props = {
 export default function OrderDetailsSidebar({
   selectedOrder,
   editedOrder,
+  currentUser,
   setSelectedOrder,
   setIsEditingOrder,
   setIsEditing,
@@ -79,6 +80,9 @@ export default function OrderDetailsSidebar({
       languageName.slice(0, 2).toUpperCase()
     )
   }
+  const isAdmin =
+  currentUser?.role ===
+  "ADMIN"
   return (
    <div className="w-[430px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0">
 
@@ -177,10 +181,98 @@ export default function OrderDetailsSidebar({
     </p>
 
   </div>
+  {/* LAST EDITED BY */}
+{isAdmin && (
+  <div className="flex justify-between items-center">
+
+    <p className="text-zinc-500 text-sm">
+      Last Edited By
+    </p>
+
+    <div className="text-right">
+
+      <p className="text-[#F5F1E8] font-medium">
+        {selectedOrder.lastEditedBy
+          ? `${selectedOrder.lastEditedBy.firstName} ${selectedOrder.lastEditedBy.lastName}`
+          : "-"}
+      </p>
+
+      {selectedOrder.lastEditedAt && (
+        <p className="text-xs text-zinc-500 mt-1">
+          {new Date(
+            selectedOrder.lastEditedAt
+          ).toLocaleString()}
+        </p>
+      )}
+
+    </div>
+
+  </div>
+)}
 
 </div>
 
         </div>
+
+        {/* EDIT HISTORY */}
+{isAdmin &&
+  selectedOrder.editHistory
+    ?.length > 0 && (
+    <div className="mb-10">
+
+      <SectionTitle title="Edit History" />
+
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-4">
+
+        {selectedOrder.editHistory.map(
+          (edit: any) => (
+            <div
+              key={edit.id}
+              className="
+                flex
+                items-center
+                justify-between
+                border-b
+                border-[#1F1F1F]
+                pb-4
+                last:border-0
+                last:pb-0
+              "
+            >
+
+              <div>
+
+                <p className="text-[#F5F1E8] font-medium">
+                  {
+                    edit.editedBy
+                      ?.firstName
+                  }{" "}
+                  {
+                    edit.editedBy
+                      ?.lastName
+                  }
+                </p>
+
+                <p className="text-xs text-zinc-500 mt-1">
+                  Edited order
+                </p>
+
+              </div>
+
+              <p className="text-sm text-zinc-400">
+                {new Date(
+                  edit.editedAt
+                ).toLocaleString()}
+              </p>
+
+            </div>
+          )
+        )}
+
+      </div>
+
+    </div>
+)}
 
 {/* BROADCAST */}
 {editedOrder?.broadcast && (

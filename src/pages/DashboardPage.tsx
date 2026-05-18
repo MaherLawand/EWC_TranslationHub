@@ -1966,6 +1966,7 @@ const statsOrders =
   <OrderDetailsSidebar
     selectedOrder={selectedOrder}
     editedOrder={editedOrder}
+    currentUser={currentUser}
     setSelectedOrder={
       setSelectedOrder
     }
