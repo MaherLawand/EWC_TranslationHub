@@ -145,7 +145,7 @@ const [userForm, setUserForm] =
     }
 
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/games/${gameId}/users`,
+        `${import.meta.env.VITE_API_URL}/games/${gameId}/users`,
       {
         credentials: "include",
       }
