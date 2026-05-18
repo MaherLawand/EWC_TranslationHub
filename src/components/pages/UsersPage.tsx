@@ -342,39 +342,45 @@ export default function UsersPage({
 
                   <div className="flex items-center gap-3">
 
-                    {(user.position ===
-                      "PRODUCER" ||
-                      user.position ===
-                        "POST_PRODUCTION_MANAGER") && (
+                    {user.department ===
+  "BROADCAST" &&
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
+(
+  user.position ===
+    "PRODUCER" ||
 
-                          openAssignGamesModal(
-                            user
-                          )
-                        }}
-                        className="
-                          h-10
-                          px-4
-                          rounded-xl
-                          bg-[#D6B36A]/10
-                          border
-                          border-[#D6B36A]/20
-                          text-[#D6B36A]
-                          hover:bg-[#D6B36A]/15
-                          hover:border-[#D6B36A]/40
-                          transition-all
-                          duration-200
-                          text-sm
-                          font-medium
-                        "
-                      >
-                        Assign Games
-                      </button>
+  user.position ===
+    "POST_PRODUCTION_MANAGER"
+) && (
 
-                    )}
+  <button
+    onClick={(e) => {
+      e.stopPropagation()
+
+      openAssignGamesModal(
+        user
+      )
+    }}
+    className="
+      h-10
+      px-4
+      rounded-xl
+      bg-[#D6B36A]/10
+      border
+      border-[#D6B36A]/20
+      text-[#D6B36A]
+      hover:bg-[#D6B36A]/15
+      hover:border-[#D6B36A]/40
+      transition-all
+      duration-200
+      text-sm
+      font-medium
+    "
+  >
+    Assign Games
+  </button>
+
+)}
 
                     <button
                       onClick={(e) => {
