@@ -196,7 +196,7 @@ const filteredGames =
               font-medium
             "
           >
-            {producer.firsName}{" "}
+            {producer.firstName}{" "}
 {producer.lastName}
           </span>
         )

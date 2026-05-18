@@ -1233,6 +1233,8 @@ const statsOrders =
   canManageOrders={
     canManageOrders
   }
+  statsOrders={statsOrders}
+  currentUser={currentUser}
 />
 
       {/* CONTENT */}
@@ -1243,52 +1245,7 @@ const statsOrders =
 
         <div className="flex-1 overflow-auto px-8 py-7 space-y-7 bg-[#070707]">
 
-{/* STATS */}
-{showFilters && (
-  <div className="grid grid-cols-4 gap-6">
 
-    <StatCard
-      title="Total Orders"
-      value={String(
-        statsOrders.length
-      )}
-    />
-
-    <StatCard
-      title="In Progress"
-      value={String(
-        statsOrders.filter(
-          (o) =>
-            o.status ===
-            "IN_PROGRESS"
-        ).length
-      )}
-    />
-
-    <StatCard
-      title="Completed"
-      value={String(
-        statsOrders.filter(
-          (o) =>
-            o.status ===
-            "COMPLETED"
-        ).length
-      )}
-    />
-
-    <StatCard
-      title="Pending"
-      value={String(
-        statsOrders.filter(
-          (o) =>
-            o.status ===
-            "PENDING"
-        ).length
-      )}
-    />
-
-  </div>
-)}
 
 {/* FILTERS */}
 {showFilters && (
