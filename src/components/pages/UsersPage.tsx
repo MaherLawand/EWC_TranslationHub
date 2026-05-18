@@ -297,10 +297,6 @@ export default function UsersPage({
 
                     </div>
 
-                    <p className="text-sm text-zinc-500 mt-1">
-                      {user.id}
-                    </p>
-
                   </div>
 
                 </td>
