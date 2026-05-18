@@ -1,12 +1,5 @@
-import React, { act } from "react"
+import React from "react"
 import { useNavigate } from "react-router-dom"
-import  SidebarItem  from "../components/shared/SidebarItem"
-import  StatCard  from "../components/shared/StatCard"
-import  StatusBadge  from "../components/shared/StatusBadge"
-import  CompactDetailCard  from "../components/shared/CompactDetailCard"
-import  DetailRow  from "../components/shared/DetailRow"
-import  SectionTitle  from "../components/shared/SectionTitle"
-import  DeliveryCard  from "../components/shared/DeliveryCard"
 import Sidebar from "../components/layout/Sidebar"
 import Topbar from "../components/layout/Topbar"
 import UsersPage from "../components/pages/UsersPage"
@@ -45,6 +38,19 @@ const [activePage, setActivePage] =
 
   const [selectedOrder, setSelectedOrder] =
     React.useState<any>(null)
+
+      const [priorityFilter, setPriorityFilter] =
+  React.useState("All Priorities")
+
+const [formatFilter, setFormatFilter] =
+  React.useState("All Formats")
+
+const [deadlineSort, setDeadlineSort] =
+  React.useState("")
+  
+  const [selectedGameFilter, setSelectedGameFilter] =
+  React.useState("")
+
 
     const [
   contentTitleFilter,
@@ -446,11 +452,23 @@ async function saveAssignments() {
 
 //change later
 React.useEffect(() => {
-  fetchOrders()
   fetchCurrentUser()
   fetchUsers()
   fetchGames()
 }, [])
+
+React.useEffect(() => {
+  fetchOrders()
+}, [
+  search,
+  statusFilter,
+  priorityFilter,
+  formatFilter,
+  contentTitleFilter,
+  selectedGameFilter,
+  deadlineSort,
+  activePage,
+])
 
 React.useEffect(() => {
 
@@ -697,152 +715,258 @@ const [editingOrderId, setEditingOrderId] =
 
 async function fetchOrders() {
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/orders`
-    )
 
-    const data = await response.json()
+    const params =
+      new URLSearchParams()
 
-    setOrders(data)
+    /*
+      SEARCH
+    */
+    if (search.trim()) {
+      params.append(
+        "search",
+        search
+      )
+    }
+
+    if (
+  activePage === "my-games"
+) {
+  params.append(
+    "assignedOnly",
+    "true"
+  )
+}
+
+    /*
+      STATUS
+    */
+    if (
+      statusFilter !==
+      "All Statuses"
+    ) {
+      params.append(
+        "status",
+        statusFilter
+          .toUpperCase()
+          .replace(" ", "_")
+      )
+    }
+
+    /*
+      PRIORITY
+    */
+    if (
+      priorityFilter !==
+      "All Priorities"
+    ) {
+      params.append(
+        "priority",
+        priorityFilter
+      )
+    }
+
+    /*
+      FORMAT
+    */
+    if (
+      formatFilter !==
+      "All Formats"
+    ) {
+      params.append(
+        "format",
+        formatFilter
+      )
+    }
+
+    /*
+      CONTENT TITLE
+    */
+    if (
+      contentTitleFilter
+    ) {
+      params.append(
+        "contentTitle",
+        contentTitleFilter
+      )
+    }
+
+    /*
+      GAME
+    */
+    if (
+      selectedGameFilter
+    ) {
+      params.append(
+        "gameId",
+        selectedGameFilter
+      )
+    }
+
+    /*
+      DEADLINE SORT
+    */
+    if (deadlineSort) {
+      params.append(
+        "deadlineSort",
+        deadlineSort
+      )
+    }
+
+    const response =
+      await fetch(
+        `${import.meta.env.VITE_API_URL}/orders?${params.toString()}`,
+        {
+          credentials:
+            "include",
+        }
+      )
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to fetch orders"
+      )
+    }
+
+    const data =
+      await response.json()
+
+    setOrders(data.orders)
+
   } catch (error) {
+
     console.error(
       "Failed to fetch orders:",
       error
     )
   }
 }
-  const [priorityFilter, setPriorityFilter] =
-  React.useState("All Priorities")
-
-const [formatFilter, setFormatFilter] =
-  React.useState("All Formats")
-
-const [deadlineSort, setDeadlineSort] =
-  React.useState("")
-
-const filteredOrders = [...orders]
-  .filter((order) => {
-
-    const matchesSearch =
-      order.title
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-
-    const matchesStatus =
-      statusFilter ===
-        "All Statuses" ||
-      order.status ===
-        statusFilter
-          .toUpperCase()
-          .replace(" ", "_")
-
-    const matchesPriority =
-      priorityFilter ===
-        "All Priorities" ||
-      order.priority ===
-        priorityFilter
-
-    const format =
-      order.broadcast
-        ?.deliveryFormat ||
-      order.marketing
-        ?.deliveryFormat
-
-    const matchesFormat =
-      formatFilter ===
-        "All Formats" ||
-      format === formatFilter
-
-    const matchesContentTitle =
-      !contentTitleFilter ||
-      order.marketing
-        ?.contentTitle ===
-        contentTitleFilter
-
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesPriority &&
-      matchesFormat &&
-      matchesContentTitle
-    )
-  })
-
-  .sort((a, b) => {
-
-    if (!deadlineSort)
-      return 0
-
-    const dateA = new Date(
-      a.broadcast?.deadlineDate ||
-      a.marketing?.deadlineDate ||
-      0
-    ).getTime()
-
-    const dateB = new Date(
-      b.broadcast?.deadlineDate ||
-      b.marketing?.deadlineDate ||
-      0
-    ).getTime()
-
-    return deadlineSort ===
-      "ASC"
-      ? dateA - dateB
-      : dateB - dateA
-  })
-  const [selectedGameFilter, setSelectedGameFilter] =
-  React.useState("")
-
-  const filteredBroadcastOrders =
-  filteredOrders.filter((order) => {
-    if (order.type !== "BROADCAST") {
-      return false
-    }
-
-    if (!selectedGameFilter) {
-      return true
-    }
-
-    return (
-      order.broadcast?.game?.id ===
-      selectedGameFilter
-    )
-  })
-
-  const assignedGameIds =
-  currentUser?.assignedGames?.map(
-    (assignment: any) =>
-      assignment.gameId
-  ) || []
 
 
-const myGameOrders =
-  filteredOrders.filter((o) => {
 
-    if (o.type !== "BROADCAST") {
-      return false
-    }
 
-    const belongsToUser =
-      assignedGameIds.includes(
-        o.broadcast?.gameId
-      )
+// const filteredOrders = [...orders]
+//   .filter((order) => {
 
-    if (!belongsToUser) {
-      return false
-    }
+//     const matchesSearch =
+//       order.title
+//         ?.toLowerCase()
+//         .includes(
+//           search.toLowerCase()
+//         )
 
-    if (!selectedGameFilter) {
-      return true
-    }
+//     const matchesStatus =
+//       statusFilter ===
+//         "All Statuses" ||
+//       order.status ===
+//         statusFilter
+//           .toUpperCase()
+//           .replace(" ", "_")
 
-    return (
-      o.broadcast?.gameId ===
-      selectedGameFilter
-    )
-  })
+//     const matchesPriority =
+//       priorityFilter ===
+//         "All Priorities" ||
+//       order.priority ===
+//         priorityFilter
+
+//     const format =
+//       order.broadcast
+//         ?.deliveryFormat ||
+//       order.marketing
+//         ?.deliveryFormat
+
+//     const matchesFormat =
+//       formatFilter ===
+//         "All Formats" ||
+//       format === formatFilter
+
+//     const matchesContentTitle =
+//       !contentTitleFilter ||
+//       order.marketing
+//         ?.contentTitle ===
+//         contentTitleFilter
+
+//     return (
+//       matchesSearch &&
+//       matchesStatus &&
+//       matchesPriority &&
+//       matchesFormat &&
+//       matchesContentTitle
+//     )
+//   })
+
+//   .sort((a, b) => {
+
+//     if (!deadlineSort)
+//       return 0
+
+//     const dateA = new Date(
+//       a.broadcast?.deadlineDate ||
+//       a.marketing?.deadlineDate ||
+//       0
+//     ).getTime()
+
+//     const dateB = new Date(
+//       b.broadcast?.deadlineDate ||
+//       b.marketing?.deadlineDate ||
+//       0
+//     ).getTime()
+
+//     return deadlineSort ===
+//       "ASC"
+//       ? dateA - dateB
+//       : dateB - dateA
+//   })
+
+
+  // const filteredBroadcastOrders =
+  // filteredOrders.filter((order) => {
+  //   if (order.type !== "BROADCAST") {
+  //     return false
+  //   }
+
+  //   if (!selectedGameFilter) {
+  //     return true
+  //   }
+
+  //   return (
+  //     order.broadcast?.game?.id ===
+  //     selectedGameFilter
+  //   )
+  // })
+
+  // const assignedGameIds =
+  // currentUser?.assignedGames?.map(
+  //   (assignment: any) =>
+  //     assignment.gameId
+  // ) || []
+
+
+// const myGameOrders =
+//   filteredOrders.filter((o) => {
+
+//     if (o.type !== "BROADCAST") {
+//       return false
+//     }
+
+//     const belongsToUser =
+//       assignedGameIds.includes(
+//         o.broadcast?.gameId
+//       )
+
+//     if (!belongsToUser) {
+//       return false
+//     }
+
+//     if (!selectedGameFilter) {
+//       return true
+//     }
+
+//     return (
+//       o.broadcast?.gameId ===
+//       selectedGameFilter
+//     )
+//   })
 
 function toggleLanguage(
   language: string
@@ -1240,36 +1364,17 @@ const statsOrders =
           "MARKETING"
       )
 
-    : activePage === "games"
+    : activePage === "games" ||
+      activePage === "my-games"
 
-    ? orders.filter((o) => {
-
-        if (
-          o.type !==
+    ? orders.filter(
+        (o) =>
+          o.type ===
           "BROADCAST"
-        ) {
-          return false
-        }
-
-        if (
-          !selectedGameFilter
-        ) {
-          return true
-        }
-
-        return (
-          o.broadcast?.game?.id ===
-          selectedGameFilter
-        )
-      })
-
-    : activePage ===
-      "my-games"
-
-    ? myGameOrders
+      )
 
     : orders
- 
+
   return (
 
   <div
@@ -2078,13 +2183,13 @@ const statsOrders =
          {/* TABLE DATA */}
 {(() => {
   const broadcastOrders =
-    filteredOrders.filter(
+    orders.filter(
       (o) =>
         o.type === "BROADCAST"
     )
 
   const marketingOrders =
-    filteredOrders.filter(
+    orders.filter(
       (o) =>
         o.type === "MARKETING"
     )
@@ -2109,11 +2214,7 @@ const statsOrders =
   activePage === "games") && (
   <BroadcastOrdersTable
   currentUser={currentUser}
-    orders={
-  activePage === "games"
-    ? filteredBroadcastOrders
-    : broadcastOrders
-}
+    orders={broadcastOrders}
     setSelectedOrder={
       setSelectedOrder
     }
@@ -2129,7 +2230,7 @@ const statsOrders =
 {activePage === "my-games" && (
   <BroadcastOrdersTable
   currentUser={currentUser}
-    orders={myGameOrders}
+    orders={broadcastOrders}
     setSelectedOrder={
       setSelectedOrder
     }
