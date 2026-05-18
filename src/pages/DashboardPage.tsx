@@ -1,5 +1,4 @@
 import React from "react"
-import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/layout/Sidebar"
 import Topbar from "../components/layout/Topbar"
 import UsersPage from "../components/pages/UsersPage"
@@ -18,14 +17,9 @@ export default function App() {
   React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<any>(null)
   const [users, setUsers] = React.useState<any[]>([])
-  const navigate = useNavigate()
   const [orders, setOrders] = React.useState<any[]>([])
 
-  const [isCreating, setIsCreating] =React.useState(false)
-
   const [search, setSearch] = React.useState("")
-  const [typeFilter, setTypeFilter] =
-    React.useState("All Types")
 
   const [statusFilter, setStatusFilter] =
     React.useState("All Statuses")
@@ -1136,46 +1130,6 @@ setEditingOrderId("")
   }
 }
 
-function EditableField({
-  label,
-  value,
-  editing,
-  onChange,
-}: {
-  label: string
-  value: string
-  editing: boolean
-  onChange: (value: string) => void
-}) 
-
-
-
-
-{
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-
-      <p className="text-sm text-zinc-500 mb-2">
-        {label}
-      </p>
-
-      {editing ? (
-        <input
-          value={value}
-          onChange={(e) =>
-            onChange(e.target.value)
-          }
-          className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none"
-        />
-      ) : (
-        <p className="font-medium break-all">
-          {value || "-"}
-        </p>
-      )}
-
-    </div>
-  )
-}
 
 async function logout() {
   try {
@@ -2180,8 +2134,16 @@ const statsOrders =
 }
   />
 )}
+
+
          {/* TABLE DATA */}
 {(() => {
+
+  console.log("ORDERS:", orders)
+console.log(
+  "IS ARRAY:",
+  Array.isArray(orders)
+)
   const broadcastOrders =
     orders.filter(
       (o) =>
