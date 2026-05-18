@@ -47,13 +47,21 @@ export default function UsersPage({
   const [page, setPage] =
     React.useState(1)
 
-  const filteredUsers = users.filter(
+    
+const safeUsers =
+  Array.isArray(users)
+    ? users
+    : []
+
+const filteredUsers =
+  safeUsers.filter(
     (user) =>
       `${user.firstName} ${user.lastName}`
         ?.toLowerCase()
         .includes(
           search.toLowerCase()
         ) ||
+
       user.email
         ?.toLowerCase()
         .includes(
