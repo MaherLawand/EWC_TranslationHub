@@ -1271,6 +1271,11 @@ const showFilters =
 const [gameSearch, setGameSearch] =
   React.useState("")
 
+  console.log("GAMES:", games)
+console.log(
+  "GAMES ARRAY:",
+  Array.isArray(games)
+)
 const filteredGames =
   games.filter((game) =>
     game.name
