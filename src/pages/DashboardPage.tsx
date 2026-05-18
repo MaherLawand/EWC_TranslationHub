@@ -431,6 +431,25 @@ React.useEffect(() => {
 }, [])
 
 React.useEffect(() => {
+
+  if (
+    activePage ===
+    "notifications"
+  ) {
+
+    const hasUnread =
+      currentUser?.notifications?.some(
+        (n: any) => !n.isRead
+      )
+
+    if (hasUnread) {
+      markNotificationsAsRead()
+    }
+  }
+
+}, [activePage])
+
+React.useEffect(() => {
   if (!currentUser) return
 
   // ADMIN
@@ -880,7 +899,12 @@ function EditableField({
   value: string
   editing: boolean
   onChange: (value: string) => void
-}) {
+}) 
+
+
+
+
+{
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
 
@@ -1808,6 +1832,28 @@ const statsOrders =
     }
 
     orders={orders}
+
+    setActivePage={
+      setActivePage
+    }
+
+    setSearch={setSearch}
+
+    setStatusFilter={
+      setStatusFilter
+    }
+
+    setPriorityFilter={
+      setPriorityFilter
+    }
+
+    setFormatFilter={
+      setFormatFilter
+    }
+
+    setSelectedGameFilter={
+      setSelectedGameFilter
+    }
   />
 )}
 
