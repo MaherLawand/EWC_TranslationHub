@@ -271,7 +271,13 @@ async function createUser() {
 }
 
 async function updateUser() {
+
+  if (isSavingUser) return
+
   try {
+
+    setIsSavingUser(true)
+
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/auth/users/${selectedUser.id}`,
       {
@@ -310,7 +316,13 @@ async function updateUser() {
     setShowUserModal(false)
 
   } catch (error) {
+
     console.error(error)
+
+  } finally {
+
+    setIsSavingUser(false)
+
   }
 }
 
