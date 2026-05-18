@@ -83,6 +83,19 @@ export default function OrderDetailsSidebar({
   const isAdmin =
   currentUser?.role ===
   "ADMIN"
+
+  function formatUrl(url: string) {
+  if (!url) return "#"
+
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
+    return url
+  }
+
+  return `https://${url}`
+}
   return (
    <div className="w-[430px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0">
 
@@ -647,10 +660,7 @@ export default function OrderDetailsSidebar({
         </p>
 
         <a
-          href={
-            editedOrder.broadcast
-              ?.sourceFileLink
-          }
+          href={formatUrl(editedOrder.broadcast?.sourceFileLink)}
           target="_blank"
           rel="noreferrer"
           className="text-[#D6B36A] underline text-sm break-all mt-1 block"
@@ -703,7 +713,7 @@ export default function OrderDetailsSidebar({
 
         {delivery.deliveryLink ? (
           <a
-            href={delivery.deliveryLink}
+            href={formatUrl(delivery.deliveryLink)}
             target="_blank"
             rel="noreferrer"
             className="text-[#D6B36A] underline text-sm break-all mt-1 block"
@@ -965,7 +975,7 @@ export default function OrderDetailsSidebar({
                   {delivery.deliveryLink ? (
 
                     <a
-                      href={delivery.deliveryLink}
+                      href={formatUrl(delivery.deliveryLink)}
                       target="_blank"
                       rel="noreferrer"
                       className="

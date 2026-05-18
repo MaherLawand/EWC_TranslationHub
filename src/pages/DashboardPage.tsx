@@ -786,13 +786,13 @@ const filteredOrders = [...orders]
       assignment.gameId
   ) || []
 
+
 const myGameOrders =
   filteredOrders.filter((o) =>
     assignedGameIds.includes(
-      o.broadcast?.gameId
+      o.broadcast?.game?.id
     )
   )
-
 
 
 function toggleLanguage(

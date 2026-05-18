@@ -904,6 +904,7 @@ today.setHours(0, 0, 0, 0)
         </label>
 
         <input
+        type="url"
           value={
             newOrder.sourceFileLink
           }
@@ -1007,6 +1008,7 @@ transition={{
             </p>
 
             <input
+            type="url"
               value={
                 delivery.deliveryLink || ""
               }
