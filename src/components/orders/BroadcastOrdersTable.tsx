@@ -28,6 +28,7 @@ currentUser: any
     text: string
     color: string
   }
+  isLoading?: boolean
 }
 
 export default function BroadcastOrdersTable({
@@ -37,6 +38,7 @@ export default function BroadcastOrdersTable({
   updateOrderStatus,
   getDeadlineInfo,
   currentUser,
+  isLoading,
 }: Props) {
 
   const ITEMS_PER_PAGE = 50
@@ -197,10 +199,33 @@ const canUpdateStatus =
 
         </thead>
 
-        <tbody>
+          <tbody>
 
-          {paginatedOrders.map(
-            (order) => {
+  {isLoading ? (
+
+    <tr>
+      <td
+        colSpan={7}
+        className="py-20 text-center text-zinc-500"
+      >
+        Loading orders...
+      </td>
+    </tr>
+
+  ) : paginatedOrders.length === 0 ? (
+
+    <tr>
+      <td
+        colSpan={7}
+        className="py-20 text-center text-zinc-500"
+      >
+        No orders found
+      </td>
+    </tr>
+
+  ) : (
+
+    paginatedOrders.map((order) => {
 
             const broadcast =
               order.broadcast
@@ -556,7 +581,8 @@ const canUpdateStatus =
 
               </tr>
             )
-          })}
+          })
+        )}
 
         </tbody>
 

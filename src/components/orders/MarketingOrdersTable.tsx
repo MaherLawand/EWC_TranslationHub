@@ -26,6 +26,7 @@ currentUser: any
     text: string
     color: string
   }
+  isLoading?: boolean
 }
 
 export default function MarketingOrdersTable({
@@ -35,6 +36,7 @@ export default function MarketingOrdersTable({
   updateOrderStatus,
   currentUser,
   getDeadlineInfo,
+  isLoading,
 }: Props) {
 
   const ITEMS_PER_PAGE = 50
@@ -190,8 +192,31 @@ function getLanguageCode(
 
         <tbody>
 
-          {paginatedOrders.map(
-            (order) => {
+  {isLoading ? (
+
+    <tr>
+      <td
+        colSpan={7}
+        className="py-20 text-center text-zinc-500"
+      >
+        Loading orders...
+      </td>
+    </tr>
+
+  ) : paginatedOrders.length === 0 ? (
+
+    <tr>
+      <td
+        colSpan={7}
+        className="py-20 text-center text-zinc-500"
+      >
+        No orders found
+      </td>
+    </tr>
+
+  ) : (
+
+    paginatedOrders.map((order) => {
 
             const marketing =
               order.marketing
@@ -521,7 +546,8 @@ function getLanguageCode(
 
 </tr>
             )
-          })}
+          })
+        )}
 
         </tbody>
 

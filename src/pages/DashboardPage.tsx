@@ -83,6 +83,8 @@ const canManageOrders =
 
 const [isEditingOrder, setIsEditingOrder] =
   React.useState(false)
+  const [isLoadingOrders, setIsLoadingOrders] =
+  React.useState(false)
 const [isSavingUser, setIsSavingUser] =
   React.useState(false)
 const [editedOrder, setEditedOrder] =
@@ -709,7 +711,7 @@ const [editingOrderId, setEditingOrderId] =
 
 async function fetchOrders() {
   try {
-
+    setIsLoadingOrders(true)
     const params =
       new URLSearchParams()
 
@@ -833,6 +835,8 @@ async function fetchOrders() {
       "Failed to fetch orders:",
       error
     )
+  }finally {
+    setIsLoadingOrders(false)
   }
 }
 
@@ -2179,6 +2183,7 @@ const marketingOrders =
 {(activePage === "dashboard" ||
   activePage === "games") && (
   <BroadcastOrdersTable
+    isLoading={isLoadingOrders}
   currentUser={currentUser}
     orders={broadcastOrders}
     setSelectedOrder={
@@ -2195,6 +2200,7 @@ const marketingOrders =
 {/* MY GAMES */}
 {activePage === "my-games" && (
   <BroadcastOrdersTable
+    isLoading={isLoadingOrders}
   currentUser={currentUser}
     orders={broadcastOrders}
     setSelectedOrder={
@@ -2258,6 +2264,7 @@ const marketingOrders =
 {(activePage === "dashboard" ||
   activePage === "marketing") && (
   <MarketingOrdersTable
+    isLoading={isLoadingOrders}
     orders={marketingOrders}
     currentUser={currentUser}
     setSelectedOrder={
