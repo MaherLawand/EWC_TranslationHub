@@ -46,6 +46,11 @@ const [activePage, setActivePage] =
   const [selectedOrder, setSelectedOrder] =
     React.useState<any>(null)
 
+    const [
+  contentTitleFilter,
+  setContentTitleFilter,
+] = React.useState("")
+
   const [newOrder, setNewOrder] = React.useState({
   title: "",
   contentTitle: "",
@@ -705,10 +710,13 @@ const [deadlineSort, setDeadlineSort] =
 
 const filteredOrders = [...orders]
   .filter((order) => {
+
     const matchesSearch =
       order.title
-        .toLowerCase()
-        .includes(search.toLowerCase())
+        ?.toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
 
     const matchesStatus =
       statusFilter ===
@@ -735,25 +743,36 @@ const filteredOrders = [...orders]
         "All Formats" ||
       format === formatFilter
 
+    const matchesContentTitle =
+      !contentTitleFilter ||
+      order.marketing
+        ?.contentTitle ===
+        contentTitleFilter
+
     return (
       matchesSearch &&
       matchesStatus &&
       matchesPriority &&
-      matchesFormat
+      matchesFormat &&
+      matchesContentTitle
     )
   })
+
   .sort((a, b) => {
+
     if (!deadlineSort)
       return 0
 
     const dateA = new Date(
       a.broadcast?.deadlineDate ||
-        0
+      a.marketing?.deadlineDate ||
+      0
     ).getTime()
 
     const dateB = new Date(
       b.broadcast?.deadlineDate ||
-        0
+      b.marketing?.deadlineDate ||
+      0
     ).getTime()
 
     return deadlineSort ===
@@ -1358,6 +1377,78 @@ const statsOrders =
 
         </div>
 
+        {/* MARKETING FILTERS */}
+{activePage === "marketing" && (
+  <div className="relative">
+
+    <select
+      value={contentTitleFilter}
+      onChange={(e) =>
+        setContentTitleFilter(
+          e.target.value
+        )
+      }
+      className="
+        h-[54px]
+        min-w-[220px]
+        appearance-none
+        bg-[#121212]
+        border
+        border-[#2A2A2A]
+        rounded-2xl
+        px-5
+        pr-11
+        text-sm
+        font-medium
+        text-[#F5F1E8]
+        outline-none
+        transition-all
+        hover:border-[#3A3A3A]
+        focus:border-[#D6B36A]
+        focus:bg-[#151515]
+        cursor-pointer
+      "
+    >
+
+      <option value="">
+        All Content
+      </option>
+
+      <option value="Content 1">
+        Content 1
+      </option>
+
+      <option value="Content 2">
+        Content 2
+      </option>
+
+      <option value="Content 3">
+        Content 3
+      </option>
+
+      <option value="Others">
+        Others
+      </option>
+
+    </select>
+
+    <div
+      className="
+        pointer-events-none
+        absolute
+        right-4
+        top-1/2
+        -translate-y-1/2
+        text-zinc-500
+        text-[10px]
+      "
+    >
+      ▼
+    </div>
+
+  </div>
+)}
+
         {/* NON MARKETING FILTERS */}
         {activePage !== "marketing" && (
           <>
@@ -1648,6 +1739,7 @@ const statsOrders =
               )
               setDeadlineSort("")
               setSelectedGameFilter("")
+              setContentTitleFilter("")
             }}
             className="
               h-[54px]
@@ -1696,6 +1788,7 @@ const statsOrders =
                   "All Formats",
                 deadlineSort,
                 selectedGameFilter,
+                contentTitleFilter,
               ].filter(Boolean)
                 .length
             }{" "}
