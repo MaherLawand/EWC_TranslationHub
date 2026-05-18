@@ -8,14 +8,16 @@ type Props = {
   setSelectedGameFilter: (
     gameId: string
   ) => void
-  users: any[]
+  producers: any[]
+  ppms: any[]
 }
 
 export default function GamesPage({
   games,
   selectedGameFilter,
   setSelectedGameFilter,
-  users,
+  producers,
+  ppms,
 }: Props) {
 function getGameLogo(
   logo: string
@@ -32,79 +34,6 @@ const selectedGame =
       g.id ===
       selectedGameFilter
   )
-
-const safeUsers =
-  Array.isArray(users)
-    ? users
-    : []
-
-const assignedUsers =
-  safeUsers
-    .filter((user) =>
-      user.assignedGames?.some(
-        (assignment: any) =>
-          assignment.gameId ===
-          selectedGameFilter
-      )
-    )
-    .filter(
-      (
-        user,
-        index,
-        self
-      ) =>
-        index ===
-        self.findIndex(
-          (u) => u.id === user.id
-        )
-    )
-
-const producers =
-  assignedUsers.filter(
-    (user) =>
-      user.position ===
-      "PRODUCER"
-  )
-
-const ppms =
-  assignedUsers.filter(
-    (user) =>
-      user.position ===
-      "POST_PRODUCTION_MANAGER"
-  )
-
-React.useEffect(() => {
-  console.log(
-    "SELECTED GAME:",
-    selectedGameFilter
-  )
-
-  console.log(
-    "SAFE USERS:",
-    safeUsers
-  )
-
-  console.log(
-    "ASSIGNED USERS:",
-    assignedUsers
-  )
-  console.log(
-  "PRODUCERS:",
-  producers
-)
-
-console.log(
-  "PPMS:",
-  ppms
-)
-
-}, [
-  selectedGameFilter,
-  safeUsers,
-  assignedUsers,
-  producers,
-  ppms
-])
 
 const [gameSearch, setGameSearch] =
   React.useState("")

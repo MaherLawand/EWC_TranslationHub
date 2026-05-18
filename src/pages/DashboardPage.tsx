@@ -118,6 +118,83 @@ const [userForm, setUserForm] =
     position: "",
   })
 
+  const [gameUsers, setGameUsers] =
+  React.useState<{
+    producers: any[]
+    ppms: any[]
+    users: any[]
+  }>({
+    producers: [],
+    ppms: [],
+    users: [],
+  })
+
+  async function fetchGameUsers(
+  gameId: string
+) {
+  try {
+
+    if (!gameId) {
+      setGameUsers({
+        producers: [],
+        ppms: [],
+        users: [],
+      })
+
+      return
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/games/${gameId}/users`,
+      {
+        credentials: "include",
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to fetch game users"
+      )
+    }
+
+    const data =
+      await response.json()
+
+    setGameUsers({
+      producers:
+        Array.isArray(
+          data.producers
+        )
+          ? data.producers
+          : [],
+
+      ppms:
+        Array.isArray(
+          data.ppms
+        )
+          ? data.ppms
+          : [],
+
+      users:
+        Array.isArray(
+          data.users
+        )
+          ? data.users
+          : [],
+    })
+
+  } catch (error) {
+
+    console.error(error)
+
+    setGameUsers({
+      producers: [],
+      ppms: [],
+      users: [],
+    })
+  }
+}
+
 const [games, setGames] =
   React.useState<any[]>([])
 
@@ -580,7 +657,17 @@ React.useEffect(() => {
     clearInterval(interval)
 
 }, [currentUser])
+React.useEffect(() => {
 
+  if (
+    selectedGameFilter
+  ) {
+    fetchGameUsers(
+      selectedGameFilter
+    )
+  }
+
+}, [selectedGameFilter])
 
 
 async function fetchCurrentUser() {
@@ -2168,16 +2255,21 @@ const marketingOrders =
     <>
 {(activePage === "games" ||
   activePage === "my-games") && (
-  <GamesPage
-    games={games}
-    selectedGameFilter={
-      selectedGameFilter
-    }
-    setSelectedGameFilter={
-      setSelectedGameFilter
-    }
-    users={users}
-  />
+<GamesPage
+  games={games}
+  selectedGameFilter={
+    selectedGameFilter
+  }
+  setSelectedGameFilter={
+    setSelectedGameFilter
+  }
+
+  producers={
+    gameUsers.producers
+  }
+
+  ppms={gameUsers.ppms}
+/>
 )}
 {/* BROADCAST TABLE */}
 {(activePage === "dashboard" ||
