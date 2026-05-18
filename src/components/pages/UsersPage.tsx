@@ -34,7 +34,7 @@ export default function UsersPage({
   openAssignGamesModal,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 6
+  const ITEMS_PER_PAGE = 50
 
   const [
     showDeleteModal,
