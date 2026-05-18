@@ -1184,19 +1184,41 @@ async function markNotificationsAsRead() {
 
 const statsOrders =
   activePage === "marketing"
+
     ? orders.filter(
         (o) =>
           o.type ===
           "MARKETING"
       )
-    : activePage === "games" ||
-      activePage ===
-        "my-games"
-    ? orders.filter(
-        (o) =>
-          o.type ===
+
+    : activePage === "games"
+
+    ? orders.filter((o) => {
+
+        if (
+          o.type !==
           "BROADCAST"
-      )
+        ) {
+          return false
+        }
+
+        if (
+          !selectedGameFilter
+        ) {
+          return true
+        }
+
+        return (
+          o.broadcast?.game?.id ===
+          selectedGameFilter
+        )
+      })
+
+    : activePage ===
+      "my-games"
+
+    ? myGameOrders
+
     : orders
  
   return (
