@@ -86,182 +86,192 @@ return (
   >
 
     {/* TOP ROW */}
-    <div className="flex items-center justify-between">
+  {/* TOP ROW */}
+<div
+  className="
+    flex
+    items-center
+    justify-between
+    gap-6
+  "
+>
 
-      {/* LEFT */}
-      <div>
+  {/* LEFT */}
+  <div className="min-w-fit">
 
-        <h2
-          className="
-            text-[30px]
-            font-bold
-            tracking-tight
-            text-[#F5F1E8]
-            leading-none
-          "
-        >
-          {getTitle()}
-        </h2>
+    <h2
+      className="
+        text-[30px]
+        font-bold
+        tracking-tight
+        text-[#F5F1E8]
+        leading-none
+      "
+    >
+      {getTitle()}
+    </h2>
 
-        <p
-          className="
-            text-sm
-            text-zinc-500
-            mt-2
-            tracking-wide
-          "
-        >
-          {getDescription()}
-        </p>
+    <p
+      className="
+        text-sm
+        text-zinc-500
+        mt-2
+        tracking-wide
+      "
+    >
+      {getDescription()}
+    </p>
 
-      </div>
+  </div>
 
-      {/* ACTION */}
-      {activePage !== "users" &&
-        canManageOrders && (
-          <button
-            onClick={() =>
-              setShowModal(true)
-            }
-            className="
-              h-[52px]
-              px-6
-              rounded-2xl
-              bg-[#D6B36A]
-              text-black
-              font-semibold
-              tracking-wide
-              shadow-[0_0_25px_rgba(214,179,106,0.18)]
-              transition-all
-              duration-300
-              hover:bg-[#E4C27C]
-              hover:shadow-[0_0_35px_rgba(214,179,106,0.28)]
-              hover:scale-[1.02]
-              active:scale-[0.99]
-            "
-          >
-            + New Order
-          </button>
-        )}
+  {/* COMPACT STATS */}
+  {showStats && (
+    <div
+      className="
+        flex-1
+        flex
+        items-center
+        justify-center
+        gap-3
+      "
+    >
 
-    </div>
-
-    {/* STATS */}
-    {showStats && (
+      {/* TOTAL */}
       <div
         className="
-          flex
-          items-center
-          gap-4
-          overflow-x-auto
-          pb-1
+          min-w-[120px]
+          rounded-2xl
+          border
+          border-[#242424]
+          bg-[#111111]
+          px-4
+          py-3
         "
       >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          Total
+        </p>
 
-        {/* TOTAL */}
-        <div
-          className="
-            min-w-[180px]
-            rounded-[24px]
-            border
-            border-[#242424]
-            bg-[linear-gradient(180deg,#111111_0%,#0C0C0C_100%)]
-            px-5
-            py-4
-          "
-        >
-          <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-            Total Orders
-          </p>
-
-          <h3 className="text-3xl font-bold text-white mt-3">
-            {statsOrders.length}
-          </h3>
-        </div>
-
-        {/* IN PROGRESS */}
-        <div
-          className="
-            min-w-[180px]
-            rounded-[24px]
-            border
-            border-yellow-500/10
-            bg-yellow-500/[0.05]
-            px-5
-            py-4
-          "
-        >
-          <p className="text-[11px] uppercase tracking-[0.18em] text-yellow-400">
-            In Progress
-          </p>
-
-          <h3 className="text-3xl font-bold text-white mt-3">
-            {
-              statsOrders.filter(
-                (o: any) =>
-                  o.status ===
-                  "IN_PROGRESS"
-              ).length
-            }
-          </h3>
-        </div>
-
-        {/* COMPLETED */}
-        <div
-          className="
-            min-w-[180px]
-            rounded-[24px]
-            border
-            border-green-500/10
-            bg-green-500/[0.05]
-            px-5
-            py-4
-          "
-        >
-          <p className="text-[11px] uppercase tracking-[0.18em] text-green-400">
-            Completed
-          </p>
-
-          <h3 className="text-3xl font-bold text-white mt-3">
-            {
-              statsOrders.filter(
-                (o: any) =>
-                  o.status ===
-                  "COMPLETED"
-              ).length
-            }
-          </h3>
-        </div>
-
-        {/* PENDING */}
-        <div
-          className="
-            min-w-[180px]
-            rounded-[24px]
-            border
-            border-red-500/10
-            bg-red-500/[0.05]
-            px-5
-            py-4
-          "
-        >
-          <p className="text-[11px] uppercase tracking-[0.18em] text-red-400">
-            Pending
-          </p>
-
-          <h3 className="text-3xl font-bold text-white mt-3">
-            {
-              statsOrders.filter(
-                (o: any) =>
-                  o.status ===
-                  "PENDING"
-              ).length
-            }
-          </h3>
-        </div>
-
+        <h3 className="text-2xl font-bold text-white mt-1">
+          {statsOrders.length}
+        </h3>
       </div>
+
+      {/* IN PROGRESS */}
+      <div
+        className="
+          min-w-[120px]
+          rounded-2xl
+          border
+          border-blue-500/10
+          bg-blue-500/[0.06]
+          px-4
+          py-3
+        "
+      >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-blue-400">
+          In Progress
+        </p>
+
+        <h3 className="text-2xl font-bold text-white mt-1">
+          {
+            statsOrders.filter(
+              (o: any) =>
+                o.status ===
+                "IN_PROGRESS"
+            ).length
+          }
+        </h3>
+      </div>
+
+      {/* COMPLETED */}
+      <div
+        className="
+          min-w-[120px]
+          rounded-2xl
+          border
+          border-green-500/10
+          bg-green-500/[0.06]
+          px-4
+          py-3
+        "
+      >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-green-400">
+          Completed
+        </p>
+
+        <h3 className="text-2xl font-bold text-white mt-1">
+          {
+            statsOrders.filter(
+              (o: any) =>
+                o.status ===
+                "COMPLETED"
+            ).length
+          }
+        </h3>
+      </div>
+
+      {/* PENDING */}
+      <div
+        className="
+          min-w-[120px]
+          rounded-2xl
+          border
+          border-orange-500/10
+          bg-orange-500/[0.06]
+          px-4
+          py-3
+        "
+      >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-orange-400">
+          Pending
+        </p>
+
+        <h3 className="text-2xl font-bold text-white mt-1">
+          {
+            statsOrders.filter(
+              (o: any) =>
+                o.status ===
+                "PENDING"
+            ).length
+          }
+        </h3>
+      </div>
+
+    </div>
+  )}
+
+  {/* ACTION */}
+  {activePage !== "users" &&
+    canManageOrders && (
+      <button
+        onClick={() =>
+          setShowModal(true)
+        }
+        className="
+          h-[52px]
+          px-6
+          rounded-2xl
+          bg-[#D6B36A]
+          text-black
+          font-semibold
+          tracking-wide
+          shadow-[0_0_25px_rgba(214,179,106,0.18)]
+          transition-all
+          duration-300
+          hover:bg-[#E4C27C]
+          hover:shadow-[0_0_35px_rgba(214,179,106,0.28)]
+          hover:scale-[1.02]
+          active:scale-[0.99]
+          flex-shrink-0
+        "
+      >
+        + New Order
+      </button>
     )}
+
+</div>
+
 
   </header>
 )
