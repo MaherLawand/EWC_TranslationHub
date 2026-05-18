@@ -22,16 +22,24 @@ function getGameLogo(
 ) {
   return logo
 }
-
+const safeGames =
+  Array.isArray(games)
+    ? games
+    : []
 const selectedGame =
-  games.find(
+  safeGames.find(
     (g) =>
       g.id ===
       selectedGameFilter
   )
 
+const safeUsers =
+  Array.isArray(users)
+    ? users
+    : []
+
 const assignedUsers =
-  users
+  safeUsers
     .filter((user) =>
       user.assignedGames?.some(
         (assignment: any) =>
@@ -68,7 +76,7 @@ const [gameSearch, setGameSearch] =
   React.useState("")
 
 const filteredGames =
-  games.filter((game) =>
+  safeGames.filter((game) =>
     game.name
       ?.toLowerCase()
       .includes(
