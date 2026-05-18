@@ -870,7 +870,11 @@ async function fetchUsers() {
 
     const data = await response.json()
 
-    setUsers(data)
+setUsers(
+  Array.isArray(data.users)
+    ? data.users
+    : []
+)
   } catch (error) {
     console.error(
       "Failed to fetch users:",
