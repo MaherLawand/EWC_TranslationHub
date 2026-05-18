@@ -531,6 +531,7 @@ INITIAL LOAD
 */
 React.useEffect(() => {
   fetchCurrentUser()
+  console.log("fetching current user")
 }, [])
 
 /*
@@ -546,7 +547,7 @@ React.useEffect(() => {
   }
 
   fetchUsers()
-
+  console.log("fetching all users")
 }, [activePage])
 
 /*
@@ -566,7 +567,7 @@ React.useEffect(() => {
   }
 
   fetchGames()
-
+console.log("fetching games")
 }, [activePage])
 
 /*
@@ -588,7 +589,7 @@ React.useEffect(() => {
   }
 
   fetchOrders()
-
+  console.log("fetching orders")
 }, [
   activePage,
   search,
@@ -632,6 +633,7 @@ React.useEffect(() => {
   fetchGameUsers(
     selectedGameFilter
   )
+  console.log("fetched game user")
 
 }, [
   activePage,
@@ -660,6 +662,7 @@ React.useEffect(() => {
   if (hasUnread) {
     markNotificationsAsRead()
   }
+  console.log("marked nots as read")
 
 }, [
   activePage,
@@ -777,6 +780,7 @@ React.useEffect(() => {
       refreshNotifications()
 
     }, 4000)
+
 
   return () => {
     clearInterval(interval)
