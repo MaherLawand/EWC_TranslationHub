@@ -1860,6 +1860,7 @@ const statsOrders =
     setSelectedGameFilter={
       setSelectedGameFilter
     }
+    users={users}
   />
 )}
 {/* BROADCAST TABLE */}
