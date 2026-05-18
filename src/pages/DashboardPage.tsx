@@ -1379,74 +1379,209 @@ const statsOrders =
 
         {/* MARKETING FILTERS */}
 {activePage === "marketing" && (
-  <div className="relative">
+  <>
+    {/* CONTENT */}
+    <div className="relative">
 
-    <select
-      value={contentTitleFilter}
-      onChange={(e) =>
-        setContentTitleFilter(
-          e.target.value
-        )
-      }
-      className="
-        h-[54px]
-        min-w-[220px]
-        appearance-none
-        bg-[#121212]
-        border
-        border-[#2A2A2A]
-        rounded-2xl
-        px-5
-        pr-11
-        text-sm
-        font-medium
-        text-[#F5F1E8]
-        outline-none
-        transition-all
-        hover:border-[#3A3A3A]
-        focus:border-[#D6B36A]
-        focus:bg-[#151515]
-        cursor-pointer
-      "
-    >
+      <select
+        value={contentTitleFilter}
+        onChange={(e) =>
+          setContentTitleFilter(
+            e.target.value
+          )
+        }
+        className="
+          h-[54px]
+          min-w-[220px]
+          appearance-none
+          bg-[#121212]
+          border
+          border-[#2A2A2A]
+          rounded-2xl
+          px-5
+          pr-11
+          text-sm
+          font-medium
+          text-[#F5F1E8]
+          outline-none
+          transition-all
+          hover:border-[#3A3A3A]
+          focus:border-[#D6B36A]
+          focus:bg-[#151515]
+          cursor-pointer
+        "
+      >
 
-      <option value="">
-        All Content
-      </option>
+        <option value="">
+          All Content
+        </option>
 
-      <option value="Content 1">
-        Content 1
-      </option>
+        <option value="Content 1">
+          Content 1
+        </option>
 
-      <option value="Content 2">
-        Content 2
-      </option>
+        <option value="Content 2">
+          Content 2
+        </option>
 
-      <option value="Content 3">
-        Content 3
-      </option>
+        <option value="Content 3">
+          Content 3
+        </option>
 
-      <option value="Others">
-        Others
-      </option>
+        <option value="Others">
+          Others
+        </option>
 
-    </select>
+      </select>
 
-    <div
-      className="
-        pointer-events-none
-        absolute
-        right-4
-        top-1/2
-        -translate-y-1/2
-        text-zinc-500
-        text-[10px]
-      "
-    >
-      ▼
+      <div
+        className="
+          pointer-events-none
+          absolute
+          right-4
+          top-1/2
+          -translate-y-1/2
+          text-zinc-500
+          text-[10px]
+        "
+      >
+        ▼
+      </div>
+
     </div>
 
-  </div>
+    {/* STATUS */}
+    <div className="relative">
+
+      <select
+        value={statusFilter}
+        onChange={(e) =>
+          setStatusFilter(
+            e.target.value
+          )
+        }
+        className="
+          h-[54px]
+          min-w-[170px]
+          appearance-none
+          bg-[#121212]
+          border
+          border-[#2A2A2A]
+          rounded-2xl
+          px-5
+          pr-11
+          text-sm
+          font-medium
+          text-[#F5F1E8]
+          outline-none
+          transition-all
+          hover:border-[#3A3A3A]
+          focus:border-[#D6B36A]
+          focus:bg-[#151515]
+          cursor-pointer
+        "
+      >
+
+        <option>
+          All Statuses
+        </option>
+
+        <option>
+          Pending
+        </option>
+
+        <option>
+          In Progress
+        </option>
+
+        <option>
+          Completed
+        </option>
+
+      </select>
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          right-4
+          top-1/2
+          -translate-y-1/2
+          text-zinc-500
+          text-[10px]
+        "
+      >
+        ▼
+      </div>
+
+    </div>
+
+    {/* PRIORITY */}
+    <div className="relative">
+
+      <select
+        value={priorityFilter}
+        onChange={(e) =>
+          setPriorityFilter(
+            e.target.value
+          )
+        }
+        className="
+          h-[54px]
+          min-w-[160px]
+          appearance-none
+          bg-[#121212]
+          border
+          border-[#2A2A2A]
+          rounded-2xl
+          px-5
+          pr-11
+          text-sm
+          font-medium
+          text-[#F5F1E8]
+          outline-none
+          transition-all
+          hover:border-[#3A3A3A]
+          focus:border-[#D6B36A]
+          focus:bg-[#151515]
+          cursor-pointer
+        "
+      >
+
+        <option>
+          All Priorities
+        </option>
+
+        <option>
+          HIGH
+        </option>
+
+        <option>
+          MEDIUM
+        </option>
+
+        <option>
+          LOW
+        </option>
+
+      </select>
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          right-4
+          top-1/2
+          -translate-y-1/2
+          text-zinc-500
+          text-[10px]
+        "
+      >
+        ▼
+      </div>
+
+    </div>
+  </>
 )}
 
         {/* NON MARKETING FILTERS */}
