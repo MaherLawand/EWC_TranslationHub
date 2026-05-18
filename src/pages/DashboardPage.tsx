@@ -21,6 +21,8 @@ import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
 
 export default function App() {
+  const [hasInitializedPage, setHasInitializedPage] =
+  React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<any>(null)
   const [users, setUsers] = React.useState<any[]>([])
   const navigate = useNavigate()
@@ -450,7 +452,13 @@ React.useEffect(() => {
 }, [activePage])
 
 React.useEffect(() => {
-  if (!currentUser) return
+
+  if (
+    !currentUser ||
+    hasInitializedPage
+  ) {
+    return
+  }
 
   // ADMIN
   if (
@@ -458,65 +466,78 @@ React.useEffect(() => {
     "ADMIN"
   ) {
     setActivePage("games")
-    return
   }
 
   // VIEWER - BROADCAST
-  if (
+  else if (
     currentUser.role ===
       "VIEWER" &&
-
     currentUser.department ===
       "BROADCAST"
   ) {
     setActivePage("games")
-    return
   }
 
- // VIEWER / EDITOR - MARKETING
-
-if (
-  (
-    currentUser.role ===
-      "VIEWER" ||
-    currentUser.role ===
-      "EDITOR"
-  ) &&
-  currentUser.department ===
-    "MARKETING"
-) {
-  setActivePage("marketing")
-  return
-}
+  // VIEWER / EDITOR - MARKETING
+  else if (
+    (
+      currentUser.role ===
+        "VIEWER" ||
+      currentUser.role ===
+        "EDITOR"
+    ) &&
+    currentUser.department ===
+      "MARKETING"
+  ) {
+    setActivePage("marketing")
+  }
 
   // PRODUCER / PPM
-  if (
-   ( currentUser.position ===
-      "PRODUCER" ||
-    currentUser.position ===
-      "POST_PRODUCTION_MANAGER") && currentUser.department ===
-    "BROADCAST"
+  else if (
+    (
+      currentUser.position ===
+        "PRODUCER" ||
+      currentUser.position ===
+        "POST_PRODUCTION_MANAGER"
+    ) &&
+    currentUser.department ===
+      "BROADCAST"
   ) {
     setActivePage("my-games")
-    return
   }
 
   // FALLBACKS
-  if (
+  else if (
     currentUser.department ===
     "MARKETING"
   ) {
     setActivePage("marketing")
-    return
   }
 
-  if (
+  else if (
     currentUser.department ===
     "BROADCAST"
   ) {
     setActivePage("games")
-    return
   }
+
+  setHasInitializedPage(true)
+
+}, [currentUser, hasInitializedPage])
+
+React.useEffect(() => {
+
+  if (!currentUser) return
+
+  const interval =
+    setInterval(() => {
+
+      refreshNotifications()
+
+    }, 4000)
+
+  return () =>
+    clearInterval(interval)
 
 }, [currentUser])
 
@@ -545,7 +566,49 @@ async function fetchCurrentUser() {
     )
   }
 }
+async function refreshNotifications() {
 
+  try {
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/auth/me`,
+      {
+        credentials: "include",
+      }
+    )
+
+    if (!response.ok) return
+
+    const updatedUser =
+      await response.json()
+
+    setCurrentUser(
+      (prev: any) => {
+
+        // prevent unnecessary rerenders
+        if (
+          JSON.stringify(
+            prev?.notifications
+          ) ===
+          JSON.stringify(
+            updatedUser.notifications
+          )
+        ) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          notifications:
+            updatedUser.notifications,
+        }
+      }
+    )
+
+  } catch (error) {
+    console.error(error)
+  }
+}
 async function fetchUsers() {
   try {
     const response = await fetch(
@@ -966,6 +1029,8 @@ async function updateOrderStatus(
 
     const updated =
       await response.json()
+
+      await refreshNotifications()
 
     setOrders((prev) =>
       prev.map((o) =>
