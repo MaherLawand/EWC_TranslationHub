@@ -93,6 +93,26 @@ const canUpdateStatus =
         .toUpperCase()
     )
   }
+const [updatingOrderId, setUpdatingOrderId] =
+  React.useState<string | null>(
+    null
+  )
+
+  async function handleUpdateStatus(
+  orderId: string,
+  status: string
+) {
+  try {
+    setUpdatingOrderId(orderId)
+
+    await updateOrderStatus(
+      orderId,
+      status
+    )
+  } finally {
+    setUpdatingOrderId(null)
+  }
+}
 
   return (
     <div
@@ -229,6 +249,9 @@ const canUpdateStatus =
 
             const broadcast =
               order.broadcast
+
+              const isUpdating =
+  updatingOrderId === order.id
 
             return (
               <tr
@@ -425,17 +448,54 @@ const canUpdateStatus =
     <div className="relative group/status inline-flex flex-shrink-0">
 
       <button
-        onClick={(e) =>
-          e.stopPropagation()
-        }
-        className="rounded-xl transition hover:scale-[1.02]"
+  onClick={(e) =>
+    e.stopPropagation()
+  }
+  disabled={isUpdating}
+  className="
+    rounded-xl
+    transition
+    hover:scale-[1.02]
+    disabled:opacity-60
+    disabled:cursor-not-allowed
+  "
+>
+  <div className="whitespace-nowrap">
+
+    {isUpdating ? (
+
+      <div
+        className="
+          min-w-[110px]
+          h-[36px]
+          inline-flex
+          items-center
+          justify-center
+          rounded-xl
+          border
+          border-[#2A2A2A]
+          bg-[#171717]
+          text-[#D6B36A]
+          text-xs
+          font-semibold
+          animate-pulse
+          disabled:opacity-50
+disabled:cursor-not-allowed
+        "
       >
-        <div className="whitespace-nowrap">
-          <StatusBadge
-            status={order.status}
-          />
-        </div>
-      </button>
+        Updating...
+      </div>
+
+    ) : (
+
+      <StatusBadge
+        status={order.status}
+      />
+
+    )}
+
+  </div>
+</button>
 
       {/* DROPDOWN */}
       <div
@@ -470,10 +530,11 @@ const canUpdateStatus =
           "PENDING" && (
           <>
             <button
+            disabled={isUpdating}
               onClick={(e) => {
                 e.stopPropagation()
 
-                updateOrderStatus(
+                handleUpdateStatus(
                   order.id,
                   "IN_PROGRESS"
                 )
@@ -487,16 +548,19 @@ const canUpdateStatus =
                 hover:bg-zinc-800
                 text-sm
                 transition
+                disabled:opacity-50
+disabled:cursor-not-allowed
               "
             >
               Start Progress
             </button>
 
             <button
+            disabled={isUpdating}
               onClick={(e) => {
                 e.stopPropagation()
 
-                updateOrderStatus(
+                handleUpdateStatus(
                   order.id,
                   "COMPLETED"
                 )
@@ -521,10 +585,11 @@ const canUpdateStatus =
         {order.status ===
           "IN_PROGRESS" && (
           <button
+          disabled={isUpdating}
             onClick={(e) => {
               e.stopPropagation()
 
-              updateOrderStatus(
+              handleUpdateStatus(
                 order.id,
                 "COMPLETED"
               )
@@ -539,6 +604,8 @@ const canUpdateStatus =
               text-sm
               text-green-400
               transition
+              disabled:opacity-50
+disabled:cursor-not-allowed
             "
           >
             Mark Completed

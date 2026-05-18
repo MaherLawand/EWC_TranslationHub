@@ -2130,7 +2130,6 @@ const statsOrders =
       </div>
 
       {/* RIGHT */}
-      {activePage !== "marketing" && (
         <div
   className="
     flex
@@ -2213,7 +2212,6 @@ const statsOrders =
           </div>
 
         </div>
-      )}
 
     </div>
 
