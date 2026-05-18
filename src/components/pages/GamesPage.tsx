@@ -59,11 +59,6 @@ const assignedUsers =
         )
     )
 
-    console.log(
-  "ASSIGNED USERS:",
-  assignedUsers
-)
-
 const producers =
   assignedUsers.filter(
     (user) =>
@@ -77,6 +72,40 @@ const ppms =
       user.position ===
       "POST_PRODUCTION_MANAGER"
   )
+
+React.useEffect(() => {
+  console.log(
+    "SELECTED GAME:",
+    selectedGameFilter
+  )
+
+  console.log(
+    "SAFE USERS:",
+    safeUsers
+  )
+
+  console.log(
+    "ASSIGNED USERS:",
+    assignedUsers
+  )
+  console.log(
+  "PRODUCERS:",
+  producers
+)
+
+console.log(
+  "PPMS:",
+  ppms
+)
+
+}, [
+  selectedGameFilter,
+  safeUsers,
+  assignedUsers,
+  producers,
+  ppms
+])
+
 const [gameSearch, setGameSearch] =
   React.useState("")
 
