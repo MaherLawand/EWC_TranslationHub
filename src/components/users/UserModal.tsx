@@ -318,20 +318,54 @@ export default function UserModal({
 
 </div>
 
-        {/* BUTTON */}
-        <button
+<button
   disabled={isSavingUser}
   onClick={
     isEditingUser
       ? updateUser
       : createUser
   }
-  className={`w-full py-4 rounded-xl font-semibold mt-8 transition ${
-    isSavingUser
-      ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-      : "bg-white text-black hover:opacity-90"
-  }`}
+  className={`
+    w-full
+    py-4
+    rounded-xl
+    font-semibold
+    mt-8
+    transition
+    flex
+    items-center
+    justify-center
+    gap-3
+
+    ${
+      isSavingUser
+        ? `
+          bg-zinc-700
+          text-zinc-400
+          cursor-not-allowed
+        `
+        : `
+          bg-white
+          text-black
+          hover:opacity-90
+        `
+    }
+  `}
 >
+
+  {isSavingUser && (
+    <div
+      className="
+        w-4
+        h-4
+        border-2
+        border-zinc-400
+        border-t-transparent
+        rounded-full
+        animate-spin
+      "
+    />
+  )}
 
   {isSavingUser
     ? isEditingUser
