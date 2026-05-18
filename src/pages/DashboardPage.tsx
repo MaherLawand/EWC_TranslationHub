@@ -524,15 +524,73 @@ async function saveAssignments() {
 }
 
 //change later
+/*
+========================================
+INITIAL LOAD
+========================================
+*/
 React.useEffect(() => {
   fetchCurrentUser()
-  fetchUsers()
-  fetchGames()
 }, [])
 
+/*
+========================================
+FETCH USERS
+ONLY WHEN USERS PAGE OPENS
+========================================
+*/
 React.useEffect(() => {
+
+  if (activePage !== "users") {
+    return
+  }
+
+  fetchUsers()
+
+}, [activePage])
+
+/*
+========================================
+FETCH GAMES
+ONLY FOR GAMES PAGES
+========================================
+*/
+React.useEffect(() => {
+
+  const shouldFetchGames =
+    activePage === "games" ||
+    activePage === "my-games"
+
+  if (!shouldFetchGames) {
+    return
+  }
+
+  fetchGames()
+
+}, [activePage])
+
+/*
+========================================
+FETCH ORDERS
+ONLY FOR ORDER PAGES
+========================================
+*/
+React.useEffect(() => {
+
+  const shouldFetchOrders =
+  activePage === "games" ||
+  activePage === "my-games" ||
+  activePage === "marketing" ||
+  activePage === "notifications"
+
+  if (!shouldFetchOrders) {
+    return
+  }
+
   fetchOrders()
+
 }, [
+  activePage,
   search,
   statusFilter,
   priorityFilter,
@@ -540,34 +598,91 @@ React.useEffect(() => {
   contentTitleFilter,
   selectedGameFilter,
   deadlineSort,
-  activePage,
 ])
 
+/*
+========================================
+FETCH GAME USERS
+ONLY WHEN A GAME IS SELECTED
+========================================
+*/
+React.useEffect(() => {
+
+  const shouldFetchGameUsers =
+    activePage === "games" ||
+    activePage === "my-games"
+
+  if (
+    !shouldFetchGameUsers
+  ) {
+    return
+  }
+
+  if (!selectedGameFilter) {
+
+    setGameUsers({
+      producers: [],
+      ppms: [],
+      users: [],
+    })
+
+    return
+  }
+
+  fetchGameUsers(
+    selectedGameFilter
+  )
+
+}, [
+  activePage,
+  selectedGameFilter,
+])
+
+/*
+========================================
+MARK NOTIFICATIONS AS READ
+========================================
+*/
 React.useEffect(() => {
 
   if (
-    activePage ===
+    activePage !==
     "notifications"
   ) {
-
-    const hasUnread =
-      currentUser?.notifications?.some(
-        (n: any) => !n.isRead
-      )
-
-    if (hasUnread) {
-      markNotificationsAsRead()
-    }
+    return
   }
 
-}, [activePage])
+  const hasUnread =
+    currentUser?.notifications?.some(
+      (n: any) => !n.isRead
+    )
 
+  if (hasUnread) {
+    markNotificationsAsRead()
+  }
+
+}, [
+  activePage,
+  currentUser,
+])
+
+/*
+========================================
+CLEAR SELECTED ORDER
+ON PAGE CHANGE
+========================================
+*/
 React.useEffect(() => {
 
   setSelectedOrder(null)
 
 }, [activePage])
 
+/*
+========================================
+INITIAL PAGE ROUTING
+========================================
+*/
 React.useEffect(() => {
 
   if (
@@ -640,11 +755,21 @@ React.useEffect(() => {
 
   setHasInitializedPage(true)
 
-}, [currentUser, hasInitializedPage])
+}, [
+  currentUser,
+  hasInitializedPage,
+])
 
+/*
+========================================
+LIVE NOTIFICATION REFRESH
+========================================
+*/
 React.useEffect(() => {
 
-  if (!currentUser) return
+  if (!currentUser) {
+    return
+  }
 
   const interval =
     setInterval(() => {
@@ -653,21 +778,11 @@ React.useEffect(() => {
 
     }, 4000)
 
-  return () =>
+  return () => {
     clearInterval(interval)
-
-}, [currentUser])
-React.useEffect(() => {
-
-  if (
-    selectedGameFilter
-  ) {
-    fetchGameUsers(
-      selectedGameFilter
-    )
   }
 
-}, [selectedGameFilter])
+}, [currentUser])
 
 
 async function fetchCurrentUser() {
