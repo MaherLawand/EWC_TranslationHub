@@ -1794,8 +1794,20 @@ const statsOrders =
       currentUser?.notifications ||
       []
     }
-     markNotificationsAsRead={
-    markNotificationsAsRead}
+
+    markNotificationsAsRead={
+      markNotificationsAsRead
+    }
+
+    setSelectedOrder={
+      setSelectedOrder
+    }
+
+    setEditedOrder={
+      setEditedOrder
+    }
+
+    orders={orders}
   />
 )}
 

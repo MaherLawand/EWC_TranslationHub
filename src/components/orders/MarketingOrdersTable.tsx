@@ -356,31 +356,33 @@ function getLanguageCode(
     </button>
 
     {/* DROPDOWN */}
-    <div
-      className="
-        absolute
-        bottom-full
-        left-0
-        mb-3
-        w-48
-        bg-[#101010]/95
-        backdrop-blur-xl
-        border
-        border-[#242424]
-        rounded-2xl
-        p-2
-        opacity-0
-        invisible
-        translate-y-2
-        group-hover/status:translate-y-0
-        group-hover/status:opacity-100
-        group-hover/status:visible
-        transition-all
-        duration-200
-        z-[9999]
-        shadow-[0_0_40px_rgba(0,0,0,0.55)]
-      "
-    >
+<div
+  className="
+    absolute
+    bottom-full
+    left-0
+    mb-3
+    w-48
+    flex
+    flex-col
+    bg-[#101010]/95
+    backdrop-blur-xl
+    border
+    border-[#242424]
+    rounded-2xl
+    p-2
+    opacity-0
+    invisible
+    translate-y-2
+    group-hover/status:translate-y-0
+    group-hover/status:opacity-100
+    group-hover/status:visible
+    transition-all
+    duration-200
+    z-[9999]
+    shadow-[0_0_40px_rgba(0,0,0,0.55)]
+  "
+>
 
       {order.status ===
         "PENDING" && (

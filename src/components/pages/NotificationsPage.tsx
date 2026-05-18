@@ -3,11 +3,21 @@ import React from "react"
 type Props = {
   notifications: any[]
   markNotificationsAsRead: () => void
+    setSelectedOrder: (
+    order: any
+  ) => void
+  setEditedOrder: (
+    order: any
+  ) => void
+  orders: any[]
 }
 
 export default function NotificationsPage({
   notifications,
   markNotificationsAsRead,
+  setSelectedOrder,
+  setEditedOrder,
+  orders,
 }: Props) {
 
   const ITEMS_PER_PAGE = 15
@@ -28,6 +38,27 @@ export default function NotificationsPage({
 
       page * ITEMS_PER_PAGE
     )
+
+    React.useEffect(() => {
+
+  const hasUnread =
+    notifications.some(
+      (n) => !n.isRead
+    )
+  if (hasUnread) {
+    markNotificationsAsRead()
+  }
+}, [])
+
+function getOrderFromNotification(
+  notification: any
+) {
+  return orders.find(
+    (order) =>
+      order.id ===
+      notification.order?.id
+  )
+}
 
   return (
     <div
@@ -113,119 +144,183 @@ export default function NotificationsPage({
             No notifications yet
           </div>
         ) : (
-          paginatedNotifications.map(
-            (notification) => (
-              <div
-                key={notification.id}
-                className={`
-                  px-7
-                  py-5
-                  transition-all
-                  relative
-                  overflow-hidden
+paginatedNotifications.map(
+  (notification) => {
 
+    const order =
+      getOrderFromNotification(
+        notification
+      )
+
+    const logo =
+      order?.broadcast?.game
+        ?.logo
+
+    return (
+      <div
+        key={notification.id}
+
+        onClick={() => {
+
+          if (!order) return
+
+          setSelectedOrder(order)
+
+          setEditedOrder(
+            JSON.parse(
+              JSON.stringify(order)
+            )
+          )
+        }}
+
+        className={`
+          px-7
+          py-5
+          transition-all
+          relative
+          overflow-hidden
+          cursor-pointer
+
+          ${
+            !notification.isRead
+              ? `
+                bg-[linear-gradient(90deg,rgba(214,179,106,0.08),transparent)]
+                border-l
+                border-[#D6B36A]
+              `
+              : `
+                hover:bg-[#121212]
+              `
+          }
+        `}
+      >
+
+        <div className="flex items-start justify-between gap-4">
+
+          {/* LEFT */}
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+
+            {/* GAME LOGO */}
+            {logo && (
+              <div
+                className="
+                  w-[46px]
+                  h-[46px]
+                  rounded-2xl
+                  border
+                  border-[#242424]
+                  bg-[#121212]
+                  flex
+                  items-center
+                  justify-center
+                  flex-shrink-0
+                "
+              >
+
+                <img
+                  src={logo}
+                  alt="Game"
+                  className="
+                    w-[28px]
+                    h-[28px]
+                    object-contain
+                  "
+                />
+
+              </div>
+            )}
+
+            {/* CONTENT */}
+            <div className="min-w-0 flex-1">
+
+              <p
+                className={`
+                  font-semibold
                   ${
                     !notification.isRead
-                      ? `
-                        bg-[linear-gradient(90deg,rgba(214,179,106,0.08),transparent)]
-                        border-l
-                        border-[#D6B36A]
-                      `
-                      : `
-                        hover:bg-[#121212]
-                      `
+                      ? "text-white"
+                      : "text-[#F5F1E8]"
                   }
                 `}
               >
+                {notification.title}
+              </p>
 
-                <div className="flex items-start justify-between gap-4">
+              <p
+                className={`
+                  text-sm
+                  mt-2
+                  leading-relaxed
 
-                  <div>
+                  ${
+                    !notification.isRead
+                      ? "text-zinc-300"
+                      : "text-zinc-400"
+                  }
+                `}
+              >
+                {notification.message}
+              </p>
 
-                    <p
-                      className={`
-                        font-semibold
-                        ${
-                          !notification.isRead
-                            ? "text-white"
-                            : "text-[#F5F1E8]"
-                        }
-                      `}
-                    >
-                      {notification.title}
-                    </p>
+              <p
+                className={`
+                  text-xs
+                  mt-4
 
-                    <p
-                      className={`
-                        text-sm
-                        mt-2
-                        leading-relaxed
+                  ${
+                    !notification.isRead
+                      ? "text-[#D6B36A]"
+                      : "text-zinc-600"
+                  }
+                `}
+              >
+                {new Date(
+                  notification.createdAt
+                ).toLocaleString()}
+              </p>
 
-                        ${
-                          !notification.isRead
-                            ? "text-zinc-300"
-                            : "text-zinc-400"
-                        }
-                      `}
-                    >
-                      {notification.message}
-                    </p>
+            </div>
 
-                  </div>
+          </div>
 
-                  {!notification.isRead && (
-                    <div
-                      className="
-                        flex
-                        items-center
-                        gap-2
-                        flex-shrink-0
-                      "
-                    >
+          {/* NEW BADGE */}
+          {!notification.isRead && (
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+                flex-shrink-0
+              "
+            >
 
-                      <div
-                        className="
-                          px-2.5
-                          h-[24px]
-                          rounded-full
-                          bg-[#D6B36A]
-                          text-black
-                          text-[10px]
-                          font-bold
-                          flex
-                          items-center
-                          justify-center
-                          shadow-[0_0_14px_rgba(214,179,106,0.35)]
-                        "
-                      >
-                        NEW
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
-
-                <p
-                  className={`
-                    text-xs
-                    mt-4
-
-                    ${
-                      !notification.isRead
-                        ? "text-[#D6B36A]"
-                        : "text-zinc-600"
-                    }
-                  `}
-                >
-                  {new Date(
-                    notification.createdAt
-                  ).toLocaleString()}
-                </p>
-
+              <div
+                className="
+                  px-2.5
+                  h-[24px]
+                  rounded-full
+                  bg-[#D6B36A]
+                  text-black
+                  text-[10px]
+                  font-bold
+                  flex
+                  items-center
+                  justify-center
+                  shadow-[0_0_14px_rgba(214,179,106,0.35)]
+                "
+              >
+                NEW
               </div>
-            )
-          )
+
+            </div>
+          )}
+
+        </div>
+
+      </div>
+    )
+  }
+)
         )}
 
       </div>

@@ -30,8 +30,8 @@ const selectedGame =
       selectedGameFilter
   )
 
-const producer =
-  users.find(
+const producers =
+  users.filter(
     (user) =>
       user.position ===
         "PRODUCER" &&
@@ -43,8 +43,8 @@ const producer =
       )
   )
 
-const ppm =
-  users.find(
+const ppms =
+  users.filter(
     (user) =>
       user.position ===
         "POST_PRODUCTION_MANAGER" &&
@@ -162,30 +162,83 @@ const filteredGames =
                 "
               >
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-start gap-2">
 
-                  <span className="text-zinc-500">
-                    Producer
-                  </span>
+  <span className="text-zinc-500 whitespace-nowrap">
+    Producers
+  </span>
 
-                  <span className="text-white font-medium">
-                    {producer?.name ||
-                      "—"}
-                  </span>
+  <div className="flex flex-wrap gap-2">
 
-                </div>
+    {producers.length > 0 ? (
+      producers.map(
+        (producer: any) => (
+          <span
+            key={producer.id}
+            className="
+              px-2.5
+              py-1
+              rounded-lg
+              bg-[#171717]
+              border
+              border-[#2A2A2A]
+              text-white
+              text-xs
+              font-medium
+            "
+          >
+            {producer.name}
+          </span>
+        )
+      )
+    ) : (
+      <span className="text-white font-medium">
+        —
+      </span>
+    )}
 
-                <div className="flex items-center gap-2">
+  </div>
 
-                  <span className="text-zinc-500">
-                    PPM
-                  </span>
+</div>
 
-                  <span className="text-white font-medium">
-                    {ppm?.name || "—"}
-                  </span>
+<div className="flex items-start gap-2">
 
-                </div>
+  <span className="text-zinc-500 whitespace-nowrap">
+    PPMs
+  </span>
+
+  <div className="flex flex-wrap gap-2">
+
+    {ppms.length > 0 ? (
+      ppms.map(
+        (ppm: any) => (
+          <span
+            key={ppm.id}
+            className="
+              px-2.5
+              py-1
+              rounded-lg
+              bg-[#171717]
+              border
+              border-[#2A2A2A]
+              text-white
+              text-xs
+              font-medium
+            "
+          >
+            {ppm.name}
+          </span>
+        )
+      )
+    ) : (
+      <span className="text-white font-medium">
+        —
+      </span>
+    )}
+
+  </div>
+
+</div>
 
               </div>
 
