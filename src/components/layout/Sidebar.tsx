@@ -166,18 +166,14 @@ const unreadNotifications =
 {(
   currentUser?.role === "ADMIN" ||
 
-  (
-    currentUser?.department ===
-      "BROADCAST" &&
+  currentUser?.position ===
+    "PRODUCER" ||
 
-    (
-      currentUser?.position ===
-        "PRODUCER" ||
+  currentUser?.position ===
+    "POST_PRODUCTION_MANAGER" ||
 
-      currentUser?.position ===
-        "POST_PRODUCTION_MANAGER"
-    )
-  )
+  currentUser?.position ===
+    "TRANSLATOR"
 ) && (
   <div className="relative">
 

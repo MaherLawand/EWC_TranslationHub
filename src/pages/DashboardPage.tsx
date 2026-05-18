@@ -1708,7 +1708,8 @@ const statsOrders =
     </div>
 
     {/* GAMES */}
-{activePage === "games" && (
+{(activePage === "games" ||
+  activePage === "my-games") && (
   <div
     className="
       flex
@@ -1719,7 +1720,17 @@ const statsOrders =
     "
   >
 
-    {filteredGames.map(
+{(
+  activePage === "my-games"
+    ? filteredGames.filter((game) =>
+        currentUser?.assignedGames?.some(
+          (assignment: any) =>
+            assignment.gameId ===
+            game.id
+        )
+      )
+    : filteredGames
+).map(
       (game) => {
 
         const active =
@@ -1843,17 +1854,7 @@ const statsOrders =
 {(activePage === "games" ||
   activePage === "my-games") && (
   <GamesPage
-    games={
-      activePage === "my-games"
-        ? games.filter((game) =>
-            currentUser?.assignedGames?.some(
-              (assignment: any) =>
-                assignment.gameId ===
-                game.id
-            )
-          )
-        : games
-    }
+    games={games}
     selectedGameFilter={
       selectedGameFilter
     }

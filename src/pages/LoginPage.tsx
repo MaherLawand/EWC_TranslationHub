@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { api } from "../lib/api"
 
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
 export default function LoginPage() {
   const [email, setEmail] =
     useState("")
@@ -8,12 +11,19 @@ export default function LoginPage() {
   const [password, setPassword] =
     useState("")
 
+  const [isLoading, setIsLoading] =
+    useState(false)
+
   async function handleLogin(
     e: React.FormEvent
   ) {
     e.preventDefault()
 
+    if (isLoading) return
+
     try {
+      setIsLoading(true)
+
       const res = await api.post(
         "/auth/login",
         {
@@ -24,10 +34,24 @@ export default function LoginPage() {
 
       console.log(res.data)
 
-      window.location.reload()
+      toast.success(
+        "Login successful"
+      )
 
-    } catch (error) {
+      setTimeout(() => {
+        window.location.reload()
+      }, 700)
+
+    } catch (error: any) {
       console.error(error)
+
+      toast.error(
+        error?.response?.data
+          ?.message ||
+          "Invalid email or password"
+      )
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -43,6 +67,12 @@ export default function LoginPage() {
         overflow-hidden
       "
     >
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        theme="dark"
+      />
 
       {/* BACKGROUND GLOW */}
       <div
@@ -130,6 +160,7 @@ export default function LoginPage() {
               type="email"
               placeholder="Enter your email"
               value={email}
+              disabled={isLoading}
               onChange={(e) =>
                 setEmail(e.target.value)
               }
@@ -149,6 +180,7 @@ export default function LoginPage() {
                 focus:border-[#D6B36A]
                 focus:bg-[#151515]
                 focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
+                disabled:opacity-60
               "
             />
 
@@ -175,6 +207,7 @@ export default function LoginPage() {
               type="password"
               placeholder="Enter your password"
               value={password}
+              disabled={isLoading}
               onChange={(e) =>
                 setPassword(
                   e.target.value
@@ -196,6 +229,7 @@ export default function LoginPage() {
                 focus:border-[#D6B36A]
                 focus:bg-[#151515]
                 focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
+                disabled:opacity-60
               "
             />
 
@@ -206,6 +240,7 @@ export default function LoginPage() {
         {/* BUTTON */}
         <button
           type="submit"
+          disabled={isLoading}
           className="
             w-full
             h-[56px]
@@ -221,9 +256,13 @@ export default function LoginPage() {
             hover:bg-[#E7C989]
             hover:shadow-[0_0_30px_rgba(214,179,106,0.20)]
             active:scale-[0.99]
+            disabled:opacity-60
+            disabled:cursor-not-allowed
           "
         >
-          Login
+          {isLoading
+            ? "Logging in..."
+            : "Login"}
         </button>
 
       </form>

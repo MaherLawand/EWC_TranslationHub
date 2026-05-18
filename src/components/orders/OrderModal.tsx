@@ -598,6 +598,7 @@ today.setHours(0, 0, 0, 0)
             </label>
 
             <input
+            type="url"
               value={
                 newOrder.sourceFileLink
               }
