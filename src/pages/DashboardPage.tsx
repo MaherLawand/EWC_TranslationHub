@@ -453,6 +453,12 @@ React.useEffect(() => {
 
 React.useEffect(() => {
 
+  setSelectedOrder(null)
+
+}, [activePage])
+
+React.useEffect(() => {
+
   if (
     !currentUser ||
     hasInitializedPage
@@ -540,6 +546,8 @@ React.useEffect(() => {
     clearInterval(interval)
 
 }, [currentUser])
+
+
 
 async function fetchCurrentUser() {
   try {
@@ -1285,6 +1293,7 @@ const statsOrders =
     className="
       border
       border-[#242424]
+      overflow-x-auto
       bg-[linear-gradient(180deg,#0F0F0F_0%,#0B0B0B_100%)]
       rounded-[30px]
       px-6
@@ -1297,25 +1306,26 @@ const statsOrders =
 
     {/* TOP */}
     <div
-      className="
-        flex
-        items-center
-        justify-between
-        gap-5
-      "
-    >
-
+  className="
+    flex
+    items-start
+    justify-between
+    gap-5
+    flex-nowrap
+  "
+>
       {/* LEFT */}
       <div
-        className="
-          flex
-          items-center
-          gap-3
-          flex-1
-          min-w-0
-          flex-wrap
-        "
-      >
+  className="
+    flex
+    items-center
+    gap-3
+    flex-1
+    min-w-0
+    flex-wrap
+    overflow-hidden
+  "
+>
 
         {/* SEARCH */}
         <div className="relative flex-1 min-w-[240px]">
@@ -1614,13 +1624,14 @@ const statsOrders =
       {/* RIGHT */}
       {activePage !== "marketing" && (
         <div
-          className="
-            flex
-            items-center
-            gap-3
-            flex-shrink-0
-          "
-        >
+  className="
+    flex
+    items-center
+    gap-3
+    flex-shrink-0
+    min-w-fit
+  "
+>
 
           {/* RESET */}
           <button
