@@ -796,7 +796,7 @@ const myGameOrders =
 
     const belongsToUser =
       assignedGameIds.includes(
-        o.broadcast?.game?.id
+        o.broadcast?.gameId
       )
 
     if (!belongsToUser) {
@@ -808,7 +808,7 @@ const myGameOrders =
     }
 
     return (
-      o.broadcast?.game?.id ===
+      o.broadcast?.gameId ===
       selectedGameFilter
     )
   })
@@ -1849,7 +1849,6 @@ const statsOrders =
     setSelectedGameFilter={
       setSelectedGameFilter
     }
-      users={users}
   />
 )}
 {/* BROADCAST TABLE */}
