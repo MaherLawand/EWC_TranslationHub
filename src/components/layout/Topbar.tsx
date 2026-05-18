@@ -223,7 +223,7 @@ return (
           border
           border-yellow-500/20"
       >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-orange-400">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-yellow-400">
           Pending
         </p>
 
