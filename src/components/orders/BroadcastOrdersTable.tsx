@@ -239,10 +239,6 @@ const canUpdateStatus =
                       {order.title}
                     </p>
 
-                    <p className="text-sm text-zinc-500 mt-1">
-                      {order.id}
-                    </p>
-
                   </div>
 
                 </td>

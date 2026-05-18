@@ -30,30 +30,39 @@ const selectedGame =
       selectedGameFilter
   )
 
-const producers =
-  users.filter(
-    (user) =>
-      user.position ===
-        "PRODUCER" &&
-
+const assignedUsers =
+  users
+    .filter((user) =>
       user.assignedGames?.some(
         (assignment: any) =>
           assignment.gameId ===
           selectedGameFilter
       )
+    )
+    .filter(
+      (
+        user,
+        index,
+        self
+      ) =>
+        index ===
+        self.findIndex(
+          (u) => u.id === user.id
+        )
+    )
+
+const producers =
+  assignedUsers.filter(
+    (user) =>
+      user.position ===
+      "PRODUCER"
   )
 
 const ppms =
-  users.filter(
+  assignedUsers.filter(
     (user) =>
       user.position ===
-        "POST_PRODUCTION_MANAGER" &&
-
-      user.assignedGames?.some(
-        (assignment: any) =>
-          assignment.gameId ===
-          selectedGameFilter
-      )
+      "POST_PRODUCTION_MANAGER"
   )
 const [gameSearch, setGameSearch] =
   React.useState("")
@@ -187,7 +196,8 @@ const filteredGames =
               font-medium
             "
           >
-            {producer.name}
+            {producer.firsName}{" "}
+{producer.lastName}
           </span>
         )
       )
@@ -226,7 +236,8 @@ const filteredGames =
               font-medium
             "
           >
-            {ppm.name}
+            {ppm.firstName}{" "}
+{ppm.lastName}
           </span>
         )
       )

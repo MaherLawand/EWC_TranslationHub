@@ -276,9 +276,9 @@ const unreadNotifications =
               flex-shrink-0
             "
           >
-            {currentUser?.name
-              ?.slice(0, 2)
-              ?.toUpperCase()}
+            {`${currentUser?.firstName?.[0] || ""}${
+  currentUser?.lastName?.[0] || ""
+}`.toUpperCase()}
           </div>
 
           {/* USER INFO */}
@@ -291,7 +291,8 @@ const unreadNotifications =
                 truncate
               "
             >
-              {currentUser?.name}
+              {currentUser?.firstName}{" "}
+{currentUser?.lastName}
             </p>
 
             <p
