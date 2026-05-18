@@ -1840,9 +1840,20 @@ const statsOrders =
 
   return (
     <>
-{activePage === "games" && (
+{(activePage === "games" ||
+  activePage === "my-games") && (
   <GamesPage
-    games={games}
+    games={
+      activePage === "my-games"
+        ? games.filter((game) =>
+            currentUser?.assignedGames?.some(
+              (assignment: any) =>
+                assignment.gameId ===
+                game.id
+            )
+          )
+        : games
+    }
     selectedGameFilter={
       selectedGameFilter
     }
