@@ -256,7 +256,10 @@ const canUpdateStatus =
 
                     <div className="flex flex-wrap gap-1">
 
-                      {broadcast?.sourceLanguage.map(
+                      {Array.isArray(
+  broadcast?.sourceLanguage
+)
+  ? broadcast.sourceLanguage.map(
                         (
                           lang: string
                         ) => (
@@ -284,7 +287,7 @@ const canUpdateStatus =
                             )}
                           </span>
                         )
-                      )}
+                      ):null}
 
                     </div>
 
@@ -292,7 +295,10 @@ const canUpdateStatus =
                       →
                     </span>
 
-                    {broadcast?.targetLanguages.map(
+                    {Array.isArray(
+  broadcast?.targetLanguages
+)
+  ? broadcast.targetLanguages.map(
                       (
                         lang: string
                       ) => (
@@ -319,7 +325,7 @@ const canUpdateStatus =
                           )}
                         </span>
                       )
-                    )}
+                    ):null}
 
                   </div>
 

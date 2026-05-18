@@ -2021,17 +2021,6 @@ const statsOrders =
   >
 
 {(
-  console.log(
-  "ASSIGNED GAMES:",
-  currentUser?.assignedGames
-),
-
-console.log(
-  "IS ARRAY:",
-  Array.isArray(
-    currentUser?.assignedGames
-  )
-),
   activePage === "my-games"
     ? filteredGames.filter((game) =>
       Array.isArray(
