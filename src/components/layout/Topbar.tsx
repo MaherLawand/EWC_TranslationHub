@@ -216,12 +216,12 @@ return (
         className="
           min-w-[120px]
           rounded-2xl
-          border
-          border-orange-500/10
-          bg-orange-500/[0.06]
           px-4
           py-3
-        "
+          bg-yellow-500/10
+          text-yellow-400
+          border
+          border-yellow-500/20"
       >
         <p className="text-[10px] uppercase tracking-[0.18em] text-orange-400">
           Pending
