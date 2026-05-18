@@ -1277,13 +1277,15 @@ console.log(
   Array.isArray(games)
 )
 const filteredGames =
-  games.filter((game) =>
-    game.name
-      ?.toLowerCase()
-      .includes(
-        gameSearch.toLowerCase()
+  Array.isArray(games)
+    ? games.filter((game) =>
+        game.name
+          ?.toLowerCase()
+          .includes(
+            gameSearch.toLowerCase()
+          )
       )
-  )
+    : []
 async function markNotificationsAsRead() {
   try {
     await fetch(
@@ -2149,17 +2151,22 @@ console.log(
   "IS ARRAY:",
   Array.isArray(orders)
 )
-  const broadcastOrders =
-    orders.filter(
-      (o) =>
-        o.type === "BROADCAST"
-    )
+ const safeOrders =
+  Array.isArray(orders)
+    ? orders
+    : []
 
-  const marketingOrders =
-    orders.filter(
-      (o) =>
-        o.type === "MARKETING"
-    )
+const broadcastOrders =
+  safeOrders.filter(
+    (o) =>
+      o.type === "BROADCAST"
+  )
+
+const marketingOrders =
+  safeOrders.filter(
+    (o) =>
+      o.type === "MARKETING"
+  )
 
   return (
     <>
