@@ -788,12 +788,30 @@ const filteredOrders = [...orders]
 
 
 const myGameOrders =
-  filteredOrders.filter((o) =>
-    assignedGameIds.includes(
-      o.broadcast?.game?.id
-    )
-  )
+  filteredOrders.filter((o) => {
 
+    if (o.type !== "BROADCAST") {
+      return false
+    }
+
+    const belongsToUser =
+      assignedGameIds.includes(
+        o.broadcast?.game?.id
+      )
+
+    if (!belongsToUser) {
+      return false
+    }
+
+    if (!selectedGameFilter) {
+      return true
+    }
+
+    return (
+      o.broadcast?.game?.id ===
+      selectedGameFilter
+    )
+  })
 
 function toggleLanguage(
   language: string
