@@ -11,6 +11,7 @@ import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
+import { toast, ToastContainer } from "react-toastify"
 
 export default function App() {
   const [hasInitializedPage, setHasInitializedPage] =
@@ -1307,9 +1308,15 @@ async function createOrder() {
 
 
 async function updateOrder() {
-    if (isSavingOrder) return
+
+  if (isSavingOrder) {
+    return
+  }
+
   try {
-        setIsSavingOrder(true)
+
+    setIsSavingOrder(true)
+
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/orders/${editingOrderId}`,
       {
@@ -1323,47 +1330,77 @@ async function updateOrder() {
         },
 
         body: JSON.stringify({
-  ...newOrder,
+          ...newOrder,
 
-  estimatedMinutes:
-    Number(
-      newOrder.estimatedMinutes
-    ),
+          estimatedMinutes:
+            Number(
+              newOrder.estimatedMinutes
+            ),
 
-  deliveries:
-  newOrder.deliveries || []
-}),
+          deliveries:
+            newOrder.deliveries || [],
+        }),
       }
     )
 
-const updated =
-  await response.json()
+    const data =
+      await response.json()
 
-setOrders((prev) =>
-  prev.map((o) =>
-    o.id === updated.id
-      ? { ...updated }
-      : o
-  )
-)
+    /*
+      IMPORTANT
+    */
+    if (!response.ok) {
 
-setSelectedOrder({
-  ...updated,
-})
+      toast.error(
+        data.message ||
+        "Failed to update order"
+      )
 
-setEditedOrder(
-  JSON.parse(JSON.stringify(updated))
-)
-resetOrderState()
-setShowModal(false)
+      return
+    }
 
-setIsEditing(false)
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === data.id
+          ? { ...data }
+          : o
+      )
+    )
 
-setEditingOrderId("")
+    setSelectedOrder({
+      ...data,
+    })
+
+    setEditedOrder(
+      JSON.parse(
+        JSON.stringify(data)
+      )
+    )
+
+    toast.success(
+      "Order updated successfully"
+    )
+
+    resetOrderState()
+
+    setShowModal(false)
+
+    setIsEditing(false)
+
+    setEditingOrderId("")
+
   } catch (error) {
+
     console.error(error)
+
+    toast.error(
+      "Something went wrong"
+    )
+
   } finally {
+
     setIsSavingOrder(false)
+
   }
 }
 
@@ -2661,6 +2698,11 @@ const marketingOrders =
   }
   isSavingAssignments={isSavingAssignments}
   user={selectedUserForGames}
+/>
+<ToastContainer
+  position="top-right"
+  autoClose={3000}
+  theme="dark"
 />
       </main>
     </div>
