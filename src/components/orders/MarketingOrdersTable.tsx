@@ -6,26 +6,12 @@ import StatusBadge from "../shared/StatusBadge"
 
 type Props = {
   orders: any[]
-currentUser: any
-  setSelectedOrder: (
-    order: any
-  ) => void
-
-  setEditedOrder: (
-    order: any
-  ) => void
-
-  updateOrderStatus: (
-    orderId: string,
-    status: string
-  ) => void
-
-  getDeadlineInfo: (
-    deadlineDate: string
-  ) => {
-    text: string
-    color: string
-  }
+  currentUser: any
+  onAssignUsers: (orderId: string, userIds: string[]) => Promise<void>
+  setSelectedOrder: (order: any) => void
+  setEditedOrder: (order: any) => void
+  updateOrderStatus: (orderId: string, status: string) => void
+  getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
   isLoading?: boolean
 }
 
@@ -35,6 +21,7 @@ export default function MarketingOrdersTable({
   setEditedOrder,
   updateOrderStatus,
   currentUser,
+  onAssignUsers,
   getDeadlineInfo,
   isLoading,
 }: Props) {
@@ -97,9 +84,80 @@ function getLanguageCode(
 }
 
 const [updatingOrderId, setUpdatingOrderId] =
-  React.useState<string | null>(
-    null
+  React.useState<string | null>(null)
+
+const canAssignUsers =
+  currentUser?.role === "ADMIN" ||
+  (currentUser?.department === "MARKETING" &&
+    (currentUser?.position === "PRODUCER" ||
+      currentUser?.position === "POST_PRODUCTION_MANAGER"))
+
+const [assigningOrder, setAssigningOrder] =
+  React.useState<any>(null)
+
+const [assignSearch, setAssignSearch] =
+  React.useState("")
+
+const [selectedUserIds, setSelectedUserIds] =
+  React.useState<string[]>([])
+
+const [isSavingAssign, setIsSavingAssign] =
+  React.useState(false)
+
+const [searchResults, setSearchResults] =
+  React.useState<any[]>([])
+
+const [isSearching, setIsSearching] =
+  React.useState(false)
+
+function openAssignModal(order: any) {
+  const currentIds: string[] =
+    order.marketing?.assignments?.map((a: any) => a.user.id) ?? []
+  setSelectedUserIds(currentIds)
+  setAssignSearch("")
+  setSearchResults([])
+  setAssigningOrder(order)
+}
+
+function toggleUser(userId: string) {
+  setSelectedUserIds((prev) =>
+    prev.includes(userId)
+      ? prev.filter((id) => id !== userId)
+      : [...prev, userId]
   )
+}
+
+async function saveAssign() {
+  if (isSavingAssign || !assigningOrder) return
+  setIsSavingAssign(true)
+  try {
+    await onAssignUsers(assigningOrder.id, selectedUserIds)
+    setAssigningOrder(null)
+  } finally {
+    setIsSavingAssign(false)
+  }
+}
+
+React.useEffect(() => {
+  if (!assigningOrder) return
+
+  const timer = setTimeout(async () => {
+    setIsSearching(true)
+    try {
+      const params = new URLSearchParams()
+      if (assignSearch.trim()) params.set("q", assignSearch.trim())
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/users/search?${params}`,
+        { credentials: "include" }
+      )
+      if (res.ok) setSearchResults(await res.json())
+    } finally {
+      setIsSearching(false)
+    }
+  }, 250)
+
+  return () => clearTimeout(timer)
+}, [assignSearch, assigningOrder])
 
   async function handleUpdateStatus(
   orderId: string,
@@ -119,6 +177,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
 
   return (
+    <>
     <div
       className="
         bg-[radial-gradient(ellipse_90%_70%_at_top,rgba(214,179,106,0.05),transparent_80%),linear-gradient(to_bottom,#111111,#090909)]
@@ -190,29 +249,35 @@ const [updatingOrderId, setUpdatingOrderId] =
 
           <tr>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Order
   </th>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Content
   </th>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Languages
   </th>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Format
   </th>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Status
   </th>
 
-  <th className="text-left px-6 py-5">
+  <th className="text-left px-6 py-3">
     Priority
   </th>
+
+  {canAssignUsers && (
+    <th className="text-left px-6 py-3">
+      Assign
+    </th>
+  )}
 
 </tr>
 
@@ -224,7 +289,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
     <tr>
       <td
-        colSpan={6}
+        colSpan={canAssignUsers ? 7 : 6}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -235,7 +300,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
     <tr>
       <td
-        colSpan={6}
+        colSpan={canAssignUsers ? 7 : 6}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -274,7 +339,7 @@ setEditedOrder(
 >
 
   {/* ORDER */}
-  <td className="px-6 py-6 align-center">
+  <td className="px-6 py-2.5 align-center">
 
     <div>
 
@@ -288,7 +353,7 @@ setEditedOrder(
   </td>
 
   {/* CONTENT TITLE */}
-  <td className="px-6 py-6 align-center">
+  <td className="px-6 py-2.5 align-center">
 
     <div>
 
@@ -304,7 +369,7 @@ setEditedOrder(
   </td>
 
   {/* LANGUAGES */}
-  <td className="px-6 py-6 align-center">
+  <td className="px-6 py-2.5 align-center">
 
     <div className="flex flex-wrap items-center gap-2">
 
@@ -318,7 +383,7 @@ setEditedOrder(
               key={lang}
               className="
                 min-w-[34px]
-                h-[28px]
+                h-[22px]
                 inline-flex
                 items-center
                 justify-center
@@ -354,7 +419,7 @@ setEditedOrder(
             key={lang}
             className="
               min-w-[34px]
-              h-[28px]
+              h-[22px]
               inline-flex
               items-center
               justify-center
@@ -380,7 +445,7 @@ setEditedOrder(
   </td>
 
   {/* FORMAT */}
-<td className="px-6 py-6 align-center">
+<td className="px-6 py-2.5 align-center">
 
   <div className="flex flex-wrap gap-2">
 
@@ -393,7 +458,7 @@ setEditedOrder(
             border-[#2B2B2B]
             bg-[#171717]
             px-3
-            py-1.5
+            py-0.5
             rounded-xl
             text-xs
             font-semibold
@@ -411,7 +476,7 @@ setEditedOrder(
 </td>
 
 {/* STATUS */}
-<td className="px-6 py-6 align-center whitespace-nowrap">
+<td className="px-6 py-2.5 align-center whitespace-nowrap">
 
   {!canUpdateStatus ? (
 
@@ -608,15 +673,13 @@ disabled:cursor-not-allowed
 </td>
 
   {/* PRIORITY */}
-  <td className="px-6 py-6 align-center">
+  <td className="px-6 py-2.5 align-center">
 
     <span
       className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-        order.priority ===
-        "HIGH"
+        order.priority === "HIGH"
           ? "bg-red-500/10 text-red-400 border-red-500/20"
-          : order.priority ===
-            "MEDIUM"
+          : order.priority === "MEDIUM"
           ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
           : "bg-green-500/10 text-green-400 border-green-500/20"
       }`}
@@ -625,6 +688,23 @@ disabled:cursor-not-allowed
     </span>
 
   </td>
+
+  {/* ASSIGN */}
+  {canAssignUsers && (
+    <td className="px-6 py-2.5 align-center" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          openAssignModal(order)
+        }}
+        className="text-xs font-semibold text-[#D6B36A] hover:text-[#E4C27C] transition border border-[#D6B36A]/30 hover:border-[#D6B36A]/60 px-3 py-1.5 rounded-xl whitespace-nowrap"
+      >
+        {order.marketing?.assignments?.length > 0
+          ? `Assigned (${order.marketing.assignments.length})`
+          : "Assign"}
+      </button>
+    </td>
+  )}
 
 </tr>
             )
@@ -763,5 +843,90 @@ disabled:cursor-not-allowed
       </div>
 
     </div>
+
+    {/* ASSIGN USERS MODAL */}
+    {assigningOrder && (
+      <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center">
+        <div className="w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8 flex flex-col max-h-[80vh]">
+
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-[#F5F1E8]">Assign Users</h2>
+              <p className="text-sm text-zinc-500 mt-1 truncate max-w-[340px]">{assigningOrder.title}</p>
+            </div>
+            <button
+              onClick={() => setAssigningOrder(null)}
+              className="text-zinc-400 hover:text-white transition text-xl flex-shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+
+          <input
+            value={assignSearch}
+            onChange={(e) => setAssignSearch(e.target.value)}
+            placeholder="Search users..."
+            className="w-full h-[46px] bg-[#171717] border border-[#2A2A2A] rounded-2xl px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#D6B36A] mb-4"
+          />
+
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+            {isSearching ? (
+              <p className="text-sm text-zinc-600 text-center py-4">Searching...</p>
+            ) : searchResults.length === 0 ? (
+              <p className="text-sm text-zinc-600 text-center py-4">
+                {assignSearch.trim() ? "No users found" : "Type to search users"}
+              </p>
+            ) : (
+              searchResults.map((user: any) => {
+                const isSelected = selectedUserIds.includes(user.id)
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => toggleUser(user.id)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition text-left ${
+                      isSelected
+                        ? "bg-[#D6B36A]/10 border-[#D6B36A]/40"
+                        : "bg-[#111111] border-[#242424] hover:border-[#3A3A3A]"
+                    }`}
+                  >
+                    <div>
+                      <p className={`font-medium text-sm ${isSelected ? "text-[#D6B36A]" : "text-[#F5F1E8]"}`}>
+                        {user.firstName} {user.lastName}
+                      </p>
+                      {user.position && (
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          {user.position.replace(/_/g, " ")}
+                        </p>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <span className="text-[#D6B36A] text-lg">✓</span>
+                    )}
+                  </button>
+                )
+              })
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mt-6">
+            <button
+              onClick={() => setAssigningOrder(null)}
+              className="bg-zinc-900 border border-zinc-800 py-3 rounded-2xl font-semibold hover:bg-zinc-800 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveAssign}
+              disabled={isSavingAssign}
+              className="bg-[#D6B36A] text-black py-3 rounded-2xl font-semibold hover:bg-[#E4C27C] transition disabled:opacity-50"
+            >
+              {isSavingAssign ? "Saving..." : `Save (${selectedUserIds.length})`}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+    </>
   )
 }

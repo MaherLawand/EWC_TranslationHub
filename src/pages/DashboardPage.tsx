@@ -12,20 +12,26 @@ import GamesPage from "../components/pages/GamesPage"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
 import { toast, ToastContainer } from "react-toastify"
+import { useOrders } from "../hooks/useOrders"
+import { useUsers } from "../hooks/useUsers"
+import { useGames } from "../hooks/useGames"
 
 export default function App() {
+
   const [hasInitializedPage, setHasInitializedPage] =
-  React.useState(false)
-  const [currentUser, setCurrentUser] = React.useState<any>(null)
-  const [users, setUsers] = React.useState<any[]>([])
-  const [orders, setOrders] = React.useState<any[]>([])
-  const [search, setSearch] = React.useState("")
+    React.useState(false)
+
+  const [currentUser, setCurrentUser] =
+    React.useState<any>(null)
+
+  const [search, setSearch] =
+    React.useState("")
 
   const [statusFilter, setStatusFilter] =
     React.useState("All Statuses")
 
-const [activePage, setActivePage] =
-  React.useState("")
+  const [activePage, setActivePage] =
+    React.useState("")
 
   const [showModal, setShowModal] =
     React.useState(false)
@@ -33,2099 +39,710 @@ const [activePage, setActivePage] =
   const [selectedOrder, setSelectedOrder] =
     React.useState<any>(null)
 
-      const [priorityFilter, setPriorityFilter] =
-  React.useState("All Priorities")
+  const [priorityFilter, setPriorityFilter] =
+    React.useState("All Priorities")
 
-const [formatFilter, setFormatFilter] =
-  React.useState<string[]>([])
+  const [formatFilter, setFormatFilter] =
+    React.useState<string[]>([])
 
-const [deadlineSort, setDeadlineSort] =
-  React.useState("")
-  
+  const [deadlineSort, setDeadlineSort] =
+    React.useState("")
+
   const [selectedGameFilter, setSelectedGameFilter] =
-  React.useState("")
+    React.useState("")
 
-
-    const [
-  contentTitleFilter,
-  setContentTitleFilter,
-] = React.useState("")
-
-  const [newOrder, setNewOrder] = React.useState({
-  title: "",
-  contentTitle: "",
-  notes:"",
-  game: "",
-  type: "BROADCAST",
-  event:"EWC",
-
-  status: "PENDING",
-priority: "MEDIUM",
-  sourceLanguage: [],
-  targetLanguages: [] as string[],
-
-  deliveryFormats: [
-  {
-    format: "SRT",
-    deliveryLink: ""
-  }
-],
-
-  deadline: "",
-  sourceFileLink: "",
-
-  estimatedMinutes: "",
-  deliveryDate: "",
-  deliveries: [],
-})
-
-const canManageOrders =
-  currentUser?.role === "ADMIN" ||
-
-  currentUser?.position ===
-    "PRODUCER" ||
-
-  currentUser?.position ===
-    "POST_PRODUCTION_MANAGER"
-
-const [isEditingOrder, setIsEditingOrder] =
-  React.useState(false)
-  const [isLoadingOrders, setIsLoadingOrders] =
-  React.useState(false)
-const [isSavingUser, setIsSavingUser] =
-  React.useState(false)
-const [editedOrder, setEditedOrder] =
-  React.useState<any>(null)
-
-const [isSavingOrder, setIsSavingOrder] =
-  React.useState(false)
-
-
-  const [userSearch, setUserSearch] =
-  React.useState("")
-
-  const [showUserModal, setShowUserModal] =
-  React.useState(false)
-
-const [selectedUser, setSelectedUser] =
-  React.useState<any>(null)
-
-const [isEditingUser, setIsEditingUser] =
-  React.useState(false)
-
-const [userForm, setUserForm] =
-  React.useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    role: "",
-    isActive: "",
-    department: "",
-    position: "",
-  })
+  const [contentTitleFilter, setContentTitleFilter] =
+    React.useState("")
 
   const [selectedEvent, setSelectedEvent] =
-  React.useState("EWC")
+    React.useState("EWC")
 
-  const [gameUsers, setGameUsers] =
-  React.useState<{
-    producers: any[]
-    ppms: any[]
-    users: any[]
-  }>({
-    producers: [],
-    ppms: [],
-    users: [],
-  })
-
-  async function fetchGameUsers(
-  gameId: string
-) {
-  try {
-
-    if (!gameId) {
-      setGameUsers({
-        producers: [],
-        ppms: [],
-        users: [],
-      })
-
-      return
-    }
-
-    const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/games/${gameId}/users`,
-      {
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to fetch game users"
-      )
-    }
-
-    const data =
-      await response.json()
-
-    setGameUsers({
-      producers:
-        Array.isArray(
-          data.producers
-        )
-          ? data.producers
-          : [],
-
-      ppms:
-        Array.isArray(
-          data.ppms
-        )
-          ? data.ppms
-          : [],
-
-      users:
-        Array.isArray(
-          data.users
-        )
-          ? data.users
-          : [],
-    })
-
-  } catch (error) {
-
-    console.error(error)
-
-    setGameUsers({
-      producers: [],
-      ppms: [],
-      users: [],
-    })
-  }
-}
-
-const [games, setGames] =
-  React.useState<any[]>([])
-
-const [
-  showAssignGamesModal,
-  setShowAssignGamesModal,
-] = React.useState(false)
-
-const [
-  selectedUserForGames,
-  setSelectedUserForGames,
-] = React.useState<any>(null)
-
-const [
-  selectedGames,
-  setSelectedGames,
-] = React.useState<string[]>([])
-
-const [
-  showDeleteModal,
-  setShowDeleteModal,
-] = React.useState(false)
-
-const [
-  deletingOrderId,
-  setDeletingOrderId,
-] = React.useState("")
-
-async function deleteOrder() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/orders/${deletingOrderId}`,
-      {
-        method: "DELETE",
-
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to delete order"
-      )
-    }
-
-    setOrders((prev) =>
-      prev.filter(
-        (o) =>
-          o.id !== deletingOrderId
-      )
-    )
-
-    setSelectedOrder(null)
-
-    setShowDeleteModal(false)
-
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const [
-  isSavingAssignments,
-  setIsSavingAssignments,
-] = React.useState(false)
-
-  function openCreateUserModal() {
-  setIsEditingUser(false)
-
-  setSelectedUser(null)
-
-  setUserForm({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    role: "",
-    isActive: "",
-    department: "",
-    position: "",
-  })
-
-  setShowUserModal(true)
-}
-
-function openEditUserModal(
-  user: any
-) {
-  setIsEditingUser(true)
-
-  setSelectedUser(user)
-
-  setUserForm({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
-    email: user.email || "",
-    password: "",
-    role: user.role || "EDITOR",
-    department:
-      user.department ||
-      "BROADCAST",
-
-    position: user.position || "",
-    isActive: user.isActive || false,
-  })
-
-  setShowUserModal(true)
-}
-async function createUser() {
-  if (isSavingUser) return
-
-  try {
-    setIsSavingUser(true)
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/users`,
-      {
-        method: "POST",
-
-        credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify(
-          userForm
-        ),
-      }
-    )
-
-    const data =
-      await response.json()
-
-    if (!response.ok) {
-      alert(data.message)
-      return
-    }
-
-    setUsers((prev) => [
-      data,
-      ...prev,
-    ])
-
-    setShowUserModal(false)
-
-  } catch (error) {
-    console.error(error)
-  } finally {
-    setIsSavingUser(false)
-  }
-}
-
-async function updateUser() {
-
-  if (isSavingUser) return
-
-  try {
-
-    setIsSavingUser(true)
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/users/${selectedUser.id}`,
-      {
-        method: "PATCH",
-
-        credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify(
-          userForm
-        ),
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to update user"
-      )
-    }
-
-    const updated =
-      await response.json()
-
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === updated.id
-          ? updated
-          : u
-      )
-    )
-
-    setShowUserModal(false)
-
-  } catch (error) {
-
-    console.error(error)
-
-  } finally {
-
-    setIsSavingUser(false)
-
-  }
-}
-
-async function deleteUser(
-  userId: string
-) {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/users/${userId}`,
-      {
-        method: "DELETE",
-
-        credentials: "include",
-      }
-    )
-
-    const data =
-      await response.json()
-
-    if (!response.ok) {
-      alert(data.message)
-      return
-    }
-
-    setUsers((prev) =>
-      prev.filter(
-        (u) => u.id !== userId
-      )
-    )
-
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-async function fetchGames() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/games`,
-      {
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to fetch games"
-      )
-    }
-
-    const data = await response.json()
-
-    setGames(data)
-  } catch (error) {
-    console.error(
-      "Failed to fetch games:",
-      error
-    )
-  }
-}
-
-function openAssignGamesModal(
-  user: any
-) {
-  // setSelectedUser(user)
-setSelectedUserForGames(user)
-  setSelectedGames(
-    user.assignedGames.map(
-      (assignment: any) =>
-        assignment.gameId
-    )
-  )
-
-  setShowAssignGamesModal(true)
-}
-
-function toggleGame(
-  gameId: string
-) {
-  setSelectedGames((prev) =>
-    prev.includes(gameId)
-      ? prev.filter(
-          (id) => id !== gameId
-        )
-      : [...prev, gameId]
-  )
-}
-
-async function saveAssignments() {
-  try {
-    setIsSavingAssignments(true)
-
-    await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/users/${selectedUserForGames.id}/games`,
-      {
-        method: "POST",
-
-        credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          gameIds: selectedGames,
-        }),
-      }
-    )
-
-    await fetchUsers()
-
-    setShowAssignGamesModal(false)
-
-  } catch (error) {
-    console.error(error)
-  } finally {
-    setIsSavingAssignments(false)
-  }
-}
-
-//change later
-/*
-========================================
-INITIAL LOAD
-========================================
-*/
-React.useEffect(() => {
-  fetchCurrentUser()
-  console.log("fetching current user")
-}, [])
-
-/*
-========================================
-FETCH USERS
-ONLY WHEN USERS PAGE OPENS
-========================================
-*/
-React.useEffect(() => {
-
-  if (activePage !== "users") {
-    return
-  }
-
-  fetchUsers()
-  console.log("fetching all users")
-}, [activePage])
-
-/*
-========================================
-FETCH GAMES
-ONLY FOR GAMES PAGES
-========================================
-*/
-React.useEffect(() => {
-
-  const shouldFetchGames =
-    activePage === "Broadcast" ||
-    activePage === "my-games"
-
-  if (!shouldFetchGames) {
-    return
-  }
-
-  fetchGames()
-console.log("fetching games")
-}, [activePage])
-
-/*
-========================================
-FETCH ORDERS
-ONLY FOR ORDER PAGES
-========================================
-*/
-React.useEffect(() => {
-
-  const shouldFetchOrders =
-  activePage === "Broadcast" ||
-  activePage === "my-games" ||
-  activePage === "marketing" ||
-  activePage === "notifications"
-
-  if (!shouldFetchOrders) {
-    return
-  }
-
-  fetchOrders()
-  console.log("fetching orders")
-}, [
-  activePage,
-  search,
-  statusFilter,
-  priorityFilter,
-  formatFilter,
-  contentTitleFilter,
-  selectedGameFilter,
-  deadlineSort,
-  selectedEvent,
-])
-
-/*
-========================================
-FETCH GAME USERS
-ONLY WHEN A GAME IS SELECTED
-========================================
-*/
-React.useEffect(() => {
-
-  const shouldFetchGameUsers =
-    activePage === "Broadcast" ||
-    activePage === "my-games"
-
-  if (
-    !shouldFetchGameUsers
-  ) {
-    return
-  }
-
-  if (!selectedGameFilter) {
-
-    setGameUsers({
-      producers: [],
-      ppms: [],
-      users: [],
-    })
-
-    return
-  }
-
-  fetchGameUsers(
-    selectedGameFilter
-  )
-  console.log("fetched game user")
-
-}, [
-  activePage,
-  selectedGameFilter,
-])
-
-/*
-========================================
-MARK NOTIFICATIONS AS READ
-========================================
-*/
-React.useEffect(() => {
-
-  if (
-    activePage !==
-    "notifications"
-  ) {
-    return
-  }
-
-  const hasUnread =
-    currentUser?.notifications?.some(
-      (n: any) => !n.isRead
-    )
-
-  if (hasUnread) {
-    markNotificationsAsRead()
-  }
-  console.log("marked nots as read")
-
-}, [
-  activePage,
-  currentUser,
-])
-
-/*
-========================================
-CLEAR SELECTED ORDER
-ON PAGE CHANGE
-========================================
-*/
-React.useEffect(() => {
-
-  setSelectedOrder(null)
-
-  resetFilters()
-
-}, [activePage])
-
-/*
-========================================
-INITIAL PAGE ROUTING
-========================================
-*/
-React.useEffect(() => {
-
-  if (
-    !currentUser ||
-    hasInitializedPage
-  ) {
-    return
-  }
-
-  // ADMIN
-  if (
-    currentUser.role ===
-    "ADMIN"
-  ) {
-    setActivePage("Broadcast")
-  }
-
-  // VIEWER - BROADCAST
-  else if (
-    currentUser.role ===
-      "VIEWER" &&
-    currentUser.department ===
-      "BROADCAST"
-  ) {
-    setActivePage("Broadcast")
-  }
-
-  // VIEWER / EDITOR - MARKETING
-  else if (
-    (
-      currentUser.role ===
-        "VIEWER" ||
-      currentUser.role ===
-        "EDITOR"
-    ) &&
-    currentUser.department ===
-      "MARKETING"
-  ) {
-    setActivePage("marketing")
-  }
-
-  // PRODUCER / PPM
-  else if (
-    (
-      currentUser.position ===
-        "PRODUCER" ||
-      currentUser.position ===
-        "POST_PRODUCTION_MANAGER"
-    ) &&
-    currentUser.department ===
-      "BROADCAST"
-  ) {
-    setActivePage("my-games")
-  }
-
-  // FALLBACKS
-  else if (
-    currentUser.department ===
-    "MARKETING"
-  ) {
-    setActivePage("marketing")
-  }
-
-  else if (
-    currentUser.department ===
-    "BROADCAST"
-  ) {
-    setActivePage("Broadcast")
-  }
-
-  setHasInitializedPage(true)
-
-}, [
-  currentUser,
-  hasInitializedPage,
-])
-
-/*
-========================================
-LIVE NOTIFICATION REFRESH
-========================================
-*/
-React.useEffect(() => {
-
-  if (!currentUser) {
-    return
-  }
-
-  const interval =
-    setInterval(() => {
-
-      refreshNotifications()
-
-    }, 4000)
-
-
-  return () => {
-    clearInterval(interval)
-  }
-
-}, [currentUser])
-
-
-async function fetchCurrentUser() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/me`,
-      {
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to fetch current user"
-      )
-    }
-
-    const data = await response.json()
-    console.log("Current user:", data)
-    setCurrentUser(data)
-  } catch (error) {
-    console.error(
-      "Failed to fetch current user:",
-      error
-    )
-  }
-}
-async function refreshNotifications() {
-
-  try {
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/me`,
-      {
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) return
-
-    const updatedUser =
-      await response.json()
-
-    setCurrentUser(
-      (prev: any) => {
-
-        // prevent unnecessary rerenders
-        if (
-          JSON.stringify(
-            prev?.notifications
-          ) ===
-          JSON.stringify(
-            updatedUser.notifications
-          )
-        ) {
-          return prev
-        }
-
-        return {
-          ...prev,
-          notifications:
-            updatedUser.notifications,
-        }
-      }
-    )
-
-  } catch (error) {
-    console.error(error)
-  }
-}
-async function fetchUsers() {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/auth/getAllUsers`,
-      {
-        credentials: "include",
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to fetch users"
-      )
-    }
-
-    const data = await response.json()
-
-setUsers(
-  Array.isArray(data.users)
-    ? data.users
-    : []
-)
-  } catch (error) {
-    console.error(
-      "Failed to fetch users:",
-      error
-    )
-  }
-}
-
-  const [isEditing, setIsEditing] =
-  React.useState(false)
-
-const [editingOrderId, setEditingOrderId] =
-  React.useState("")
-
-  function resetOrderState() {
-  setNewOrder({
+  const [newOrder, setNewOrder] = React.useState({
     title: "",
     contentTitle: "",
-    notes:"",
+    notes: "",
     game: "",
     type: "BROADCAST",
-    event:"EWC",
-
+    event: "EWC",
     status: "PENDING",
     priority: "MEDIUM",
-    sourceLanguage:[],
-
-    targetLanguages: [],
-
-    deliveryFormats: [
-  {
-    format: "SRT",
-    deliveryLink: ""
-  }
-],
-
+    sourceLanguage: [],
+    targetLanguages: [] as string[],
+    deliveryFormats: [{ format: "SRT", deliveryLink: "" }],
     deadline: "",
-
     sourceFileLink: "",
-
     estimatedMinutes: "",
-
     deliveryDate: "",
     deliveries: [],
   })
-}
 
-function resetFilters() {
+  const [isEditing, setIsEditing] =
+    React.useState(false)
 
-  setSearch("")
+  const [editingOrderId, setEditingOrderId] =
+    React.useState("")
 
-  setStatusFilter(
-    "All Statuses"
-  )
+  const [showDeleteModal, setShowDeleteModal] =
+    React.useState(false)
 
-  setPriorityFilter(
-    "All Priorities"
-  )
+  const pendingNavRef = React.useRef<{
+    search: string
+    order: any | null
+  } | null>(null)
 
-  setFormatFilter([])
+  const canManageOrders =
+    currentUser?.role === "ADMIN" ||
+    currentUser?.position === "PRODUCER" ||
+    currentUser?.position === "POST_PRODUCTION_MANAGER"
 
-  setDeadlineSort("")
+  /*
+  ========================================
+  HOOKS
+  ========================================
+  */
+  const {
+    users,
+    userSearch,
+    setUserSearch,
+    showUserModal,
+    setShowUserModal,
+    selectedUser,
+    isEditingUser,
+    userForm,
+    setUserForm,
+    isSavingUser,
+    fetchUsers,
+    openCreateUserModal,
+    openEditUserModal,
+    createUser,
+    updateUser,
+    deleteUser,
+  } = useUsers()
 
-  setSelectedGameFilter("")
+  const {
+    games,
+    gameSearch,
+    setGameSearch,
+    gameUsers,
+    filteredGames,
+    showAssignGamesModal,
+    setShowAssignGamesModal,
+    selectedUserForGames,
+    selectedGames,
+    isSavingAssignments,
+    fetchGames,
+    openAssignGamesModal,
+    toggleGame,
+    saveAssignments,
+  } = useGames({ activePage, selectedGameFilter, fetchUsers })
 
-  setContentTitleFilter("")
-  setSelectedEvent(selectedEvent)
-}
-
-async function fetchOrders() {
-  try {
-    setIsLoadingOrders(true)
-    const params =
-      new URLSearchParams()
-
-    /*
-      SEARCH
-    */
-    if (search.trim()) {
-      params.append(
-        "search",
-        search
-      )
-    }
-
-    if (
-  activePage === "my-games"
-) {
-  params.append(
-    "assignedOnly",
-    "true"
-  )
-}
-
-    /*
-      STATUS
-    */
-    if (
-      statusFilter !==
-      "All Statuses"
-    ) {
-      params.append(
-        "status",
-        statusFilter
-          .toUpperCase()
-          .replace(" ", "_")
-      )
-    }
-
-    /*
-      PRIORITY
-    */
-    if (
-      priorityFilter !==
-      "All Priorities"
-    ) {
-      params.append(
-        "priority",
-        priorityFilter
-      )
-    }
-
-    /*
-      FORMAT
-    */
-    if (
-  formatFilter.length > 0
-) {
-
-  formatFilter.forEach(
-    (format) => {
-
-      params.append(
-        "format",
-        format
-      )
-
-    }
-  )
-}
-
-    /*
-      CONTENT TITLE
-    */
-    if (
-      contentTitleFilter
-    ) {
-      params.append(
-        "contentTitle",
-        contentTitleFilter
-      )
-    }
-
-    /*
-      GAME
-    */
-    if (
-      selectedGameFilter
-    ) {
-      params.append(
-        "gameId",
-        selectedGameFilter
-      )
-    }
-
-    /*
-      DEADLINE SORT
-    */
-    if (deadlineSort) {
-      params.append(
-        "deadlineSort",
-        deadlineSort
-      )
-    }
-
-    if (selectedEvent) {
-  params.append(
-    "event",
-    selectedEvent
-  )
-}
-
-    const response =
-      await fetch(
-        `${import.meta.env.VITE_API_URL}/orders?${params.toString()}`,
-        {
-          credentials:
-            "include",
-        }
-      )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to fetch orders"
-      )
-    }
-
-    const data =
-      await response.json()
-
-    setOrders(data.orders)
-
-  } catch (error) {
-
-    console.error(
-      "Failed to fetch orders:",
-      error
-    )
-  }finally {
-    setIsLoadingOrders(false)
-  }
-}
-
-
-
-
-// const filteredOrders = [...orders]
-//   .filter((order) => {
-
-//     const matchesSearch =
-//       order.title
-//         ?.toLowerCase()
-//         .includes(
-//           search.toLowerCase()
-//         )
-
-//     const matchesStatus =
-//       statusFilter ===
-//         "All Statuses" ||
-//       order.status ===
-//         statusFilter
-//           .toUpperCase()
-//           .replace(" ", "_")
-
-//     const matchesPriority =
-//       priorityFilter ===
-//         "All Priorities" ||
-//       order.priority ===
-//         priorityFilter
-
-//     const format =
-//       order.broadcast
-//         ?.deliveryFormat ||
-//       order.marketing
-//         ?.deliveryFormat
-
-//     const matchesFormat =
-//       formatFilter ===
-//         "All Formats" ||
-//       format === formatFilter
-
-//     const matchesContentTitle =
-//       !contentTitleFilter ||
-//       order.marketing
-//         ?.contentTitle ===
-//         contentTitleFilter
-
-//     return (
-//       matchesSearch &&
-//       matchesStatus &&
-//       matchesPriority &&
-//       matchesFormat &&
-//       matchesContentTitle
-//     )
-//   })
-
-//   .sort((a, b) => {
-
-//     if (!deadlineSort)
-//       return 0
-
-//     const dateA = new Date(
-//       a.broadcast?.deadlineDate ||
-//       a.marketing?.deadlineDate ||
-//       0
-//     ).getTime()
-
-//     const dateB = new Date(
-//       b.broadcast?.deadlineDate ||
-//       b.marketing?.deadlineDate ||
-//       0
-//     ).getTime()
-
-//     return deadlineSort ===
-//       "ASC"
-//       ? dateA - dateB
-//       : dateB - dateA
-//   })
-
-
-  // const filteredBroadcastOrders =
-  // filteredOrders.filter((order) => {
-  //   if (order.type !== "BROADCAST") {
-  //     return false
-  //   }
-
-  //   if (!selectedGameFilter) {
-  //     return true
-  //   }
-
-  //   return (
-  //     order.broadcast?.game?.id ===
-  //     selectedGameFilter
-  //   )
-  // })
-
-  // const assignedGameIds =
-  // currentUser?.assignedGames?.map(
-  //   (assignment: any) =>
-  //     assignment.gameId
-  // ) || []
-
-
-// const myGameOrders =
-//   filteredOrders.filter((o) => {
-
-//     if (o.type !== "BROADCAST") {
-//       return false
-//     }
-
-//     const belongsToUser =
-//       assignedGameIds.includes(
-//         o.broadcast?.gameId
-//       )
-
-//     if (!belongsToUser) {
-//       return false
-//     }
-
-//     if (!selectedGameFilter) {
-//       return true
-//     }
-
-//     return (
-//       o.broadcast?.gameId ===
-//       selectedGameFilter
-//     )
-//   })
-
-function toggleLanguage(
-  language: string
-) {
-  setNewOrder((prev: any) => {
-    const alreadySelected =
-      prev.targetLanguages.includes(
-        language
-      )
-
-    return {
-      ...prev,
-
-      targetLanguages:
-        alreadySelected
-          ? prev.targetLanguages.filter(
-              (l: string) =>
-                l !== language
-            )
-          : [
-              ...prev.targetLanguages,
-              language,
-            ],
-
-      deliveries:
-        alreadySelected
-          ? prev.deliveries.filter(
-              (d: any) =>
-                d.language !==
-                language
-            )
-          : [
-              ...prev.deliveries,
-
-              {
-                language,
-                deliveryLink: "",
-              },
-            ],
-    }
+  const {
+    orders,
+    isLoadingOrders,
+    editedOrder,
+    setEditedOrder,
+    isSavingOrder,
+    isEditingOrder,
+    setIsEditingOrder,
+    deletingOrderId,
+    setDeletingOrderId,
+    createOrder,
+    updateOrder,
+    updateOrderStatus,
+    deleteOrder,
+    statsOrders,
+    setOrders,
+  } = useOrders({
+    activePage,
+    search,
+    statusFilter,
+    priorityFilter,
+    formatFilter,
+    contentTitleFilter,
+    selectedGameFilter,
+    deadlineSort,
+    selectedEvent,
+    newOrder,
+    resetOrderState,
+    selectedOrder,
+    setSelectedOrder,
+    setShowModal,
+    setShowDeleteModal,
+    refreshNotifications,
+    editingOrderId,
+    setEditingOrderId,
+    setIsEditing,
   })
-}
 
-async function createOrder() {
-  if (
-    !newOrder.title ||
-    isSavingOrder
-  )
-    return
-  try {
-    setIsSavingOrder(true)
+  /*
+  ========================================
+  EFFECTS
+  ========================================
+  */
+  React.useEffect(() => {
+    fetchCurrentUser()
+  }, [])
+
+  React.useEffect(() => {
+    if (activePage !== "users") return
+    fetchUsers()
+  }, [activePage])
+
+  React.useEffect(() => {
+    if (activePage !== "notifications") return
+
+    const hasUnread = currentUser?.notifications?.some(
+      (n: any) => !n.isRead
+    )
+
+    if (hasUnread) markNotificationsAsRead()
+  }, [activePage, currentUser])
+
+  React.useEffect(() => {
+    if (pendingNavRef.current) {
+      const pending = pendingNavRef.current
+      pendingNavRef.current = null
+      setSearch(pending.search)
+      if (pending.order) {
+        setSelectedOrder(pending.order)
+        setEditedOrder(JSON.parse(JSON.stringify(pending.order)))
+      }
+    } else {
+      setSelectedOrder(null)
+      resetFilters()
+    }
+  }, [activePage])
+
+  React.useEffect(() => {
+    if (!currentUser || hasInitializedPage) return
+
+    if (currentUser.role === "ADMIN") {
+      setActivePage("Broadcast")
+    } else if (
+      currentUser.role === "VIEWER" &&
+      currentUser.department === "BROADCAST"
+    ) {
+      setActivePage("Broadcast")
+    } else if (
+      (currentUser.role === "VIEWER" || currentUser.role === "EDITOR") &&
+      currentUser.department === "MARKETING"
+    ) {
+      setActivePage("marketing")
+    } else if (
+      (currentUser.position === "PRODUCER" ||
+        currentUser.position === "POST_PRODUCTION_MANAGER") &&
+      currentUser.department === "BROADCAST"
+    ) {
+      setActivePage("my-games")
+    } else if (currentUser.department === "MARKETING") {
+      setActivePage("marketing")
+    } else if (currentUser.department === "BROADCAST") {
+      setActivePage("Broadcast")
+    }
+
+    setHasInitializedPage(true)
+  }, [currentUser, hasInitializedPage])
+
+  React.useEffect(() => {
+    if (!currentUser) return
+
+    const interval = setInterval(() => {
+      refreshNotifications()
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [currentUser])
+
+  /*
+  ========================================
+  FUNCTIONS
+  ========================================
+  */
+  async function fetchCurrentUser() {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/me`,
+        { credentials: "include" }
+      )
+      if (!response.ok) throw new Error("Failed to fetch current user")
+      const data = await response.json()
+      setCurrentUser(data)
+    } catch (error) {
+      console.error("Failed to fetch current user:", error)
+    }
+  }
+
+  async function refreshNotifications() {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/me`,
+        { credentials: "include" }
+      )
+      if (!response.ok) return
+      const updatedUser = await response.json()
+      setCurrentUser((prev: any) => {
+        if (
+          JSON.stringify(prev?.notifications) ===
+          JSON.stringify(updatedUser.notifications)
+        ) {
+          return prev
+        }
+        return { ...prev, notifications: updatedUser.notifications }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function markNotificationsAsRead() {
+    try {
+      await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/notifications/read`,
+        { method: "PATCH", credentials: "include" }
+      )
+      setCurrentUser((prev: any) => ({
+        ...prev,
+        notifications: prev.notifications.map((n: any) => ({
+          ...n,
+          isRead: true,
+        })),
+      }))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function logout() {
+    try {
+      await api.post("/auth/logout")
+      window.location.replace("/login")
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  function navigateToOrder(notification: any, order: any | null) {
+    const orderType =
+      order?.type ??
+      (notification.type === "ASSIGNED_TO_ORDER" ? "MARKETING" : null)
+
+    pendingNavRef.current = {
+      search: notification.order?.title ?? "",
+      order,
+    }
+
+    setActivePage(orderType === "MARKETING" ? "marketing" : "Broadcast")
+  }
+
+  async function onAssignUsers(orderId: string, userIds: string[]) {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/orders`,
+      `${import.meta.env.VITE_API_URL}/orders/${orderId}/assign`,
       {
         method: "POST",
-
         credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          ...newOrder,
-
-          estimatedMinutes:
-            Number(
-              newOrder.estimatedMinutes
-            ),
-
-          game:
-            newOrder.type ===
-            "Marketing"
-              ? "-"
-              : newOrder.game,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
       }
     )
-
-    if (!response.ok) {
-      throw new Error(
-        "Failed to create order"
-      )
-    }
-
-    const createdOrder =
-      await response.json()
-
-    setOrders((prev) => [
-      createdOrder,
-      ...prev,
-    ])
-
-    setShowModal(false)
-
-    resetOrderState()
-  } catch (error) {
-    console.error(
-      "Create order error:",
-      error
+    if (!response.ok) throw new Error("Failed to assign users")
+    const updated = await response.json()
+    setOrders((prev: any[]) =>
+      prev.map((o: any) => (o.id === updated.id ? updated : o))
     )
-  } finally {
-      setIsSavingOrder(false)
-  }
-}
-
-
-async function updateOrder() {
-
-  if (isSavingOrder) {
-    return
+    setSelectedOrder(updated)
+    setEditedOrder(JSON.parse(JSON.stringify(updated)))
   }
 
-  try {
-
-    setIsSavingOrder(true)
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/orders/${editingOrderId}`,
-      {
-        method: "PATCH",
-
-        credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          ...newOrder,
-
-          estimatedMinutes:
-            Number(
-              newOrder.estimatedMinutes
-            ),
-
-          deliveries:
-            newOrder.deliveries || [],
-        }),
-      }
-    )
-
-    const data =
-      await response.json()
-
-    /*
-      IMPORTANT
-    */
-    if (!response.ok) {
-
-      toast.error(
-        data.message ||
-        "Failed to update order"
-      )
-
-      return
-    }
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === data.id
-          ? { ...data }
-          : o
-      )
-    )
-
-    setSelectedOrder({
-      ...data,
+  function resetOrderState() {
+    setNewOrder({
+      title: "",
+      contentTitle: "",
+      notes: "",
+      game: "",
+      type: "BROADCAST",
+      event: "EWC",
+      status: "PENDING",
+      priority: "MEDIUM",
+      sourceLanguage: [],
+      targetLanguages: [],
+      deliveryFormats: [{ format: "SRT", deliveryLink: "" }],
+      deadline: "",
+      sourceFileLink: "",
+      estimatedMinutes: "",
+      deliveryDate: "",
+      deliveries: [],
     })
-
-    setEditedOrder(
-      JSON.parse(
-        JSON.stringify(data)
-      )
-    )
-
-    toast.success(
-      "Order updated successfully"
-    )
-
-    resetOrderState()
-
-    setShowModal(false)
-
-    setIsEditing(false)
-
-    setEditingOrderId("")
-
-  } catch (error) {
-
-    console.error(error)
-
-    toast.error(
-      "Something went wrong"
-    )
-
-  } finally {
-
-    setIsSavingOrder(false)
-
-  }
-}
-
-
-async function logout() {
-  try {
-    await api.post("/auth/logout")
-
-    window.location.replace("/login")
-
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-async function updateOrderStatus(
-  orderId: string,
-  status: string
-) {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/orders/${orderId}/status`,
-      {
-        method: "PATCH",
-
-        credentials: "include",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          status,
-        }),
-      }
-    )
-
-    const updated =
-      await response.json()
-
-      await refreshNotifications()
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === updated.id
-          ? updated
-          : o
-      )
-    )
-
-    if (
-      selectedOrder?.id ===
-      updated.id
-    ) {
-      setSelectedOrder(updated)
-      setEditedOrder(updated)
-    }
-
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-function getDeadlineInfo(
-  deadlineDate: string
-) {
-  const today = new Date()
-
-  today.setHours(
-    0,
-    0,
-    0,
-    0
-  )
-
-  const deadline =
-    new Date(deadlineDate)
-
-  deadline.setHours(
-    0,
-    0,
-    0,
-    0
-  )
-
-  const diffTime =
-    deadline.getTime() -
-    today.getTime()
-
-  const diffDays =
-    Math.ceil(
-      diffTime /
-        (1000 *
-          60 *
-          60 *
-          24)
-    )
-
-  if (diffDays === 0) {
-    return {
-      text: "Due today",
-      color: "text-red-400",
-    }
   }
 
-  if (diffDays < 0) {
-    return {
-      text: `${Math.abs(
-        diffDays
-      )} days overdue`,
-      color: "text-red-400",
-    }
+  function resetFilters() {
+    setSearch("")
+    setStatusFilter("All Statuses")
+    setPriorityFilter("All Priorities")
+    setFormatFilter([])
+    setDeadlineSort("")
+    setSelectedGameFilter("")
+    setContentTitleFilter("")
+    setSelectedEvent(selectedEvent)
   }
 
-  if (diffDays <= 3) {
-    return {
-      text: `${diffDays} day${
-        diffDays > 1
-          ? "s"
-          : ""
-      } left`,
-      color:
-        "text-yellow-400",
-    }
-  }
-
-  return {
-    text: `${diffDays} day${
-      diffDays > 1
-        ? "s"
-        : ""
-    } left`,
-    color: "text-zinc-500",
-  }
-}
-const showFilters =
-  activePage === "marketing" ||
-  activePage === "Broadcast" ||
-  activePage === "my-games"
-
-const [gameSearch, setGameSearch] =
-  React.useState("")
-const filteredGames =
-  Array.isArray(games)
-    ? games.filter((game) =>
-        game.name
-          ?.toLowerCase()
-          .includes(
-            gameSearch.toLowerCase()
-          )
-      )
-    : []
-async function markNotificationsAsRead() {
-  try {
-    await fetch(
-      `${import.meta.env.VITE_API_URL}/orders/notifications/read`,
-      {
-        method: "PATCH",
-
-        credentials: "include",
-      }
-    )
-
-    setCurrentUser(
-      (prev: any) => ({
+  function toggleLanguage(language: string) {
+    setNewOrder((prev: any) => {
+      const alreadySelected = prev.targetLanguages.includes(language)
+      return {
         ...prev,
+        targetLanguages: alreadySelected
+          ? prev.targetLanguages.filter((l: string) => l !== language)
+          : [...prev.targetLanguages, language],
+        deliveries: alreadySelected
+          ? prev.deliveries.filter((d: any) => d.language !== language)
+          : [...prev.deliveries, { language, deliveryLink: "" }],
+      }
+    })
+  }
 
-        notifications:
-          prev.notifications.map(
-            (n: any) => ({
-              ...n,
-              isRead: true,
-            })
-          ),
-      })
+  function getDeadlineInfo(deadlineDate: string) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const deadline = new Date(deadlineDate)
+    deadline.setHours(0, 0, 0, 0)
+    const diffDays = Math.ceil(
+      (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     )
 
-  } catch (error) {
-    console.error(error)
+    if (diffDays === 0) return { text: "Due today", color: "text-red-400" }
+    if (diffDays < 0) return { text: `${Math.abs(diffDays)} days overdue`, color: "text-red-400" }
+    if (diffDays <= 3) return { text: `${diffDays} day${diffDays > 1 ? "s" : ""} left`, color: "text-yellow-400" }
+    return { text: `${diffDays} day${diffDays > 1 ? "s" : ""} left`, color: "text-zinc-500" }
   }
-}
 
-const statsOrders =
-  activePage === "marketing"
+  /*
+  ========================================
+  DERIVED
+  ========================================
+  */
+  const showFilters =
+    activePage === "marketing" ||
+    activePage === "Broadcast" ||
+    activePage === "my-games"
 
-    ? orders.filter(
-        (o) =>
-          o.type ===
-          "MARKETING"
-      )
-
-    : activePage === "Broadcast" ||
-      activePage === "my-games"
-
-    ? orders.filter(
-        (o) =>
-          o.type ===
-          "BROADCAST"
-      )
-
-    : orders
+  const safeOrders = Array.isArray(orders) ? orders : []
+  const broadcastOrders = safeOrders.filter((o) => o.type === "BROADCAST")
+  const marketingOrders = safeOrders.filter((o) => o.type === "MARKETING")
 
   return (
-
-  <div
-  className="
-    h-screen
-    flex
-    overflow-hidden
-    text-white
-    bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.04),transparent_30%)]
-    bg-[#070707]
-  "
->
-
-    {/* LEFT SIDEBAR */}
-
-<Sidebar
-  activePage={activePage}
-  setActivePage={setActivePage}
-  currentUser={currentUser}
-  logout={logout}
-  selectedEvent={selectedEvent}
-  setSelectedEvent={setSelectedEvent}
-/>
-
-    {/* MAIN */}
-
-    <main className="flex-1 flex flex-col overflow-hidden">
-
-      {/* TOPBAR */}
-
-<Topbar
-  activePage={activePage}
-  setShowModal={setShowModal}
-  canManageOrders={
-    canManageOrders
-  }
-  statsOrders={statsOrders}
-  currentUser={currentUser}
-/>
-
-      {/* CONTENT */}
-
-      <div className="flex-1 flex overflow-hidden">
-
-        {/* TABLE AREA */}
-
-        <div className="flex-1 overflow-auto px-8 py-7 space-y-7 bg-[#070707]">
-
-
-
-{/* FILTERS */}
-{showFilters && (
-  <div
-    className="
-      border
-      border-[#242424]
-      overflow-x-auto
-      bg-[linear-gradient(180deg,#0F0F0F_0%,#0B0B0B_100%)]
-      rounded-[30px]
-      px-6
-      py-5
-      shadow-[0_15px_50px_rgba(0,0,0,0.45)]
-      backdrop-blur-2xl
-      space-y-5
-    "
-  >
-
-    {/* TOP */}
     <div
-  className="
-    flex
-    items-start
-    justify-between
-    gap-5
-    flex-nowrap
-  "
->
-      {/* LEFT */}
-      <div
-  className="
-    flex
-    items-center
-    gap-3
-    flex-1
-    min-w-0
-    flex-wrap
-    overflow-hidden
-  "
->
+      className="
+        h-screen
+        flex
+        overflow-hidden
+        text-white
+        bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.04),transparent_30%)]
+        bg-[#070707]
+      "
+    >
 
-        {/* SEARCH */}
-        <div className="relative flex-1 min-w-[240px]">
+      {/* LEFT SIDEBAR */}
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        currentUser={currentUser}
+        logout={logout}
+        selectedEvent={selectedEvent}
+        setSelectedEvent={setSelectedEvent}
+      />
 
-          <input
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-            placeholder="Search orders"
-            className="
-              w-full
-              h-[54px]
-              bg-[#121212]
-              border
-              border-[#2A2A2A]
-              rounded-2xl
-              pl-5
-              pr-5
-              text-sm
-              text-white
-              outline-none
-              transition-all
-              placeholder:text-zinc-600
-              focus:border-[#D6B36A]
-              focus:bg-[#151515]
-              focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-            "
-          />
+      {/* MAIN */}
+      <main className="flex-1 flex flex-col overflow-hidden">
 
-        </div>
+        {/* TOPBAR */}
+        <Topbar
+          activePage={activePage}
+          setShowModal={setShowModal}
+          canManageOrders={canManageOrders}
+          statsOrders={statsOrders}
+          currentUser={currentUser}
+        />
 
-        {/* MARKETING FILTERS */}
-{activePage === "marketing" && (
-  <>
-    {/* CONTENT */}
-    <div className="relative">
+        {/* CONTENT */}
+        <div className="flex-1 flex overflow-hidden">
 
-      <select
-        value={contentTitleFilter}
-        onChange={(e) =>
-          setContentTitleFilter(
-            e.target.value
-          )
-        }
-        className="
-          h-[54px]
-          min-w-[220px]
-          appearance-none
-          bg-[#121212]
-          border
-          border-[#2A2A2A]
-          rounded-2xl
-          px-5
-          pr-11
-          text-sm
-          font-medium
-          text-[#F5F1E8]
-          outline-none
-          transition-all
-          hover:border-[#3A3A3A]
-          focus:border-[#D6B36A]
-          focus:bg-[#151515]
-          cursor-pointer
-        "
-      >
+          {/* TABLE AREA */}
+          <div className="flex-1 overflow-auto px-8 py-7 space-y-7 bg-[#070707]">
 
-        <option value="">
-          All Content
-        </option>
-
-        <option value="Content 1">
-          Content 1
-        </option>
-
-        <option value="Content 2">
-          Content 2
-        </option>
-
-        <option value="Content 3">
-          Content 3
-        </option>
-
-        <option value="Others">
-          Others
-        </option>
-
-      </select>
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          right-4
-          top-1/2
-          -translate-y-1/2
-          text-zinc-500
-          text-[10px]
-        "
-      >
-        ▼
-      </div>
-
-    </div>
-
-    {/* STATUS */}
-    <div className="relative">
-
-      <select
-        value={statusFilter}
-        onChange={(e) =>
-          setStatusFilter(
-            e.target.value
-          )
-        }
-        className="
-          h-[54px]
-          min-w-[170px]
-          appearance-none
-          bg-[#121212]
-          border
-          border-[#2A2A2A]
-          rounded-2xl
-          px-5
-          pr-11
-          text-sm
-          font-medium
-          text-[#F5F1E8]
-          outline-none
-          transition-all
-          hover:border-[#3A3A3A]
-          focus:border-[#D6B36A]
-          focus:bg-[#151515]
-          cursor-pointer
-        "
-      >
-
-        <option>
-          All Statuses
-        </option>
-
-        <option>
-          Pending
-        </option>
-
-        <option>
-          In Progress
-        </option>
-
-        <option>
-          Completed
-        </option>
-
-      </select>
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          right-4
-          top-1/2
-          -translate-y-1/2
-          text-zinc-500
-          text-[10px]
-        "
-      >
-        ▼
-      </div>
-
-    </div>
-
-    {/* PRIORITY */}
-    <div className="relative">
-
-      <select
-        value={priorityFilter}
-        onChange={(e) =>
-          setPriorityFilter(
-            e.target.value
-          )
-        }
-        className="
-          h-[54px]
-          min-w-[160px]
-          appearance-none
-          bg-[#121212]
-          border
-          border-[#2A2A2A]
-          rounded-2xl
-          px-5
-          pr-11
-          text-sm
-          font-medium
-          text-[#F5F1E8]
-          outline-none
-          transition-all
-          hover:border-[#3A3A3A]
-          focus:border-[#D6B36A]
-          focus:bg-[#151515]
-          cursor-pointer
-        "
-      >
-
-        <option>
-          All Priorities
-        </option>
-
-        <option>
-          HIGH
-        </option>
-
-        <option>
-          MEDIUM
-        </option>
-
-        <option>
-          LOW
-        </option>
-
-      </select>
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          right-4
-          top-1/2
-          -translate-y-1/2
-          text-zinc-500
-          text-[10px]
-        "
-      >
-        ▼
-      </div>
-
-    </div>
-  </>
-)}
-
-        {/* NON MARKETING FILTERS */}
-        {activePage !== "marketing" && (
-          <>
-            {/* STATUS */}
-            <div className="relative">
-
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value
-                  )
-                }
-                className="
-                  h-[54px]
-                  min-w-[170px]
-                  appearance-none
-                  bg-[#121212]
-                  border
-                  border-[#2A2A2A]
-                  rounded-2xl
-                  px-5
-                  pr-11
-                  text-sm
-                  font-medium
-                  text-[#F5F1E8]
-                  outline-none
-                  transition-all
-                  hover:border-[#3A3A3A]
-                  focus:border-[#D6B36A]
-                  focus:bg-[#151515]
-                  cursor-pointer
-                "
-              >
-                <option>
-                  All Statuses
-                </option>
-
-                <option>
-                  Pending
-                </option>
-
-                <option>
-                  In Progress
-                </option>
-
-                <option>
-                  Completed
-                </option>
-
-              </select>
-
+            {/* FILTERS */}
+            {showFilters && (
               <div
                 className="
-                  pointer-events-none
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-zinc-500
-                  text-[10px]
-                "
-              >
-                ▼
-              </div>
-
-            </div>
-
-            {/* PRIORITY */}
-            <div className="relative">
-
-              <select
-                value={priorityFilter}
-                onChange={(e) =>
-                  setPriorityFilter(
-                    e.target.value
-                  )
-                }
-                className="
-                  h-[54px]
-                  min-w-[160px]
-                  appearance-none
-                  bg-[#121212]
                   border
-                  border-[#2A2A2A]
-                  rounded-2xl
-                  px-5
-                  pr-11
-                  text-sm
-                  font-medium
-                  text-[#F5F1E8]
-                  outline-none
-                  transition-all
-                  hover:border-[#3A3A3A]
-                  focus:border-[#D6B36A]
-                  focus:bg-[#151515]
-                  cursor-pointer
+                  border-[#242424]
+                  overflow-x-auto
+                  bg-[linear-gradient(180deg,#0F0F0F_0%,#0B0B0B_100%)]
+                  rounded-[30px]
+                  px-6
+                  py-5
+                  shadow-[0_15px_50px_rgba(0,0,0,0.45)]
+                  backdrop-blur-2xl
+                  space-y-5
                 "
               >
-                <option>
-                  All Priorities
-                </option>
 
-                <option>
-                  HIGH
-                </option>
+                {/* TOP */}
+                <div
+                  className="
+                    flex
+                    items-start
+                    justify-between
+                    gap-5
+                    flex-nowrap
+                  "
+                >
+                  {/* LEFT */}
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      flex-1
+                      min-w-0
+                      flex-wrap
+                      overflow-hidden
+                    "
+                  >
 
-                <option>
-                  MEDIUM
-                </option>
+                    {/* SEARCH */}
+                    <div className="relative flex-1 min-w-[240px]">
+                      <input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search orders"
+                        className="
+                          w-full
+                          h-[54px]
+                          bg-[#121212]
+                          border
+                          border-[#2A2A2A]
+                          rounded-2xl
+                          pl-5
+                          pr-5
+                          text-sm
+                          text-white
+                          outline-none
+                          transition-all
+                          placeholder:text-zinc-600
+                          focus:border-[#D6B36A]
+                          focus:bg-[#151515]
+                          focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
+                        "
+                      />
+                    </div>
 
-                <option>
-                  LOW
-                </option>
+                    {/* MARKETING FILTERS */}
+                    {activePage === "marketing" && (
+                      <>
+                        {/* CONTENT */}
+                        <div className="relative">
+                          <select
+                            value={contentTitleFilter}
+                            onChange={(e) => setContentTitleFilter(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[220px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option value="">All Content</option>
+                            <option value="Content 1">Content 1</option>
+                            <option value="Content 2">Content 2</option>
+                            <option value="Content 3">Content 3</option>
+                            <option value="Others">Others</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
 
-              </select>
+                        {/* STATUS */}
+                        <div className="relative">
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[170px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option>All Statuses</option>
+                            <option>Pending</option>
+                            <option>In Progress</option>
+                            <option>Completed</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
 
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-zinc-500
-                  text-[10px]
-                "
-              >
-                ▼
-              </div>
+                        {/* PRIORITY */}
+                        <div className="relative">
+                          <select
+                            value={priorityFilter}
+                            onChange={(e) => setPriorityFilter(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[160px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option>All Priorities</option>
+                            <option>HIGH</option>
+                            <option>MEDIUM</option>
+                            <option>LOW</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
+                      </>
+                    )}
 
-            </div>
+                    {/* NON MARKETING FILTERS */}
+                    {activePage !== "marketing" && (
+                      <>
+                        {/* STATUS */}
+                        <div className="relative">
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[170px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option>All Statuses</option>
+                            <option>Pending</option>
+                            <option>In Progress</option>
+                            <option>Completed</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
 
-            {/* FORMAT */}
-            <div className="relative">
+                        {/* PRIORITY */}
+                        <div className="relative">
+                          <select
+                            value={priorityFilter}
+                            onChange={(e) => setPriorityFilter(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[160px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option>All Priorities</option>
+                            <option>HIGH</option>
+                            <option>MEDIUM</option>
+                            <option>LOW</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
+
+                        {/* FORMAT */}
+<div className="relative">
 
   <select
-    multiple
-
-    value={formatFilter}
-
+    value={formatFilter[0] || ""}
+    
     onChange={(e) => {
 
-      const values =
-        Array.from(
-          e.target.selectedOptions
-        ).map(
-          (option) =>
-            option.value
-        )
+      if (!e.target.value) {
+        setFormatFilter([])
+        return
+      }
 
-      setFormatFilter(values)
+      setFormatFilter([
+        e.target.value
+      ])
     }}
 
     className="
+      h-[54px]
       min-w-[180px]
-      h-[120px]
+      appearance-none
       bg-[#121212]
       border
       border-[#2A2A2A]
       rounded-2xl
-      px-4
-      py-3
+      px-5
+      pr-11
       text-sm
       font-medium
       text-[#F5F1E8]
@@ -2134,8 +751,13 @@ const statsOrders =
       hover:border-[#3A3A3A]
       focus:border-[#D6B36A]
       focus:bg-[#151515]
+      cursor-pointer
     "
   >
+
+    <option value="">
+      All Formats
+    </option>
 
     <option value="SRT">
       SRT
@@ -2151,573 +773,374 @@ const statsOrders =
 
   </select>
 
-</div>
-
-            {/* DEADLINE */}
-            <div className="relative">
-
-              <select
-                value={deadlineSort}
-                onChange={(e) =>
-                  setDeadlineSort(
-                    e.target.value
-                  )
-                }
-                className="
-                  h-[54px]
-                  min-w-[180px]
-                  appearance-none
-                  bg-[#121212]
-                  border
-                  border-[#2A2A2A]
-                  rounded-2xl
-                  px-5
-                  pr-11
-                  text-sm
-                  font-medium
-                  text-[#F5F1E8]
-                  outline-none
-                  transition-all
-                  hover:border-[#3A3A3A]
-                  focus:border-[#D6B36A]
-                  focus:bg-[#151515]
-                  cursor-pointer
-                "
-              >
-                <option value="">
-                  Deadline Order
-                </option>
-
-                <option value="ASC">
-                  Closest Deadline
-                </option>
-
-                <option value="DESC">
-                  Furthest Deadline
-                </option>
-
-              </select>
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-zinc-500
-                  text-[10px]
-                "
-              >
-                ▼
-              </div>
-
-            </div>
-          </>
-        )}
-
-      </div>
-
-      {/* RIGHT */}
-        <div
-  className="
-    flex
-    items-center
-    gap-3
-    flex-shrink-0
-    min-w-fit
-  "
->
-
-          {/* RESET */}
-          <button
-            onClick={resetFilters}
-            className="
-              h-[54px]
-              px-5
-              rounded-2xl
-              border
-              border-[#2A2A2A]
-              bg-[#141414]
-              text-sm
-              font-medium
-              text-zinc-400
-              transition-all
-              hover:text-white
-              hover:border-[#3A3A3A]
-              hover:bg-[#1A1A1A]
-            "
-          >
-            Reset
-          </button>
-
-          {/* ACTIVE */}
-          <div
-            className="
-              h-[54px]
-              px-5
-              rounded-2xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              flex
-              items-center
-              text-sm
-              font-medium
-              text-[#D6B36A]
-              shadow-[0_0_20px_rgba(214,179,106,0.08)]
-            "
-          >
-            {
-              [
-                search,
-                statusFilter !==
-                  "All Statuses",
-                priorityFilter !==
-                  "All Priorities",
-                formatFilter.length > 0,
-                deadlineSort,
-                selectedGameFilter,
-                contentTitleFilter,
-                selectedEvent,
-              ].filter(Boolean)
-                .length
-            }{" "}
-            Active
-          </div>
-
-        </div>
-
-    </div>
-
-    {/* GAMES */}
-{(activePage === "Broadcast" ||
-  activePage === "my-games") && (
   <div
     className="
-      flex
-      flex-wrap
-      items-center
-      gap-3
-      pt-1
+      pointer-events-none
+      absolute
+      right-4
+      top-1/2
+      -translate-y-1/2
+      text-zinc-500
+      text-[10px]
     "
   >
+    ▼
+  </div>
 
-{(
-  activePage === "my-games"
-    ? filteredGames.filter((game) =>
-      Array.isArray(
-  currentUser?.assignedGames
-) &&
-        currentUser.assignedGames.some(
-          (assignment: any) =>
-            assignment.gameId ===
-            game.id
-        )
-        
-      )
-    : filteredGames
-).map(
-      (game) => {
+</div>
 
-        const active =
-          selectedGameFilter ===
-          game.id
+                        {/* DEADLINE */}
+                        <div className="relative">
+                          <select
+                            value={deadlineSort}
+                            onChange={(e) => setDeadlineSort(e.target.value)}
+                            className="
+                              h-[54px]
+                              min-w-[180px]
+                              appearance-none
+                              bg-[#121212]
+                              border
+                              border-[#2A2A2A]
+                              rounded-2xl
+                              px-5
+                              pr-11
+                              text-sm
+                              font-medium
+                              text-[#F5F1E8]
+                              outline-none
+                              transition-all
+                              hover:border-[#3A3A3A]
+                              focus:border-[#D6B36A]
+                              focus:bg-[#151515]
+                              cursor-pointer
+                            "
+                          >
+                            <option value="">Deadline Order</option>
+                            <option value="ASC">Closest Deadline</option>
+                            <option value="DESC">Furthest Deadline</option>
+                          </select>
+                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
+                        </div>
+                      </>
+                    )}
 
-        return (
-          <button
-            key={game.id}
-            onClick={() =>
-              setSelectedGameFilter(
-                active
-                  ? ""
-                  : game.id
-              )
-            }
-            title={game.name}
-            className={`
-              relative
-              w-[80px]
-              h-[80px]
-              flex
-              items-center
-              justify-center
-              rounded-2xl
-              transition-all
-              duration-200
+                  </div>
 
-              ${
-                active
-                  ? `
-                    scale-110
-                  `
-                  : `
-                    opacity-55
-                    hover:opacity-100
-                    hover:scale-110
-                  `
-              }
-            `}
-          >
+                  {/* RIGHT */}
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      flex-shrink-0
+                      min-w-fit
+                    "
+                  >
 
-            {active && (
-              <div
-                className="
-                  absolute
-                  inset-0
-                  rounded-2xl
-                "
+                    {/* RESET */}
+                    <button
+                      onClick={resetFilters}
+                      className="
+                        h-[54px]
+                        px-5
+                        rounded-2xl
+                        border
+                        border-[#2A2A2A]
+                        bg-[#141414]
+                        text-sm
+                        font-medium
+                        text-zinc-400
+                        transition-all
+                        hover:text-white
+                        hover:border-[#3A3A3A]
+                        hover:bg-[#1A1A1A]
+                      "
+                    >
+                      Reset
+                    </button>
+
+                    {/* ACTIVE */}
+                    <div
+                      className="
+                        h-[54px]
+                        px-5
+                        rounded-2xl
+                        border
+                        border-[#2A2A2A]
+                        bg-[#151515]
+                        flex
+                        items-center
+                        text-sm
+                        font-medium
+                        text-[#D6B36A]
+                        shadow-[0_0_20px_rgba(214,179,106,0.08)]
+                      "
+                    >
+                      {
+                        [
+                          search,
+                          statusFilter !== "All Statuses",
+                          priorityFilter !== "All Priorities",
+                          formatFilter.length > 0,
+                          deadlineSort,
+                          selectedGameFilter,
+                          contentTitleFilter,
+                          selectedEvent,
+                        ].filter(Boolean).length
+                      }{" "}
+                      Active
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* GAMES */}
+                {(activePage === "Broadcast" || activePage === "my-games") && (
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+
+                    {(activePage === "my-games"
+                      ? filteredGames.filter((game) =>
+                          Array.isArray(currentUser?.assignedGames) &&
+                          currentUser.assignedGames.some(
+                            (assignment: any) => assignment.gameId === game.id
+                          )
+                        )
+                      : filteredGames
+                    ).map((game) => {
+                      const active = selectedGameFilter === game.id
+                      return (
+                        <button
+                          key={game.id}
+                          onClick={() =>
+                            setSelectedGameFilter(active ? "" : game.id)
+                          }
+                          title={game.name}
+                          className={`
+                            relative
+                            w-[80px]
+                            h-[80px]
+                            flex
+                            items-center
+                            justify-center
+                            rounded-2xl
+                            transition-all
+                            duration-200
+                            ${
+                              active
+                                ? "scale-110"
+                                : "opacity-55 hover:opacity-100 hover:scale-110"
+                            }
+                          `}
+                        >
+                          {active && (
+                            <div className="absolute inset-0 rounded-2xl" />
+                          )}
+                          <img
+                            src={game.logo}
+                            alt={game.name}
+                            className={`
+                              relative
+                              z-10
+                              w-[60px]
+                              h-[60px]
+                              object-contain
+                              ${active ? "border border-[#D6B36A] rounded-lg p-1" : ""}
+                            `}
+                          />
+                        </button>
+                      )
+                    })}
+
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* USERS PAGE */}
+            {activePage === "users" && (
+              <UsersPage
+                users={users}
+                deleteUser={deleteUser}
+                search={userSearch}
+                setSearch={setUserSearch}
+                openCreateUserModal={openCreateUserModal}
+                openEditUserModal={openEditUserModal}
+                openAssignGamesModal={openAssignGamesModal}
               />
             )}
 
-            <img
-              src={game.logo}
-              alt={game.name}
-              className={`
-                relative
-                z-10
-                w-[60px]
-                h-[60px]
-                object-contain
+            {/* TABLE DATA */}
+            <>
+              {(activePage === "Broadcast" || activePage === "my-games") && (
+                <GamesPage
+                  games={games}
+                  selectedGameFilter={selectedGameFilter}
+                  setSelectedGameFilter={setSelectedGameFilter}
+                  producers={gameUsers.producers}
+                  ppms={gameUsers.ppms}
+                />
+              )}
 
-                ${
-                  active
-                    ? `
-                      border
-                      border-[#D6B36A]
-                      rounded-lg
-                      p-1
-                    `
-                    : ""
-                }
-              `}
-            />
+              {(activePage === "dashboard" || activePage === "Broadcast") && (
+                <BroadcastOrdersTable
+                  isLoading={isLoadingOrders}
+                  currentUser={currentUser}
+                  orders={broadcastOrders}
+                  setSelectedOrder={setSelectedOrder}
+                  setEditedOrder={setEditedOrder}
+                  updateOrderStatus={updateOrderStatus}
+                  getDeadlineInfo={getDeadlineInfo}
+                />
+              )}
 
-          </button>
-        )
-      }
-    )}
+              {activePage === "my-games" && (
+                <BroadcastOrdersTable
+                  isLoading={isLoadingOrders}
+                  currentUser={currentUser}
+                  orders={broadcastOrders}
+                  setSelectedOrder={setSelectedOrder}
+                  setEditedOrder={setEditedOrder}
+                  updateOrderStatus={updateOrderStatus}
+                  getDeadlineInfo={getDeadlineInfo}
+                />
+              )}
 
-  </div>
-)}
+              {activePage === "notifications" && (
+                <NotificationsPage
+                  notifications={currentUser?.notifications || []}
+                  markNotificationsAsRead={markNotificationsAsRead}
+                  orders={orders}
+                  navigateToOrder={navigateToOrder}
+                />
+              )}
 
-  </div>
-)}
+              {(activePage === "dashboard" || activePage === "marketing") && (
+                <MarketingOrdersTable
+                  isLoading={isLoadingOrders}
+                  orders={marketingOrders}
+                  currentUser={currentUser}
+                  onAssignUsers={onAssignUsers}
+                  setSelectedOrder={setSelectedOrder}
+                  setEditedOrder={setEditedOrder}
+                  updateOrderStatus={updateOrderStatus}
+                  getDeadlineInfo={getDeadlineInfo}
+                />
+              )}
+            </>
 
-          {/* TABLE DATA */}
-{activePage === "users" && (
-  <UsersPage
-    users={users}
-    deleteUser={deleteUser}
-    search={userSearch}
-    setSearch={setUserSearch}
-    openCreateUserModal={
-      openCreateUserModal
-    }
-    openEditUserModal={
-      openEditUserModal
-    }
-    openAssignGamesModal={
-  openAssignGamesModal
-}
-  />
-)}
-
-
-         {/* TABLE DATA */}
-{(() => {
- const safeOrders =
-  Array.isArray(orders)
-    ? orders
-    : []
-
-const broadcastOrders =
-  safeOrders.filter(
-    (o) =>
-      o.type === "BROADCAST"
-  )
-
-const marketingOrders =
-  safeOrders.filter(
-    (o) =>
-      o.type === "MARKETING"
-  )
-
-  return (
-    <>
-{(activePage === "Broadcast" ||
-  activePage === "my-games") && (
-<GamesPage
-  games={games}
-  selectedGameFilter={
-    selectedGameFilter
-  }
-  setSelectedGameFilter={
-    setSelectedGameFilter
-  }
-
-  producers={
-    gameUsers.producers
-  }
-
-  ppms={gameUsers.ppms}
-/>
-)}
-{/* BROADCAST TABLE */}
-{(activePage === "dashboard" ||
-  activePage === "Broadcast") && (
-  <BroadcastOrdersTable
-    isLoading={isLoadingOrders}
-  currentUser={currentUser}
-    orders={broadcastOrders}
-    setSelectedOrder={
-      setSelectedOrder
-    }
-    setEditedOrder={
-      setEditedOrder
-    }
-    updateOrderStatus={updateOrderStatus}
-    getDeadlineInfo={getDeadlineInfo}
-  />
-)}
-
-{/* MY GAMES */}
-{activePage === "my-games" && (
-  <BroadcastOrdersTable
-    isLoading={isLoadingOrders}
-  currentUser={currentUser}
-    orders={broadcastOrders}
-    setSelectedOrder={
-      setSelectedOrder
-    }
-    setEditedOrder={
-      setEditedOrder
-    }
-    updateOrderStatus={updateOrderStatus}
-    getDeadlineInfo={getDeadlineInfo}
-  />
-)}
-
-{activePage ===
-  "notifications" && (
-  <NotificationsPage
-    notifications={
-      currentUser?.notifications ||
-      []
-    }
-
-    markNotificationsAsRead={
-      markNotificationsAsRead
-    }
-
-    setSelectedOrder={
-      setSelectedOrder
-    }
-
-    setEditedOrder={
-      setEditedOrder
-    }
-
-    orders={orders}
-
-    setActivePage={
-      setActivePage
-    }
-
-    setSearch={setSearch}
-
-    setStatusFilter={
-      setStatusFilter
-    }
-
-    setPriorityFilter={
-      setPriorityFilter
-    }
-
-    setFormatFilter={
-      setFormatFilter
-    }
-
-    setSelectedGameFilter={
-      setSelectedGameFilter
-    }
-  />
-)}
-
-{/* MARKETING TABLE */}
-{(activePage === "dashboard" ||
-  activePage === "marketing") && (
-  <MarketingOrdersTable
-    isLoading={isLoadingOrders}
-    orders={marketingOrders}
-    currentUser={currentUser}
-    setSelectedOrder={
-      setSelectedOrder
-    }
-    setEditedOrder={
-      setEditedOrder
-    }
-    updateOrderStatus={updateOrderStatus}
-    getDeadlineInfo={getDeadlineInfo}
-  />
-)}
-
-    </>
-  )
-})()}
-
-        </div>
+          </div>
 
           {/* RIGHT SIDEBAR */}
-{selectedOrder && (
-  <OrderDetailsSidebar
-    selectedOrder={selectedOrder}
-    editedOrder={editedOrder}
-    currentUser={currentUser}
-    setSelectedOrder={
-      setSelectedOrder
-    }
-    setIsEditingOrder={
-      setIsEditingOrder
-    }
-    setIsEditing={setIsEditing}
-    setEditingOrderId={
-      setEditingOrderId
-    }
-    setNewOrder={setNewOrder}
-    setShowModal={setShowModal}
-    showDeleteModal={showDeleteModal}
-    setShowDeleteModal={
-      setShowDeleteModal
-    }
-    setDeletingOrderId={
-      setDeletingOrderId
-    }
-    deleteOrder={deleteOrder}
-    canManageOrders={
-      canManageOrders
-    }
-    getDeadlineInfo={getDeadlineInfo}
-    activePage={activePage}
-  />
-)}
+          {selectedOrder && (
+            <OrderDetailsSidebar
+              selectedOrder={selectedOrder}
+              editedOrder={editedOrder}
+              currentUser={currentUser}
+              setSelectedOrder={setSelectedOrder}
+              setIsEditingOrder={setIsEditingOrder}
+              setIsEditing={setIsEditing}
+              setEditingOrderId={setEditingOrderId}
+              setNewOrder={setNewOrder}
+              setShowModal={setShowModal}
+              showDeleteModal={showDeleteModal}
+              setShowDeleteModal={setShowDeleteModal}
+              setDeletingOrderId={setDeletingOrderId}
+              deleteOrder={deleteOrder}
+              canManageOrders={canManageOrders}
+              getDeadlineInfo={getDeadlineInfo}
+              activePage={activePage}
+            />
+          )}
+
         </div>
 
         {/* DELETE CONFIRM MODAL */}
-{showDeleteModal && (
-  <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
+            <div className="w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8">
 
-    <div className="w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8">
+              <div className="mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl mb-5">
+                  !
+                </div>
+                <h2 className="text-2xl font-bold">Delete Order</h2>
+                <p className="text-zinc-500 mt-3 leading-relaxed">
+                  This action cannot be undone.
+                  The order and all related delivery
+                  assets will be permanently deleted.
+                </p>
+              </div>
 
-      {/* HEADER */}
-      <div className="mb-6">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="bg-zinc-900 border border-zinc-800 py-3 rounded-2xl font-semibold hover:bg-zinc-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteOrder}
+                  className="bg-red-500 text-white py-3 rounded-2xl font-semibold hover:bg-red-600 transition"
+                >
+                  Delete Order
+                </button>
+              </div>
 
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl mb-5">
-          !
-        </div>
+            </div>
+          </div>
+        )}
 
-        <h2 className="text-2xl font-bold">
-          Delete Order
-        </h2>
+        {/* ORDER MODAL */}
+        <OrderModal
+          showModal={showModal}
+          setShowModal={setShowModal}
+          isEditing={isEditing}
+          isSavingOrder={isSavingOrder}
+          newOrder={newOrder}
+          setNewOrder={setNewOrder}
+          toggleLanguage={toggleLanguage}
+          fetchGames={fetchGames}
+          games={games}
+          selectedOrder={selectedOrder}
+          setSelectedOrder={setSelectedOrder}
+          createOrder={createOrder}
+          updateOrder={updateOrder}
+          selectedEvent={selectedEvent}
+        />
 
-        <p className="text-zinc-500 mt-3 leading-relaxed">
-          This action cannot be undone.
-          The order and all related delivery
-          assets will be permanently deleted.
-        </p>
+        {/* USER MODAL */}
+        <UserModal
+          showUserModal={showUserModal}
+          setShowUserModal={setShowUserModal}
+          isEditingUser={isEditingUser}
+          isSavingUser={isSavingUser}
+          userForm={userForm}
+          setUserForm={setUserForm}
+          createUser={createUser}
+          updateUser={updateUser}
+        />
 
-      </div>
+        {/* ASSIGN GAMES MODAL */}
+        <AssignGamesModal
+          show={showAssignGamesModal}
+          onClose={() => setShowAssignGamesModal(false)}
+          games={games}
+          selectedGames={selectedGames}
+          toggleGame={toggleGame}
+          saveAssignments={saveAssignments}
+          isSavingAssignments={isSavingAssignments}
+          user={selectedUserForGames}
+        />
 
-      {/* ACTIONS */}
-      <div className="grid grid-cols-2 gap-3">
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          theme="dark"
+        />
 
-        <button
-          onClick={() =>
-            setShowDeleteModal(false)
-          }
-          className="bg-zinc-900 border border-zinc-800 py-3 rounded-2xl font-semibold hover:bg-zinc-800 transition"
-        >
-          Cancel
-        </button>
-
-        <button
-          onClick={deleteOrder}
-          className="bg-red-500 text-white py-3 rounded-2xl font-semibold hover:bg-red-600 transition"
-        >
-          Delete Order
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-)}
-
-        {/* MODAL */}
-<OrderModal
-  showModal={showModal}
-  setShowModal={setShowModal}
-  isEditing={isEditing}
-  isSavingOrder={isSavingOrder}
-  newOrder={newOrder}
-  setNewOrder={setNewOrder}
-  toggleLanguage={toggleLanguage}
-  fetchGames={fetchGames}
-  games={games}
-  selectedOrder={selectedOrder}
-  setSelectedOrder={setSelectedOrder}
-  createOrder={createOrder}
-  updateOrder={updateOrder}
-  selectedEvent={selectedEvent}
-/>
-<UserModal
-  showUserModal={
-    showUserModal
-  }
-  setShowUserModal={
-    setShowUserModal
-  }
-  isEditingUser={
-    isEditingUser
-  }
-  isSavingUser={
-    isSavingUser
-  }
-  userForm={userForm}
-  setUserForm={setUserForm}
-  createUser={createUser}
-  updateUser={updateUser}
-/>
-<AssignGamesModal
-  show={showAssignGamesModal}
-  onClose={() =>
-    setShowAssignGamesModal(
-      false
-    )
-  }
-  games={games}
-  selectedGames={
-    selectedGames
-  }
-  toggleGame={toggleGame}
-  saveAssignments={
-    saveAssignments
-  }
-  isSavingAssignments={isSavingAssignments}
-  user={selectedUserForGames}
-/>
-<ToastContainer
-  position="top-right"
-  autoClose={3000}
-  theme="dark"
-/>
       </main>
     </div>
   )
 }
-
-
-
-
-

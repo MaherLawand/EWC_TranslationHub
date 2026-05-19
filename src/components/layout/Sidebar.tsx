@@ -93,7 +93,7 @@ const canManageOrders =
               font-semibold
             "
           >
-            EWC
+            {selectedEvent}
           </p>
 
           <h1
@@ -276,8 +276,13 @@ const canManageOrders =
 )}
 {/* NOTIFICATIONS */}
 {(
-
-  canManageOrders
+    currentUser?.role === "ADMIN" ||
+      currentUser?.position ===
+        "PRODUCER" ||
+      currentUser?.position ===
+        "POST_PRODUCTION_MANAGER" ||
+        currentUser?.position ===
+    "TRANSLATOR"
 ) && (
   <div className="relative">
 

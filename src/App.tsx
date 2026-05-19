@@ -1,13 +1,5 @@
-import {
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom"
-
-import {
-  useEffect,
-  useState,
-} from "react"
+import { Routes, Route, Navigate } from "react-router-dom"
+import { useEffect, useState } from "react"
 
 import LoginPage from "./pages/LoginPage"
 import DashboardPage from "./pages/DashboardPage"
@@ -16,38 +8,20 @@ import SetupPasswordPage from "./components/pages/setPasswordPage"
 import { api } from "./lib/api"
 
 export default function App() {
-  const [loading, setLoading] =
-    useState(true)
-
-  const [user, setUser] =
-    useState(null)
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
-async function fetchUser() {
-  try {
-    console.log("FETCHING USER")
-
-    const res =
-      await api.get("/auth/me")
-
-    console.log("USER RESPONSE", res.data)
-
-    setUser(res.data)
-
-  } catch (error) {
-
-    console.log("AUTH ERROR", error)
-
-    setUser(null)
-
-  } finally {
-
-    console.log("DONE LOADING")
-
-    setLoading(false)
-  }
-}
-
+    async function fetchUser() {
+      try {
+        const res = await api.get("/auth/me")
+        setUser(res.data)
+      } catch {
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchUser()
   }, [])
 
@@ -62,31 +36,26 @@ async function fetchUser() {
   return (
     <Routes>
 
-      {/* SET PASSWORD */}
+      {/* SET PASSWORD — only for unauthenticated users */}
       <Route
         path="/setup-password"
-        element={
-          <SetupPasswordPage />
-        }
+        element={user ? <Navigate to="/" replace /> : <SetupPasswordPage />}
       />
 
-      {/* MAIN APP */}
+      {/* LOGIN — redirect to dashboard if already authenticated */}
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+
+      {/* MAIN APP — show login if not authenticated */}
       <Route
         path="/"
-        element={
-          user
-            ? <DashboardPage />
-            : <LoginPage />
-        }
+        element={user ? <DashboardPage /> : <LoginPage />}
       />
 
       {/* FALLBACK */}
-      <Route
-        path="*"
-        element={
-          <Navigate to="/" />
-        }
-      />
+      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   )

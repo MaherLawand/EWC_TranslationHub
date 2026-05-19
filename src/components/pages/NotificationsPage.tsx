@@ -3,54 +3,15 @@ import React from "react"
 type Props = {
   notifications: any[]
   markNotificationsAsRead: () => void
-
-  setSelectedOrder: (
-    order: any
-  ) => void
-
-  setEditedOrder: (
-    order: any
-  ) => void
-
   orders: any[]
-
-  setActivePage: (
-    page: string
-  ) => void
-
-  setSearch: (
-    value: string
-  ) => void
-
-  setStatusFilter: (
-    value: string
-  ) => void
-
-  setPriorityFilter: (
-    value: string
-  ) => void
-
-setFormatFilter: (
-  value: string[]
-) => void
-
-  setSelectedGameFilter: (
-    value: string
-  ) => void
+  navigateToOrder: (notification: any, order: any | null) => void
 }
 
 export default function NotificationsPage({
   notifications,
   markNotificationsAsRead,
-  setSelectedOrder,
-  setEditedOrder,
   orders,
-  setActivePage,
-  setSearch,
-  setStatusFilter,
-  setPriorityFilter,
-  setFormatFilter,
-  setSelectedGameFilter
+  navigateToOrder,
 }: Props) {
 
   const ITEMS_PER_PAGE = 15
@@ -184,70 +145,9 @@ paginatedNotifications.map(
         key={notification.id}
 
         onClick={() => {
-
-  if (!order) return
-
-  // open correct page
-  if (
-    order.type ===
-    "MARKETING"
-  ) {
-
-    setActivePage(
-      "marketing"
-    )
-
-  } else {
-
-    setActivePage(
-      "games"
-    )
-
-    if (
-      order.broadcast?.game?.id
-    ) {
-      setSelectedGameFilter(
-        order.broadcast.game.id
-      )
-    }
-  }
-
-  // autofill filters
-  setSearch(order.title || "")
-
-  setStatusFilter(
-    order.status
-      .replace("_", " ")
-  )
-
-  setPriorityFilter(
-    order.priority || ""
-  )
-
-  setFormatFilter(
-  (
-    order.broadcast
-      ?.deliveryFormats ||
-
-    order.marketing
-      ?.deliveryFormats ||
-
-    []
-  ).map(
-    (format: any) =>
-      format.format
-  )
-)
-
-  // open sidebar
-  setSelectedOrder(order)
-
-  setEditedOrder(
-    JSON.parse(
-      JSON.stringify(order)
-    )
-  )
-}}
+          if (!notification.order?.id) return
+          navigateToOrder(notification, order ?? null)
+        }}
 
         className={`
           px-7

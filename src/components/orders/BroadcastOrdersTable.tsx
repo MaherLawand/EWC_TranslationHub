@@ -120,6 +120,9 @@ const [updatingOrderId, setUpdatingOrderId] =
   }
 }
 
+
+
+
   return (
     <div
       className="
@@ -193,31 +196,31 @@ const [updatingOrderId, setUpdatingOrderId] =
 
           <tr>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Order
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Game
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Languages
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Format
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Deadline
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Status
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Priority
             </th>
 
@@ -266,7 +269,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                   setSelectedOrder(order)
 
                   setEditedOrder(structuredClone(order))
-                  
+
                 }}
                 className="
                   border-b
@@ -280,7 +283,7 @@ const [updatingOrderId, setUpdatingOrderId] =
               >
 
                 {/* ORDER */}
-                <td className="px-6 py-6 align-center">
+                <td className="px-6 py-2.5 align-center">
 
                   <div>
 
@@ -293,13 +296,13 @@ const [updatingOrderId, setUpdatingOrderId] =
                 </td>
 
                 {/* GAME */}
-                <td className="px-6 py-5 text-zinc-300 align-center">
+                <td className="px-6 py-2.5 text-zinc-300 align-center">
                   {broadcast?.game
                     ?.name || "-"}
                 </td>
 
                 {/* LANGUAGES */}
-                <td className="px-6 py-6 align-center">
+                <td className="px-6 py-2.5 align-center">
 
                   <div className="flex flex-wrap items-center gap-2">
 
@@ -313,7 +316,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                             key={lang}
                             className="
                               min-w-[34px]
-                              h-[28px]
+                              h-[22px]
                               inline-flex
                               items-center
                               justify-center
@@ -349,7 +352,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                           key={lang}
                           className="
                             min-w-[34px]
-                            h-[28px]
+                            h-[22px]
                             inline-flex
                             items-center
                             justify-center
@@ -375,7 +378,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                 </td>
 
                 {/* FORMAT */}
-                <td className="px-6 py-6 align-center">
+                <td className="px-6 py-2.5 align-center">
 
   <div className="flex flex-wrap gap-2">
 
@@ -388,7 +391,7 @@ const [updatingOrderId, setUpdatingOrderId] =
             border-[#2B2B2B]
             bg-[#171717]
             px-3
-            py-1.5
+            py-0.5
             rounded-xl
             text-xs
             font-semibold
@@ -406,7 +409,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 </td>
 
                 {/* DEADLINE */}
-                <td className="px-6 py-5 text-zinc-300 align-center">
+                <td className="px-6 py-2.5 text-zinc-300 align-center">
 
                   {broadcast?.deadlineDate ? (
                     <div>
@@ -441,7 +444,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                 </td>
 
 {/* STATUS */}
-<td className="px-6 py-6 align-center whitespace-nowrap">
+<td className="px-6 py-2.5 align-center whitespace-nowrap">
 
   {!canUpdateStatus ? (
 
@@ -636,7 +639,7 @@ disabled:cursor-not-allowed
 </td>
 
                 {/* PRIORITY */}
-                <td className="px-6 py-6 align-center">
+                <td className="px-6 py-2.5 align-center">
 
                   <span
                     className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
