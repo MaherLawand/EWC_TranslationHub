@@ -430,7 +430,7 @@ today.setHours(0, 0, 0, 0)
   <Select
     options={games.map(
       (game: any) => ({
-        value: game.id,
+        value: game.name,
         label: game.name,
       })
     )}
@@ -438,7 +438,7 @@ today.setHours(0, 0, 0, 0)
     value={
   games
     .map((game: any) => ({
-      value: game.id,
+      value: game.name,
       label: game.name,
     }))
     .find(
