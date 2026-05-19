@@ -1271,7 +1271,7 @@ async function createOrder() {
 
           game:
             newOrder.type ===
-            "MARKETING"
+            "Marketing"
               ? "-"
               : newOrder.game,
         }),

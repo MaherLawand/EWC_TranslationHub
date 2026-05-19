@@ -412,7 +412,7 @@ today.setHours(0, 0, 0, 0)
 
     {/* BROADCAST */}
     {newOrder.type ===
-      "BROADCAST" && (
+      "Broadcast" && (
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
 
         <h3 className="text-lg font-semibold mb-5">
@@ -763,7 +763,7 @@ today.setHours(0, 0, 0, 0)
 
 {/* MARKETING */}
 {newOrder.type ===
-  "MARKETING" && (
+  "Marketing" && (
   <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
 
     <h3 className="text-lg font-semibold mb-5">
