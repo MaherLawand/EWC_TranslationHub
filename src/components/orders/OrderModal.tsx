@@ -338,8 +338,8 @@ today.setHours(0, 0, 0, 0)
 }}
             className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
           >
-            <option value="BROADCAST">Broadcast</option>
-            <option value="MARKETING">Marketing</option>
+            <option value="Broadcast">Broadcast</option>
+            <option value="Marketing">Marketing</option>
           </select>
         </div>
 

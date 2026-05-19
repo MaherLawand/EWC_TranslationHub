@@ -97,8 +97,7 @@ export default function OrderDetailsSidebar({
   return `https://${url}`
 }
   return (
-   <div className="w-[430px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0">
-
+<div className="w-[520px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0">
       <div className="p-8">
 
 {/* HEADER */}
@@ -519,57 +518,65 @@ export default function OrderDetailsSidebar({
 
   <SectionTitle title="Delivery Formats" />
 
-  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-5">
 
-    <div className="flex flex-wrap gap-3">
+    {editedOrder.broadcast?.deliveryFormats?.map(
+      (formatItem: any) => (
 
-      {editedOrder.broadcast?.deliveryFormats?.map(
-        (formatItem: any) => (
-          <div
-            key={formatItem.id}
-            className="
-              min-w-[120px]
-              rounded-2xl
-              border
-              border-[#2D2D2D]
-              bg-[#1A1A1A]
-              p-4
-            "
-          >
+        <div
+          key={formatItem.id}
+          className="flex items-start justify-between gap-4"
+        >
 
-            <p className="text-[#F5F1E8] font-semibold">
-              {formatItem.format}
-            </p>
+          <div className="flex items-start gap-3">
 
-            {formatItem.deliveryLink ? (
-              <a
-                href={formatUrl(
-                  formatItem.deliveryLink
-                )}
-                target="_blank"
-                rel="noreferrer"
-                className="
-                  text-[#D6B36A]
-                  underline
-                  text-xs
-                  block
-                  mt-2
-                  break-all
-                "
-              >
-                Open File
-              </a>
-            ) : (
-              <p className="text-zinc-600 text-xs mt-2">
-                No link added
+            <img
+              src="/google-drive.png"
+              alt="Drive"
+              className="w-5 h-5 mt-[2px]"
+            />
+
+            <div>
+
+              <p className="text-zinc-500 text-sm">
+                {formatItem.format}
               </p>
-            )}
+
+              {formatItem.deliveryLink ? (
+
+                <a
+                  href={formatUrl(
+                    formatItem.deliveryLink
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="
+                    text-[#D6B36A]
+                    underline
+                    text-sm
+                    break-all
+                    mt-1
+                    block
+                  "
+                >
+                  {formatItem.deliveryLink}
+                </a>
+
+              ) : (
+
+                <p className="text-zinc-600 text-sm mt-1">
+                  No link added
+                </p>
+
+              )}
+
+            </div>
 
           </div>
-        )
-      )}
 
-    </div>
+        </div>
+      )
+    )}
 
   </div>
 
@@ -909,62 +916,70 @@ export default function OrderDetailsSidebar({
 
     </div>
 
-    {/* DELIVERY FORMATS */}
+{/* DELIVERY FORMATS */}
 <div className="mt-10">
 
   <SectionTitle title="Delivery Formats" />
 
-  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-5">
 
-    <div className="flex flex-wrap gap-3">
+    {editedOrder.marketing?.deliveryFormats?.map(
+      (formatItem: any) => (
 
-      {editedOrder.broadcast?.deliveryFormats?.map(
-        (formatItem: any) => (
-          <div
-            key={formatItem.id}
-            className="
-              min-w-[120px]
-              rounded-2xl
-              border
-              border-[#2D2D2D]
-              bg-[#1A1A1A]
-              p-4
-            "
-          >
+        <div
+          key={formatItem.id}
+          className="flex items-start justify-between gap-4"
+        >
 
-            <p className="text-[#F5F1E8] font-semibold">
-              {formatItem.format}
-            </p>
+          <div className="flex items-start gap-3">
 
-            {formatItem.deliveryLink ? (
-              <a
-                href={formatUrl(
-                  formatItem.deliveryLink
-                )}
-                target="_blank"
-                rel="noreferrer"
-                className="
-                  text-[#D6B36A]
-                  underline
-                  text-xs
-                  block
-                  mt-2
-                  break-all
-                "
-              >
-                Open File
-              </a>
-            ) : (
-              <p className="text-zinc-600 text-xs mt-2">
-                No link added
+            <img
+              src="/google-drive.png"
+              alt="Drive"
+              className="w-5 h-5 mt-[2px]"
+            />
+
+            <div>
+
+              <p className="text-zinc-500 text-sm">
+                {formatItem.format}
               </p>
-            )}
+
+              {formatItem.deliveryLink ? (
+
+                <a
+                  href={formatUrl(
+                    formatItem.deliveryLink
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="
+                    text-[#D6B36A]
+                    underline
+                    text-sm
+                    break-all
+                    mt-1
+                    block
+                  "
+                >
+                  {formatItem.deliveryLink}
+                </a>
+
+              ) : (
+
+                <p className="text-zinc-600 text-sm mt-1">
+                  No link added
+                </p>
+
+              )}
+
+            </div>
 
           </div>
-        )
-      )}
 
-    </div>
+        </div>
+      )
+    )}
 
   </div>
 
