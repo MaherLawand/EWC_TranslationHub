@@ -427,42 +427,41 @@ today.setHours(0, 0, 0, 0)
     Game
   </label>
 
-  <Select
-    options={games.map(
-      (game: any) => ({
-        value: game.name,
-        label: game.name,
-      })
-    )}
-
-    value={
-  games
-    .map((game: any) => ({
-      value: game.name,
+<Select
+  options={games.map(
+    (game: any) => ({
+      value: game.id,
       label: game.name,
-    }))
-    .find(
-      (option: any) =>
-        option.value === newOrder.game
-    ) || null
-}
+    })
+  )}
 
-    onChange={(selected) =>
-      setNewOrder({
-        ...newOrder,
+  value={
+    games
+      .map((game: any) => ({
+        value: game.id,
+        label: game.name,
+      }))
+      .find(
+        (option: any) =>
+          option.value === newOrder.game
+      ) || null
+  }
 
-        game:
-          selected?.value ||
-          "",
-      })
-    }
+  onChange={(selected) =>
+    setNewOrder({
+      ...newOrder,
 
-    placeholder="Search game..."
+      game:
+        selected?.value || "",
+    })
+  }
 
-    styles={darkSelectStyles}
+  placeholder="Search game..."
 
-    className="text-sm"
-  />
+  styles={darkSelectStyles}
+
+  className="text-sm"
+/>
 </div>
 
           {/* MINUTES */}
