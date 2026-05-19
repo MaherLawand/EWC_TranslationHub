@@ -232,6 +232,8 @@ async function createOrder() {
         body: JSON.stringify({
           ...newOrder,
 
+          event: selectedEvent,
+
           estimatedMinutes:
             Number(
               newOrder.estimatedMinutes

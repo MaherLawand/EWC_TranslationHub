@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import {
   LANGUAGES,
   type Language,
@@ -60,6 +60,32 @@ export default function OrderModal({
   updateOrder,
   selectedEvent,
 }: Props) {
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [languageSearch, setLanguageSearch] = useState("")
+
+  const clearError = useCallback((field: string) => {
+    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
+  }, [])
+
+  function validate() {
+    const e: Record<string, string> = {}
+    if (!newOrder.title?.trim()) e.title = "Order title is required"
+    if (newOrder.type === "BROADCAST") {
+      if (!newOrder.game) e.game = "Game is required"
+      if (!newOrder.estimatedMinutes || Number(newOrder.estimatedMinutes) <= 0) e.estimatedMinutes = "Estimated minutes is required"
+      if (!newOrder.deliveryDate) e.deliveryDate = "Delivery date is required"
+      if (!newOrder.deadline) e.deadline = "Deadline is required"
+    }
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  function handleSubmit() {
+    if (!validate()) return
+    if (isEditing) updateOrder()
+    else createOrder()
+  }
+
   if (!showModal) {
     return null
   }
@@ -97,9 +123,6 @@ setNewOrder({
   deliveries: [],
 })
 }
-
-const [languageSearch, setLanguageSearch] =
-  useState("");
 
   const darkSelectStyles = {
   control: (base: any) => ({
@@ -258,20 +281,15 @@ today.setHours(0, 0, 0, 0)
         {/* TITLE */}
         <div className="col-span-2">
           <label className="text-sm text-zinc-400 mb-2 block">
-            Order Title
+            Order Title <span className="text-red-400">*</span>
           </label>
-
           <input
             value={newOrder.title}
-            onChange={(e) =>
-              setNewOrder({
-                ...newOrder,
-                title: e.target.value,
-              })
-            }
+            onChange={(e) => { setNewOrder({ ...newOrder, title: e.target.value }); clearError("title") }}
             placeholder="Enter title"
-            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+            className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none transition ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-zinc-700 focus:border-[#D6B36A]"}`}
           />
+          {errors.title && <p className="text-red-400 text-xs mt-1.5">{errors.title}</p>}
         </div>
 
         {/* NOTES */}
@@ -315,27 +333,22 @@ today.setHours(0, 0, 0, 0)
           <select
             value={newOrder.type}
             onChange={(e) => {
-
-  const type = e.target.value
-
-  setNewOrder({
-    ...newOrder,
-
-    type,
-
-    sourceLanguage: [],
-    targetLanguages: [],
-    deliveries: [],
-    deliveryFormats: [],
-
-    game: "",
-    estimatedMinutes: "",
-    deadline: "",
-    deliveryDate: "",
-
-    contentTitle: "",
-  })
-}}
+              const type = e.target.value
+              setNewOrder({
+                ...newOrder,
+                type,
+                sourceLanguage: [],
+                targetLanguages: [],
+                deliveries: [],
+                deliveryFormats: [],
+                game: "",
+                estimatedMinutes: "",
+                deadline: "",
+                deliveryDate: "",
+                contentTitle: "",
+              })
+              setErrors({})
+            }}
             className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
           >
             <option value="BROADCAST">Broadcast</option>
@@ -423,67 +436,38 @@ today.setHours(0, 0, 0, 0)
 
           {/* GAME */}
           <div>
-  <label className="text-sm text-zinc-400 mb-2 block">
-    Game
-  </label>
-
-<Select
-  options={games.map(
-    (game: any) => ({
-      value: game.id,
-      label: game.name,
-    })
-  )}
-
-  value={
-    games
-      .map((game: any) => ({
-        value: game.id,
-        label: game.name,
-      }))
-      .find(
-        (option: any) =>
-          option.value === newOrder.game
-      ) || null
-  }
-
-  onChange={(selected) =>
-    setNewOrder({
-      ...newOrder,
-
-      game:
-        selected?.value || "",
-    })
-  }
-
-  placeholder="Search game..."
-
-  styles={darkSelectStyles}
-
-  className="text-sm"
-/>
-</div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Game <span className="text-red-400">*</span>
+            </label>
+            <Select
+              options={games.map((game: any) => ({ value: game.id, label: game.name }))}
+              value={games.map((game: any) => ({ value: game.id, label: game.name })).find((o: any) => o.value === newOrder.game) || null}
+              onChange={(selected) => { setNewOrder({ ...newOrder, game: selected?.value || "" }); clearError("game") }}
+              placeholder="Search game..."
+              styles={{
+                ...darkSelectStyles,
+                control: (base: any) => ({
+                  ...darkSelectStyles.control(base),
+                  borderColor: errors.game ? "rgba(239,68,68,0.6)" : base.borderColor,
+                }),
+              }}
+              className="text-sm"
+            />
+            {errors.game && <p className="text-red-400 text-xs mt-1.5">{errors.game}</p>}
+          </div>
 
           {/* MINUTES */}
           <div>
             <label className="text-sm text-zinc-400 mb-2 block">
-              Estimated Minutes
+              Estimated Minutes <span className="text-red-400">*</span>
             </label>
-
             <input
               type="number"
-              value={
-                newOrder.estimatedMinutes
-              }
-              onChange={(e) =>
-                setNewOrder({
-                  ...newOrder,
-                  estimatedMinutes:
-                    e.target.value,
-                })
-              }
-              className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+              value={newOrder.estimatedMinutes}
+              onChange={(e) => { setNewOrder({ ...newOrder, estimatedMinutes: e.target.value }); clearError("estimatedMinutes") }}
+              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none transition ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-zinc-700 focus:border-[#D6B36A]"}`}
             />
+            {errors.estimatedMinutes && <p className="text-red-400 text-xs mt-1.5">{errors.estimatedMinutes}</p>}
           </div>
 
           {/* SOURCE LANGUAGES */}
@@ -698,61 +682,33 @@ today.setHours(0, 0, 0, 0)
           {/* DELIVERY DATE */}
           <div>
             <label className="text-sm text-zinc-400 mb-2 block">
-              Delivery Date
+              Delivery Date <span className="text-red-400">*</span>
             </label>
-
             <DatePicker
-  selected={
-    newOrder.deliveryDate
-      ? new Date(
-          newOrder.deliveryDate
-        )
-      : null
-  }
-  onChange={(date: Date | null ) =>
-    setNewOrder({
-      ...newOrder,
-      deliveryDate:
-        date
-          ?.toISOString()
-          .split("T")[0] || "",
-    })
-  }
-  minDate={today}
-  dateFormat="yyyy-MM-dd"
-  placeholderText="Select delivery date"
-  className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3 outline-none text-white"
-/>
+              selected={newOrder.deliveryDate ? new Date(newOrder.deliveryDate) : null}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deliveryDate: date?.toISOString().split("T")[0] || "" }); clearError("deliveryDate") }}
+              minDate={today}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Select delivery date"
+              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deliveryDate ? "border-red-500/60" : "border-zinc-700"}`}
+            />
+            {errors.deliveryDate && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryDate}</p>}
           </div>
 
           {/* DEADLINE */}
           <div>
             <label className="text-sm text-zinc-400 mb-2 block">
-              Deadline
+              Deadline <span className="text-red-400">*</span>
             </label>
-
             <DatePicker
-  selected={
-    newOrder.deadline
-      ? new Date(
-          newOrder.deadline
-        )
-      : null
-  }
-  onChange={(date: Date | null) =>
-    setNewOrder({
-      ...newOrder,
-      deadline:
-        date
-          ?.toISOString()
-          .split("T")[0] || "",
-    })
-  }
-  minDate={today}
-  dateFormat="yyyy-MM-dd"
-  placeholderText="Select deadline"
-  className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3 outline-none text-white"
-/>
+              selected={newOrder.deadline ? new Date(newOrder.deadline) : null}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: date?.toISOString().split("T")[0] || "" }); clearError("deadline") }}
+              minDate={today}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Select deadline"
+              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deadline ? "border-red-500/60" : "border-zinc-700"}`}
+            />
+            {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
 
         </div>
@@ -1253,11 +1209,7 @@ transition={{
 
   <button
     disabled={isSavingOrder}
-    onClick={
-      isEditing
-        ? updateOrder
-        : createOrder
-    }
+    onClick={handleSubmit}
     className={`w-full py-4 rounded-2xl font-semibold transition ${
       isSavingOrder
         ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"

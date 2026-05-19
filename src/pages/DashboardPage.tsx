@@ -214,6 +214,11 @@ export default function App() {
   }, [activePage])
 
   React.useEffect(() => {
+    setSelectedOrder(null)
+    setEditedOrder(null)
+  }, [selectedEvent])
+
+  React.useEffect(() => {
     if (!currentUser || hasInitializedPage) return
 
     if (currentUser.role === "ADMIN") {
