@@ -75,7 +75,12 @@ const canUpdateStatus =
     if (page > totalPages) {
       setPage(1)
     }
-  }, [orders])
+  }, [orders, totalPages])
+
+  React.useEffect(() => {
+  setPage(1)
+}, [orders.length])
+
 function getLanguageCode(
   languageName: string
 ) {
@@ -219,7 +224,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
     <tr>
       <td
-        colSpan={7}
+        colSpan={6}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -230,7 +235,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
     <tr>
       <td
-        colSpan={7}
+        colSpan={6}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -253,11 +258,9 @@ const isUpdating =
   onClick={() => {
     setSelectedOrder(order)
 
-    setEditedOrder(
-      JSON.parse(
-        JSON.stringify(order)
-      )
-    )
+setEditedOrder(
+  structuredClone(order)
+)
   }}
   className="
     border-b
@@ -377,28 +380,35 @@ const isUpdating =
   </td>
 
   {/* FORMAT */}
-  <td className="px-6 py-6 align-center">
+<td className="px-6 py-6 align-center">
 
-    <span
-      className="
-        border
-        border-[#2B2B2B]
-        bg-[#171717]
-        px-3
-        py-1.5
-        rounded-xl
-        text-xs
-        font-semibold
-        tracking-wide
-        text-[#F5F1E8]
-      "
-    >
-      {
-        marketing?.deliveryFormat
-      }
-    </span>
+  <div className="flex flex-wrap gap-2">
 
-  </td>
+    {marketing?.deliveryFormats?.map(
+      (formatItem: any) => (
+        <span
+          key={formatItem.id}
+          className="
+            border
+            border-[#2B2B2B]
+            bg-[#171717]
+            px-3
+            py-1.5
+            rounded-xl
+            text-xs
+            font-semibold
+            tracking-wide
+            text-[#F5F1E8]
+          "
+        >
+          {formatItem.format}
+        </span>
+      )
+    )}
+
+  </div>
+
+</td>
 
 {/* STATUS */}
 <td className="px-6 py-6 align-center whitespace-nowrap">

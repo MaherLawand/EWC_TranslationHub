@@ -77,7 +77,13 @@ const canUpdateStatus =
     if (page > totalPages) {
       setPage(1)
     }
-  }, [orders])
+  }, [orders,totalPages])
+
+  React.useEffect(() => {
+
+  setPage(1)
+
+}, [orders.length])
 
   function getLanguageCode(
     languageName: string
@@ -259,13 +265,8 @@ const [updatingOrderId, setUpdatingOrderId] =
                 onClick={() => {
                   setSelectedOrder(order)
 
-                  setEditedOrder(
-                    JSON.parse(
-                      JSON.stringify(
-                        order
-                      )
-                    )
-                  )
+                  setEditedOrder(structuredClone(order))
+                  
                 }}
                 className="
                   border-b
@@ -304,7 +305,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
                     <div className="flex flex-wrap gap-1">
 
-                      {broadcast?.sourceLanguage.map(
+                      {broadcast?.sourceLanguage?.map(
                         (
                           lang: string
                         ) => (
@@ -340,7 +341,7 @@ const [updatingOrderId, setUpdatingOrderId] =
                       →
                     </span>
 
-                    {broadcast?.targetLanguages.map(
+                    {broadcast?.targetLanguages?.map(
                       (
                         lang: string
                       ) => (
@@ -376,26 +377,33 @@ const [updatingOrderId, setUpdatingOrderId] =
                 {/* FORMAT */}
                 <td className="px-6 py-6 align-center">
 
-                  <span
-                    className="
-                      border
-                      border-[#2B2B2B]
-                      bg-[#171717]
-                      px-3
-                      py-1.5
-                      rounded-xl
-                      text-xs
-                      font-semibold
-                      tracking-wide
-                      text-[#F5F1E8]
-                    "
-                  >
-                    {
-                      broadcast?.deliveryFormat
-                    }
-                  </span>
+  <div className="flex flex-wrap gap-2">
 
-                </td>
+    {broadcast?.deliveryFormats?.map(
+      (formatItem: any) => (
+        <span
+          key={formatItem.id}
+          className="
+            border
+            border-[#2B2B2B]
+            bg-[#171717]
+            px-3
+            py-1.5
+            rounded-xl
+            text-xs
+            font-semibold
+            tracking-wide
+            text-[#F5F1E8]
+          "
+        >
+          {formatItem.format}
+        </span>
+      )
+    )}
+
+  </div>
+
+</td>
 
                 {/* DEADLINE */}
                 <td className="px-6 py-5 text-zinc-300 align-center">

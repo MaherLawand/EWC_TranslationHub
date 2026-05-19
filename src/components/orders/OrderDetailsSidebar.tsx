@@ -160,12 +160,11 @@ export default function OrderDetailsSidebar({
       Created By
     </p>
 
-    <p className="text-[#F5F1E8] font-medium">
-      {
-        selectedOrder.createdBy
-          ?.name || "-"
-      }
-    </p>
+   <p className="text-[#F5F1E8] font-medium">
+  {selectedOrder.createdBy
+    ? `${selectedOrder.createdBy.firstName} ${selectedOrder.createdBy.lastName}`
+    : "-"}
+</p>
 
   </div>
 
@@ -348,7 +347,7 @@ export default function OrderDetailsSidebar({
 
   <div className="flex flex-wrap gap-2">
 
-    {editedOrder.broadcast.sourceLanguage?.map(
+    {editedOrder.broadcast?.sourceLanguage?.map(
       (lang: string) => (
         <div
           key={lang}
@@ -434,7 +433,7 @@ export default function OrderDetailsSidebar({
 
   <div className="flex flex-wrap gap-2">
 
-    {editedOrder.broadcast.targetLanguages.map(
+    {editedOrder.broadcast?.targetLanguages?.map(
       (lang: string) => (
         <div
           key={lang}
@@ -511,25 +510,71 @@ export default function OrderDetailsSidebar({
 
 </div>
 
-    {/* FORMAT */}
-    <div className="flex justify-between items-center">
+  </div>
 
-      <p className="text-zinc-500 text-sm">
-        Format
-      </p>
+</div>
 
-      <p className="text-[#F5F1E8] font-medium">
-        {
-          editedOrder.broadcast
-            ?.deliveryFormat
-        }
-      </p>
+{/* DELIVERY FORMATS */}
+<div className="mt-10">
+
+  <SectionTitle title="Delivery Formats" />
+
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+
+    <div className="flex flex-wrap gap-3">
+
+      {editedOrder.broadcast?.deliveryFormats?.map(
+        (formatItem: any) => (
+          <div
+            key={formatItem.id}
+            className="
+              min-w-[120px]
+              rounded-2xl
+              border
+              border-[#2D2D2D]
+              bg-[#1A1A1A]
+              p-4
+            "
+          >
+
+            <p className="text-[#F5F1E8] font-semibold">
+              {formatItem.format}
+            </p>
+
+            {formatItem.deliveryLink ? (
+              <a
+                href={formatUrl(
+                  formatItem.deliveryLink
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="
+                  text-[#D6B36A]
+                  underline
+                  text-xs
+                  block
+                  mt-2
+                  break-all
+                "
+              >
+                Open File
+              </a>
+            ) : (
+              <p className="text-zinc-600 text-xs mt-2">
+                No link added
+              </p>
+            )}
+
+          </div>
+        )
+      )}
 
     </div>
 
   </div>
 
 </div>
+
 {/* DATES */}
 <div className="mt-10">
 
@@ -771,22 +816,6 @@ export default function OrderDetailsSidebar({
 
         </div>
 
-        <div className="flex justify-between items-center">
-
-          <p className="text-zinc-500 text-sm">
-            Delivery Format
-          </p>
-
-          <p className="text-[#F5F1E8] font-medium">
-            {
-              editedOrder
-                .marketing
-                ?.deliveryFormat
-            }
-          </p>
-
-        </div>
-
       </div>
 
     </div>
@@ -880,6 +909,67 @@ export default function OrderDetailsSidebar({
 
     </div>
 
+    {/* DELIVERY FORMATS */}
+<div className="mt-10">
+
+  <SectionTitle title="Delivery Formats" />
+
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+
+    <div className="flex flex-wrap gap-3">
+
+      {editedOrder.broadcast?.deliveryFormats?.map(
+        (formatItem: any) => (
+          <div
+            key={formatItem.id}
+            className="
+              min-w-[120px]
+              rounded-2xl
+              border
+              border-[#2D2D2D]
+              bg-[#1A1A1A]
+              p-4
+            "
+          >
+
+            <p className="text-[#F5F1E8] font-semibold">
+              {formatItem.format}
+            </p>
+
+            {formatItem.deliveryLink ? (
+              <a
+                href={formatUrl(
+                  formatItem.deliveryLink
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="
+                  text-[#D6B36A]
+                  underline
+                  text-xs
+                  block
+                  mt-2
+                  break-all
+                "
+              >
+                Open File
+              </a>
+            ) : (
+              <p className="text-zinc-600 text-xs mt-2">
+                No link added
+              </p>
+            )}
+
+          </div>
+        )
+      )}
+
+    </div>
+
+  </div>
+
+</div>
+
     {/* LINKS */}
     <div className="mt-10">
 
@@ -902,11 +992,9 @@ export default function OrderDetailsSidebar({
             </p>
 
             <a
-              href={
-                editedOrder
-                  .marketing
-                  ?.sourceFileLink
-              }
+              href={formatUrl(
+  editedOrder.marketing?.sourceFileLink
+)}
               target="_blank"
               rel="noopener noreferrer"
               className="
@@ -1040,14 +1128,16 @@ export default function OrderDetailsSidebar({
       ?.contentTitle || "",
 
   game:
-    selectedOrder.broadcast
-      ?.game?.name || "",
+  selectedOrder.broadcast
+    ?.gameId || "",
 
   type:
     selectedOrder.type ===
     "MARKETING"
       ? "Marketing"
       : "Broadcast",
+
+      event: selectedOrder.event || "EWC",
 
   status:
     selectedOrder.status,
@@ -1075,15 +1165,29 @@ export default function OrderDetailsSidebar({
           .broadcast
           ?.targetLanguages || [],
 
-  format:
-    selectedOrder.type ===
-    "MARKETING"
-      ? selectedOrder
-          .marketing
-          ?.deliveryFormat
-      : selectedOrder
-          .broadcast
-          ?.deliveryFormat,
+  deliveryFormats:
+  selectedOrder.type ===
+  "MARKETING"
+    ? selectedOrder
+        .marketing
+        ?.deliveryFormats?.map(
+          (formatItem: any) => ({
+            id: formatItem.id,
+            format: formatItem.format,
+            deliveryLink:
+              formatItem.deliveryLink || "",
+          })
+        ) || []
+    : selectedOrder
+        .broadcast
+        ?.deliveryFormats?.map(
+          (formatItem: any) => ({
+            id: formatItem.id,
+            format: formatItem.format,
+            deliveryLink:
+              formatItem.deliveryLink || "",
+          })
+        ) || [],
 
   deadline:
     selectedOrder.broadcast

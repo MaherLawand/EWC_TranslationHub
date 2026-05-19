@@ -10,6 +10,10 @@ type Props = {
   ) => void
 
   currentUser: any
+  selectedEvent: string
+  setSelectedEvent: (
+    value:string
+  ) => void
 }
 
 export default function Sidebar({
@@ -17,6 +21,8 @@ export default function Sidebar({
   setActivePage,
   currentUser,
   logout,
+  selectedEvent,
+  setSelectedEvent
 }: Props) {
 const unreadNotifications =
   currentUser?.notifications?.filter(
@@ -80,6 +86,93 @@ const unreadNotifications =
         </div>
 
       </div>
+
+      {/* EVENT SWITCHER */}
+<div className="px-5 pt-6">
+
+  <div
+    className="
+      relative
+      grid
+      grid-cols-2
+      bg-[#111111]
+      border
+      border-[#242424]
+      rounded-2xl
+      p-1
+      overflow-hidden
+    "
+  >
+
+    {/* ACTIVE BACKGROUND */}
+    <div
+      className={`
+        absolute
+        top-1
+        bottom-1
+        w-[calc(50%-4px)]
+        rounded-xl
+        bg-[#D6B36A]
+        transition-all
+        duration-300
+        ease-out
+        ${
+          selectedEvent === "EWC"
+            ? "left-1"
+            : "left-[calc(50%+2px)]"
+        }
+      `}
+    />
+
+    {/* EWC */}
+    <button
+      onClick={() =>
+        setSelectedEvent("EWC")
+      }
+      className={`
+        relative
+        z-10
+        h-[46px]
+        rounded-xl
+        text-sm
+        font-semibold
+        transition-all
+        ${
+          selectedEvent === "EWC"
+            ? "text-black"
+            : "text-zinc-500 hover:text-white"
+        }
+      `}
+    >
+      EWC
+    </button>
+
+    {/* ENC */}
+    <button
+      onClick={() =>
+        setSelectedEvent("ENC")
+      }
+      className={`
+        relative
+        z-10
+        h-[46px]
+        rounded-xl
+        text-sm
+        font-semibold
+        transition-all
+        ${
+          selectedEvent === "ENC"
+            ? "text-black"
+            : "text-zinc-500 hover:text-white"
+        }
+      `}
+    >
+      ENC
+    </button>
+
+  </div>
+
+</div>
 
       {/* NAVIGATION */}
       <nav className="flex-1 px-5 py-7 overflow-auto">

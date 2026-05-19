@@ -18,7 +18,6 @@ export default function App() {
   const [currentUser, setCurrentUser] = React.useState<any>(null)
   const [users, setUsers] = React.useState<any[]>([])
   const [orders, setOrders] = React.useState<any[]>([])
-
   const [search, setSearch] = React.useState("")
 
   const [statusFilter, setStatusFilter] =
@@ -54,15 +53,22 @@ const [deadlineSort, setDeadlineSort] =
   const [newOrder, setNewOrder] = React.useState({
   title: "",
   contentTitle: "",
+  notes:"",
   game: "",
-  type: "Broadcast",
+  type: "BROADCAST",
+  event:"EWC",
 
   status: "PENDING",
 priority: "MEDIUM",
   sourceLanguage: [],
   targetLanguages: [] as string[],
 
-  format: "SRT",
+  deliveryFormats: [
+  {
+    format: "SRT",
+    deliveryLink: ""
+  }
+],
 
   deadline: "",
   sourceFileLink: "",
@@ -117,6 +123,9 @@ const [userForm, setUserForm] =
     department: "",
     position: "",
   })
+
+  const [selectedEvent, setSelectedEvent] =
+  React.useState("EWC")
 
   const [gameUsers, setGameUsers] =
   React.useState<{
@@ -897,8 +906,10 @@ const [editingOrderId, setEditingOrderId] =
   setNewOrder({
     title: "",
     contentTitle: "",
+    notes:"",
     game: "",
-    type: "Broadcast",
+    type: "BROADCAST",
+    event:"EWC",
 
     status: "PENDING",
     priority: "MEDIUM",
@@ -906,7 +917,12 @@ const [editingOrderId, setEditingOrderId] =
 
     targetLanguages: [],
 
+    deliveryFormats: [
+  {
     format: "SRT",
+    deliveryLink: ""
+  }
+],
 
     deadline: "",
 
@@ -1018,6 +1034,13 @@ async function fetchOrders() {
         deadlineSort
       )
     }
+
+    if (selectedEvent) {
+  params.append(
+    "event",
+    selectedEvent
+  )
+}
 
     const response =
       await fetch(
@@ -1248,7 +1271,7 @@ async function createOrder() {
 
           game:
             newOrder.type ===
-            "Marketing"
+            "MARKETING"
               ? "-"
               : newOrder.game,
         }),
@@ -1564,6 +1587,8 @@ const statsOrders =
   setActivePage={setActivePage}
   currentUser={currentUser}
   logout={logout}
+  selectedEvent={selectedEvent}
+  setSelectedEvent={setSelectedEvent}
 />
 
     {/* MAIN */}
@@ -2160,6 +2185,7 @@ const statsOrders =
               setDeadlineSort("")
               setSelectedGameFilter("")
               setContentTitleFilter("")
+              setSelectedEvent(selectedEvent)
             }}
             className="
               h-[54px]
@@ -2209,6 +2235,7 @@ const statsOrders =
                 deadlineSort,
                 selectedGameFilter,
                 contentTitleFilter,
+                selectedEvent,
               ].filter(Boolean)
                 .length
             }{" "}
@@ -2597,6 +2624,7 @@ const marketingOrders =
   setSelectedOrder={setSelectedOrder}
   createOrder={createOrder}
   updateOrder={updateOrder}
+  selectedEvent={selectedEvent}
 />
 <UserModal
   showUserModal={

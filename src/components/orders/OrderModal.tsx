@@ -21,6 +21,7 @@ type Props = {
   isSavingOrder: boolean
 
   newOrder: any
+  selectedEvent: string
 
   setNewOrder: (
     value: any
@@ -57,6 +58,7 @@ export default function OrderModal({
   games,
   fetchGames,
   updateOrder,
+  selectedEvent,
 }: Props) {
   if (!showModal) {
     return null
@@ -67,10 +69,12 @@ export default function OrderModal({
 setNewOrder({
   title: "",
   contentTitle: "",
+  notes:"",
 
   game: "",
 
   type: "Broadcast",
+  event:selectedEvent,
 
   status: "PENDING",
 
@@ -80,7 +84,7 @@ setNewOrder({
 
   targetLanguages: [],
 
-  format: "SRT",
+  deliveryFormats: [],
 
   deadline: "",
 
@@ -206,7 +210,8 @@ today.setHours(0, 0, 0, 0)
   },
 }}
   className={`bg-[#0E0E0E] border border-zinc-800 rounded-3xl flex flex-col max-h-[90vh] ${
-    newOrder.deliveries?.length > 0
+    newOrder.deliveries?.length > 0 ||
+    newOrder.deliveryFormats?.length > 0
       ? "w-[1200px]"
       : "w-[700px]"
   }`}
@@ -231,7 +236,8 @@ today.setHours(0, 0, 0, 0)
   {/* FORM */}
 <div
   className={`grid gap-6 ${
-    newOrder.deliveries?.length > 0
+    newOrder.deliveries?.length > 0 ||
+    newOrder.deliveryFormats?.length > 0
       ? "grid-cols-[1fr_380px]"
       : "grid-cols-1"
   }`}
@@ -268,6 +274,38 @@ today.setHours(0, 0, 0, 0)
           />
         </div>
 
+        {/* NOTES */}
+<div className="col-span-2">
+  <label className="text-sm text-zinc-400 mb-2 block">
+    Notes
+  </label>
+
+  <textarea
+    value={newOrder.notes || ""}
+    onChange={(e) =>
+      setNewOrder({
+        ...newOrder,
+        notes: e.target.value,
+      })
+    }
+    placeholder="Add internal notes..."
+    rows={5}
+    className="
+      w-full
+      bg-black
+      border
+      border-zinc-700
+      rounded-2xl
+      px-4
+      py-3
+      resize-none
+      outline-none
+      focus:border-[#D6B36A]
+      transition
+    "
+  />
+</div>
+
         {/* TYPE */}
         <div>
           <label className="text-sm text-zinc-400 mb-2 block">
@@ -276,12 +314,28 @@ today.setHours(0, 0, 0, 0)
 
           <select
             value={newOrder.type}
-            onChange={(e) =>
-              setNewOrder({
-                ...newOrder,
-                type: e.target.value,
-              })
-            }
+            onChange={(e) => {
+
+  const type = e.target.value
+
+  setNewOrder({
+    ...newOrder,
+
+    type,
+
+    sourceLanguage: [],
+    targetLanguages: [],
+    deliveries: [],
+    deliveryFormats: [],
+
+    game: "",
+    estimatedMinutes: "",
+    deadline: "",
+    deliveryDate: "",
+
+    contentTitle: "",
+  })
+}}
             className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
           >
             <option>Broadcast</option>
@@ -376,21 +430,22 @@ today.setHours(0, 0, 0, 0)
   <Select
     options={games.map(
       (game: any) => ({
-        value: game.name,
+        value: game.id,
         label: game.name,
       })
     )}
 
     value={
-      newOrder.game
-        ? {
-            value:
-              newOrder.game,
-            label:
-              newOrder.game,
-          }
-        : null
-    }
+  games
+    .map((game: any) => ({
+      value: game.id,
+      label: game.name,
+    }))
+    .find(
+      (option: any) =>
+        option.value === newOrder.game
+    ) || null
+}
 
     onChange={(selected) =>
       setNewOrder({
@@ -472,7 +527,7 @@ today.setHours(0, 0, 0, 0)
                   ...newOrder,
 
                   sourceLanguage:
-                    selected.map(
+                    (selected || []).map(
                       (
                         item: any
                       ) =>
@@ -521,7 +576,7 @@ today.setHours(0, 0, 0, 0)
 
             onChange={(selected) => {
   const selectedLanguages =
-    selected.map(
+    (selected || []).map(
       (item: any) => item.value
     )
 
@@ -568,27 +623,55 @@ today.setHours(0, 0, 0, 0)
     Delivery Format
   </label>
 
-  <select
-    value={newOrder.format}
-    onChange={(e) =>
-      setNewOrder({
-        ...newOrder,
-        format:
-          e.target.value,
+<Select
+  isMulti
+  styles={darkSelectStyles}
+  options={[
+    {
+      value: "SRT",
+      label: "SRT",
+    },
+    {
+      value: "BURNED_IN",
+      label: "BURNED IN",
+    },
+    {
+      value: "TEXT",
+      label: "TEXT",
+    },
+  ]}
+  value={
+    newOrder.deliveryFormats?.map(
+      (item: any) => ({
+        value: item.format,
+        label: item.format,
       })
-    }
-    className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
-  >
-    {/* AVAILABLE FOR BOTH */}
-    <option>
-      SRT
-    </option>
+    ) || []
+  }
+  onChange={(selected) => {
+    const existing =
+      newOrder.deliveryFormats || []
 
-    <option>
-      BURNED_IN
-    </option>
+    const updated =
+     (selected || []).map((item: any) => {
+        const found =
+          existing.find(
+            (f: any) =>
+              f.format === item.value
+          )
 
-  </select>
+        return found || {
+          format: item.value,
+          deliveryLink: "",
+        }
+      })
+
+    setNewOrder({
+      ...newOrder,
+      deliveryFormats: updated,
+    })
+  }}
+/>
 </div>
 
           {/* SOURCE FILE */}
@@ -751,29 +834,55 @@ today.setHours(0, 0, 0, 0)
           Delivery Format
         </label>
 
-        <select
-          value={newOrder.format}
-          onChange={(e) =>
-            setNewOrder({
-              ...newOrder,
-              format:
-                e.target.value,
-            })
-          }
-          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
-        >
-          <option>
-            SRT
-          </option>
+      <Select
+  isMulti
+  styles={darkSelectStyles}
+  options={[
+    {
+      value: "SRT",
+      label: "SRT",
+    },
+    {
+      value: "BURNED_IN",
+      label: "BURNED IN",
+    },
+    {
+      value: "TEXT",
+      label: "TEXT",
+    },
+  ]}
+  value={
+    newOrder.deliveryFormats?.map(
+      (item: any) => ({
+        value: item.format,
+        label: item.format,
+      })
+    ) || []
+  }
+  onChange={(selected) => {
+    const existing =
+      newOrder.deliveryFormats || []
 
-          <option>
-            BURNED_IN
-          </option>
+    const updated =
+      (selected || []).map((item: any) => {
+        const found =
+          existing.find(
+            (f: any) =>
+              f.format === item.value
+          )
 
-          <option>
-            TEXT
-          </option>
-        </select>
+        return found || {
+          format: item.value,
+          deliveryLink: "",
+        }
+      })
+
+    setNewOrder({
+      ...newOrder,
+      deliveryFormats: updated,
+    })
+  }}
+/>
       </div>
       {/* SOURCE LANGUAGES */}
 <div className="col-span-2">
@@ -807,7 +916,7 @@ today.setHours(0, 0, 0, 0)
         ...newOrder,
 
         sourceLanguage:
-          selected.map(
+          (selected || []).map(
             (item: any) =>
               item.value
           ),
@@ -852,7 +961,7 @@ today.setHours(0, 0, 0, 0)
     onChange={(selected) => {
 
       const selectedLanguages =
-        selected.map(
+        (selected || []).map(
           (item: any) =>
             item.value
         )
@@ -952,8 +1061,10 @@ today.setHours(0, 0, 0, 0)
 
 {/* RIGHT SIDE */}
 <AnimatePresence>
-{newOrder.deliveries
-  ?.length > 0 && (
+{(
+  newOrder.deliveries?.length > 0 ||
+  newOrder.deliveryFormats?.length > 0
+) && (
 <motion.div
  initial={{
   opacity: 0,
@@ -980,11 +1091,11 @@ transition={{
 
     <div className="mb-5">
       <h3 className="text-lg font-semibold">
-        Delivery Links
+        Delivery Assets
       </h3>
 
       <p className="text-sm text-zinc-500 mt-1">
-        Add links for each language
+        Manage language and format links
       </p>
     </div>
 
@@ -1042,6 +1153,94 @@ transition={{
           </div>
         )
       )}
+
+      {/* FORMAT DELIVERY LINKS */}
+{newOrder.deliveryFormats
+  ?.length > 0 && (
+  <div className="mt-8">
+
+    <div className="mb-5">
+
+      <h3 className="text-lg font-semibold">
+        Format Links
+      </h3>
+
+      <p className="text-sm text-zinc-500 mt-1">
+        Add links for each format
+      </p>
+
+    </div>
+
+    <div className="space-y-4">
+
+      {newOrder.deliveryFormats.map(
+        (
+          formatItem: any,
+          index: number
+        ) => (
+          <div
+            key={formatItem.format}
+            className="
+              bg-zinc-950
+              border
+              border-zinc-800
+              rounded-2xl
+              p-4
+            "
+          >
+
+            <p className="text-sm font-medium mb-3">
+              {formatItem.format}
+            </p>
+
+            <input
+              type="url"
+              value={
+                formatItem.deliveryLink || ""
+              }
+              onChange={(e) => {
+
+                const updated = [
+                  ...newOrder.deliveryFormats,
+                ]
+
+                updated[index] = {
+                  ...updated[index],
+
+                  deliveryLink:
+                    e.target.value,
+                }
+
+                setNewOrder({
+                  ...newOrder,
+
+                  deliveryFormats:
+                    updated,
+                })
+              }}
+
+              placeholder={`Paste ${formatItem.format} link...`}
+
+              className="
+                w-full
+                bg-black
+                border
+                border-zinc-700
+                rounded-xl
+                px-4
+                py-3
+                outline-none
+              "
+            />
+
+          </div>
+        )
+      )}
+
+    </div>
+
+  </div>
+)}
 
     </div>
 
