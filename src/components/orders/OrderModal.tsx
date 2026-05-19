@@ -73,7 +73,7 @@ setNewOrder({
 
   game: "",
 
-  type: "Broadcast",
+  type: "BROADCAST",
   event:selectedEvent,
 
   status: "PENDING",
@@ -338,8 +338,8 @@ today.setHours(0, 0, 0, 0)
 }}
             className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
           >
-            <option>Broadcast</option>
-            <option>Marketing</option>
+            <option value="BROADCAST">Broadcast</option>
+            <option value="MARKETING">Marketing</option>
           </select>
         </div>
 
@@ -412,7 +412,7 @@ today.setHours(0, 0, 0, 0)
 
     {/* BROADCAST */}
     {newOrder.type ===
-      "Broadcast" && (
+      "BROADCAST" && (
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
 
         <h3 className="text-lg font-semibold mb-5">
@@ -763,7 +763,7 @@ today.setHours(0, 0, 0, 0)
 
 {/* MARKETING */}
 {newOrder.type ===
-  "Marketing" && (
+  "MARKETING" && (
   <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
 
     <h3 className="text-lg font-semibold mb-5">
