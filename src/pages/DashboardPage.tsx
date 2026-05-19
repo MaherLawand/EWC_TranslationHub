@@ -56,7 +56,7 @@ const [deadlineSort, setDeadlineSort] =
   contentTitle: "",
   notes:"",
   game: "",
-  type: "Broadcast",
+  type: "BROADCAST",
   event:"EWC",
 
   status: "PENDING",
@@ -909,7 +909,7 @@ const [editingOrderId, setEditingOrderId] =
     contentTitle: "",
     notes:"",
     game: "",
-    type: "Broadcast",
+    type: "BROADCAST",
     event:"EWC",
 
     status: "PENDING",
