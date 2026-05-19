@@ -29,6 +29,32 @@ const unreadNotifications =
     (n: any) => !n.isRead
   ).length || 0
 
+  const canViewBroadcastOrders =
+
+  currentUser?.department ===
+    "BROADCAST" ||
+
+  currentUser?.department ===
+    "MARKETING" ||
+
+  currentUser?.role ===
+    "ADMIN"
+
+const canManageOrders =
+  currentUser?.role === "ADMIN" ||
+  (
+    currentUser?.department ===
+      "BROADCAST" &&
+    (
+      currentUser?.position ===
+        "PRODUCER" ||
+      currentUser?.position ===
+        "POST_PRODUCTION_MANAGER" ||
+        currentUser?.position ===
+    "TRANSLATOR"
+    )
+  )
+
   return (
     <aside
       className="
@@ -196,30 +222,23 @@ const unreadNotifications =
         <div className="space-y-2">
 
           {/* BROADCAST */}
-                    {/* GAMES */}
-          {(currentUser?.department ===
-            "BROADCAST" ||
-            currentUser?.role ===
-              "ADMIN") && (
+          {canViewBroadcastOrders && (
             <SidebarItem
               active={
                 activePage ===
-                "games"
+                "Broadcast"
               }
-              label="Games"
+              label="Broadcast Orders"
               onClick={() =>
                 setActivePage(
-                  "games"
+                  "Broadcast"
                 )
               }
             />
           )}
 
           {/* MARKETING */}
-          {(currentUser?.department ===
-            "MARKETING" ||
-            currentUser?.role ===
-              "ADMIN") && (
+          {canViewBroadcastOrders && (
             <SidebarItem
               active={
                 activePage ===
@@ -257,16 +276,8 @@ const unreadNotifications =
 )}
 {/* NOTIFICATIONS */}
 {(
-  currentUser?.role === "ADMIN" ||
 
-  currentUser?.position ===
-    "PRODUCER" ||
-
-  currentUser?.position ===
-    "POST_PRODUCTION_MANAGER" ||
-
-  currentUser?.position ===
-    "TRANSLATOR"
+  canManageOrders
 ) && (
   <div className="relative">
 

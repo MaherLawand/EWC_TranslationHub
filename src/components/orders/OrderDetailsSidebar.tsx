@@ -6,6 +6,7 @@ type Props = {
   selectedOrder: any
   currentUser: any
   editedOrder: any
+  activePage: string
 
   setSelectedOrder: (
     order: any
@@ -66,7 +67,8 @@ export default function OrderDetailsSidebar({
   setDeletingOrderId,
   deleteOrder,
   canManageOrders,
-  getDeadlineInfo
+  getDeadlineInfo,
+  activePage
 }: Props) {
 
     function getLanguageCode(
@@ -96,12 +98,34 @@ export default function OrderDetailsSidebar({
 
   return `https://${url}`
 }
+
+const isBroadcastReadOnly =
+
+  activePage === "Broadcast" &&
+
+  currentUser?.department ===
+    "MARKETING"
+
   return (
 <div className="w-[520px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0">
-      <div className="p-8">
+      <div className="px-8">
 
 {/* HEADER */}
-<div className="mb-8 relative border-b border-[#242424] pb-6">
+<div
+  className="
+    sticky
+    top-0
+    z-40
+    mb-8
+    border-b
+    border-[#242424]
+    pb-6
+    pt-8
+    bg-[#090909]/95
+    backdrop-blur-xl
+  "
+>
+        <div className="relative">
 
   {/* CLOSE */}
   <button
@@ -109,13 +133,12 @@ export default function OrderDetailsSidebar({
       setSelectedOrder(null)
       setIsEditingOrder(false)
     }}
-    className="absolute top-0 right-0 text-zinc-400 hover:text-white transition text-xl"
-  >
+    className="absolute top-0 right-0 text-zinc-400 hover:text-white transition text-xl"  >
     ✕
   </button>
 
   {/* TITLE */}
-  <h1 className="text-[34px] font-bold tracking-tight text-[#F5F1E8] leading-tight max-w-[280px]">
+  <h1 className="text-[25px] font-bold tracking-tight text-[#F5F1E8] leading-tight max-w-[280px]">
     {selectedOrder.title}
   </h1>
 
@@ -1117,11 +1140,13 @@ export default function OrderDetailsSidebar({
 )}
 
       </div>
+      </div>
 
       {/* BOTTOM ACTIONS */}
 {/* BOTTOM ACTIONS */}
 <div className="sticky bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-zinc-800 p-6 mt-10">
-{canManageOrders && (
+{canManageOrders &&
+!isBroadcastReadOnly && (
   <div className="grid grid-cols-2 gap-3">
 
     {/* EDIT */}

@@ -30,9 +30,9 @@ type Props = {
     value: string
   ) => void
 
-  setFormatFilter: (
-    value: string
-  ) => void
+setFormatFilter: (
+  value: string[]
+) => void
 
   setSelectedGameFilter: (
     value: string
@@ -225,12 +225,19 @@ paginatedNotifications.map(
   )
 
   setFormatFilter(
+  (
     order.broadcast
-      ?.deliveryFormat ||
+      ?.deliveryFormats ||
+
     order.marketing
-      ?.deliveryFormat ||
-    "All Formats"
+      ?.deliveryFormats ||
+
+    []
+  ).map(
+    (format: any) =>
+      format.format
   )
+)
 
   // open sidebar
   setSelectedOrder(order)

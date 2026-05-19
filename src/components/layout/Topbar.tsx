@@ -28,7 +28,7 @@ export default function Topbar({
         return "Marketing"
 
       case "games":
-        return "Games"
+        return "Broadcast"
 
         case "my-games":
           return "My Games"

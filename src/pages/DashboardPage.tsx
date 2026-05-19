@@ -37,7 +37,7 @@ const [activePage, setActivePage] =
   React.useState("All Priorities")
 
 const [formatFilter, setFormatFilter] =
-  React.useState("All Formats")
+  React.useState<string[]>([])
 
 const [deadlineSort, setDeadlineSort] =
   React.useState("")
@@ -569,7 +569,7 @@ ONLY FOR GAMES PAGES
 React.useEffect(() => {
 
   const shouldFetchGames =
-    activePage === "games" ||
+    activePage === "Broadcast" ||
     activePage === "my-games"
 
   if (!shouldFetchGames) {
@@ -589,7 +589,7 @@ ONLY FOR ORDER PAGES
 React.useEffect(() => {
 
   const shouldFetchOrders =
-  activePage === "games" ||
+  activePage === "Broadcast" ||
   activePage === "my-games" ||
   activePage === "marketing" ||
   activePage === "notifications"
@@ -609,6 +609,7 @@ React.useEffect(() => {
   contentTitleFilter,
   selectedGameFilter,
   deadlineSort,
+  selectedEvent,
 ])
 
 /*
@@ -620,7 +621,7 @@ ONLY WHEN A GAME IS SELECTED
 React.useEffect(() => {
 
   const shouldFetchGameUsers =
-    activePage === "games" ||
+    activePage === "Broadcast" ||
     activePage === "my-games"
 
   if (
@@ -689,6 +690,8 @@ React.useEffect(() => {
 
   setSelectedOrder(null)
 
+  resetFilters()
+
 }, [activePage])
 
 /*
@@ -710,7 +713,7 @@ React.useEffect(() => {
     currentUser.role ===
     "ADMIN"
   ) {
-    setActivePage("games")
+    setActivePage("Broadcast")
   }
 
   // VIEWER - BROADCAST
@@ -720,7 +723,7 @@ React.useEffect(() => {
     currentUser.department ===
       "BROADCAST"
   ) {
-    setActivePage("games")
+    setActivePage("Broadcast")
   }
 
   // VIEWER / EDITOR - MARKETING
@@ -763,7 +766,7 @@ React.useEffect(() => {
     currentUser.department ===
     "BROADCAST"
   ) {
-    setActivePage("games")
+    setActivePage("Broadcast")
   }
 
   setHasInitializedPage(true)
@@ -936,6 +939,28 @@ const [editingOrderId, setEditingOrderId] =
   })
 }
 
+function resetFilters() {
+
+  setSearch("")
+
+  setStatusFilter(
+    "All Statuses"
+  )
+
+  setPriorityFilter(
+    "All Priorities"
+  )
+
+  setFormatFilter([])
+
+  setDeadlineSort("")
+
+  setSelectedGameFilter("")
+
+  setContentTitleFilter("")
+  setSelectedEvent(selectedEvent)
+}
+
 async function fetchOrders() {
   try {
     setIsLoadingOrders(true)
@@ -993,14 +1018,20 @@ async function fetchOrders() {
       FORMAT
     */
     if (
-      formatFilter !==
-      "All Formats"
-    ) {
+  formatFilter.length > 0
+) {
+
+  formatFilter.forEach(
+    (format) => {
+
       params.append(
         "format",
-        formatFilter
+        format
       )
+
     }
+  )
+}
 
     /*
       CONTENT TITLE
@@ -1539,7 +1570,7 @@ function getDeadlineInfo(
 }
 const showFilters =
   activePage === "marketing" ||
-  activePage === "games" ||
+  activePage === "Broadcast" ||
   activePage === "my-games"
 
 const [gameSearch, setGameSearch] =
@@ -1593,7 +1624,7 @@ const statsOrders =
           "MARKETING"
       )
 
-    : activePage === "games" ||
+    : activePage === "Broadcast" ||
       activePage === "my-games"
 
     ? orders.filter(
@@ -2068,67 +2099,59 @@ const statsOrders =
             {/* FORMAT */}
             <div className="relative">
 
-              <select
-                value={formatFilter}
-                onChange={(e) =>
-                  setFormatFilter(
-                    e.target.value
-                  )
-                }
-                className="
-                  h-[54px]
-                  min-w-[160px]
-                  appearance-none
-                  bg-[#121212]
-                  border
-                  border-[#2A2A2A]
-                  rounded-2xl
-                  px-5
-                  pr-11
-                  text-sm
-                  font-medium
-                  text-[#F5F1E8]
-                  outline-none
-                  transition-all
-                  hover:border-[#3A3A3A]
-                  focus:border-[#D6B36A]
-                  focus:bg-[#151515]
-                  cursor-pointer
-                "
-              >
-                <option>
-                  All Formats
-                </option>
+  <select
+    multiple
 
-                <option>
-                  SRT
-                </option>
+    value={formatFilter}
 
-                <option>
-                  BURNED_IN
-                </option>
+    onChange={(e) => {
 
-                <option>
-                  TEXT
-                </option>
+      const values =
+        Array.from(
+          e.target.selectedOptions
+        ).map(
+          (option) =>
+            option.value
+        )
 
-              </select>
+      setFormatFilter(values)
+    }}
 
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-zinc-500
-                  text-[10px]
-                "
-              >
-                ▼
-              </div>
+    className="
+      min-w-[180px]
+      h-[120px]
+      bg-[#121212]
+      border
+      border-[#2A2A2A]
+      rounded-2xl
+      px-4
+      py-3
+      text-sm
+      font-medium
+      text-[#F5F1E8]
+      outline-none
+      transition-all
+      hover:border-[#3A3A3A]
+      focus:border-[#D6B36A]
+      focus:bg-[#151515]
+    "
+  >
 
-            </div>
+    <option value="SRT">
+      SRT
+    </option>
+
+    <option value="BURNED_IN">
+      BURNED IN
+    </option>
+
+    <option value="TEXT">
+      TEXT
+    </option>
+
+  </select>
+
+</div>
 
             {/* DEADLINE */}
             <div className="relative">
@@ -2208,22 +2231,7 @@ const statsOrders =
 
           {/* RESET */}
           <button
-            onClick={() => {
-              setSearch("")
-              setStatusFilter(
-                "All Statuses"
-              )
-              setPriorityFilter(
-                "All Priorities"
-              )
-              setFormatFilter(
-                "All Formats"
-              )
-              setDeadlineSort("")
-              setSelectedGameFilter("")
-              setContentTitleFilter("")
-              setSelectedEvent(selectedEvent)
-            }}
+            onClick={resetFilters}
             className="
               h-[54px]
               px-5
@@ -2267,8 +2275,7 @@ const statsOrders =
                   "All Statuses",
                 priorityFilter !==
                   "All Priorities",
-                formatFilter !==
-                  "All Formats",
+                formatFilter.length > 0,
                 deadlineSort,
                 selectedGameFilter,
                 contentTitleFilter,
@@ -2284,7 +2291,7 @@ const statsOrders =
     </div>
 
     {/* GAMES */}
-{(activePage === "games" ||
+{(activePage === "Broadcast" ||
   activePage === "my-games") && (
   <div
     className="
@@ -2438,7 +2445,7 @@ const marketingOrders =
 
   return (
     <>
-{(activePage === "games" ||
+{(activePage === "Broadcast" ||
   activePage === "my-games") && (
 <GamesPage
   games={games}
@@ -2458,7 +2465,7 @@ const marketingOrders =
 )}
 {/* BROADCAST TABLE */}
 {(activePage === "dashboard" ||
-  activePage === "games") && (
+  activePage === "Broadcast") && (
   <BroadcastOrdersTable
     isLoading={isLoadingOrders}
   currentUser={currentUser}
@@ -2591,6 +2598,7 @@ const marketingOrders =
       canManageOrders
     }
     getDeadlineInfo={getDeadlineInfo}
+    activePage={activePage}
   />
 )}
         </div>
