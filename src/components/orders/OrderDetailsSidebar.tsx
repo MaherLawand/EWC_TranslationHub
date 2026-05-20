@@ -163,7 +163,7 @@ export default function OrderDetailsSidebar({
     <p className="text-[#F5F1E8] font-medium">
       {selectedOrder.createdBy
         ? `${selectedOrder.createdBy.firstName} ${selectedOrder.createdBy.lastName}`
-        : "-"}
+        : <span className="text-zinc-600">—</span>}
     </p>
   </div>
 
@@ -186,7 +186,7 @@ export default function OrderDetailsSidebar({
         <p className="text-[#F5F1E8] font-medium">
           {selectedOrder.lastEditedBy
             ? `${selectedOrder.lastEditedBy.firstName} ${selectedOrder.lastEditedBy.lastName}`
-            : "-"}
+            : <span className="text-zinc-600">—</span>}
         </p>
         {selectedOrder.lastEditedAt && (
           <p className="text-xs text-zinc-500 mt-1">
@@ -244,14 +244,18 @@ export default function OrderDetailsSidebar({
   <div className="flex justify-between items-center">
     <p className="text-zinc-500 text-sm">Game</p>
     <p className="text-[#F5F1E8] font-medium">
-      {editedOrder.broadcast?.game?.name || "-"}
+      {editedOrder.broadcast?.game?.name
+        ? editedOrder.broadcast.game.name
+        : <span className="text-zinc-600">—</span>}
     </p>
   </div>
 
   <div className="flex justify-between items-center">
     <p className="text-zinc-500 text-sm">Estimated Length</p>
     <p className="text-[#F5F1E8] font-medium">
-      {editedOrder.broadcast?.estimatedMinutes} minutes
+      {editedOrder.broadcast?.estimatedMinutes
+        ? `${editedOrder.broadcast.estimatedMinutes} minutes`
+        : <span className="text-zinc-600">—</span>}
     </p>
   </div>
 
@@ -271,6 +275,9 @@ export default function OrderDetailsSidebar({
 
   <p className="text-zinc-500 text-sm">Translated From</p>
 
+  {!editedOrder.broadcast?.sourceLanguage?.length ? (
+    <span className="text-zinc-600 text-sm">—</span>
+  ) : (
   <div className="flex flex-wrap gap-2">
 
     {editedOrder.broadcast?.sourceLanguage?.map((lang: string) => (
@@ -287,6 +294,7 @@ export default function OrderDetailsSidebar({
     ))}
 
   </div>
+  )}
 
 </div>
 
@@ -295,6 +303,9 @@ export default function OrderDetailsSidebar({
 
   <p className="text-zinc-500 text-sm">To Be Translated To</p>
 
+  {!editedOrder.broadcast?.targetLanguages?.length ? (
+    <span className="text-zinc-600 text-sm">—</span>
+  ) : (
   <div className="flex flex-wrap gap-2">
 
     {editedOrder.broadcast?.targetLanguages?.map((lang: string) => (
@@ -311,6 +322,7 @@ export default function OrderDetailsSidebar({
     ))}
 
   </div>
+  )}
 
 </div>
 
@@ -319,7 +331,7 @@ export default function OrderDetailsSidebar({
 </div>
 
 {/* DELIVERY FORMATS */}
-<div className="mt-10">
+{/* <div className="mt-10">
 
   <SectionTitle title="Delivery Formats" />
 
@@ -345,7 +357,7 @@ export default function OrderDetailsSidebar({
 
   </div>
 
-</div>
+</div> */}
 
 {/* DATES */}
 <div className="mt-10">
@@ -364,7 +376,9 @@ export default function OrderDetailsSidebar({
         <p className="text-zinc-500 text-sm">Source Will Be Added On</p>
       </div>
       <p className="text-[#F5F1E8] font-medium">
-        {new Date(editedOrder.broadcast?.deliveryDate).toLocaleDateString()}
+        {editedOrder.broadcast?.deliveryDate
+          ? new Date(editedOrder.broadcast.deliveryDate).toLocaleDateString()
+          : <span className="text-zinc-600">—</span>}
       </p>
     </div>
 
@@ -378,18 +392,49 @@ export default function OrderDetailsSidebar({
         <p className="text-zinc-500 text-sm">Deadline</p>
       </div>
       <div className="text-right">
-        <p className="text-[#F5F1E8] font-medium">
-          {new Date(editedOrder.broadcast?.deadlineDate).toLocaleDateString()}
-        </p>
-        <p className="text-[#D6B36A] text-sm font-semibold mt-1">
-          {getDeadlineInfo(editedOrder.broadcast?.deadlineDate).text}
-        </p>
+        {editedOrder.broadcast?.deadlineDate ? (
+          <>
+            <p className="text-[#F5F1E8] font-medium">
+              {new Date(editedOrder.broadcast.deadlineDate).toLocaleDateString()}
+            </p>
+            <p className="text-[#D6B36A] text-sm font-semibold mt-1">
+              {getDeadlineInfo(editedOrder.broadcast.deadlineDate).text}
+            </p>
+          </>
+        ) : (
+          <span className="text-zinc-600">—</span>
+        )}
       </div>
     </div>
 
   </div>
 
 </div>
+
+    {/* SRT AVAILABLE LINK — broadcast */}
+    {editedOrder.broadcast?.srtAvailableLink && (
+      <div className="mt-10">
+
+        <SectionTitle title="SRT Available Link" />
+
+        <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+          <div className="flex items-start gap-3">
+            <img src="/google-drive.png" alt="Link" className="w-5 h-5 mt-[2px]" />
+            <div className="flex-1 min-w-0">
+              <a
+                href={formatUrl(editedOrder.broadcast.srtAvailableLink)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#D6B36A] underline text-sm break-all"
+              >
+                {editedOrder.broadcast.srtAvailableLink}
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    )}
 
     {/* SOURCE FILE */}
     <div className="mt-10">
@@ -403,9 +448,13 @@ export default function OrderDetailsSidebar({
       <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
       <div>
         <p className="text-zinc-500 text-sm">Source File</p>
-        <a href={formatUrl(editedOrder.broadcast?.sourceFileLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
-          {editedOrder.broadcast?.sourceFileLink}
-        </a>
+        {editedOrder.broadcast?.sourceFileLink ? (
+          <a href={formatUrl(editedOrder.broadcast.sourceFileLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
+            {editedOrder.broadcast.sourceFileLink}
+          </a>
+        ) : (
+          <p className="text-zinc-600 text-sm mt-1">No file added</p>
+        )}
       </div>
     </div>
   </div>
@@ -414,32 +463,38 @@ export default function OrderDetailsSidebar({
 
     </div>
 
+
+
     {/* DELIVERIES */}
     <div className="mt-10">
 
       <SectionTitle title="Delivery Assets" />
 
-      <div className="space-y-4">
-
-        {editedOrder.broadcast?.deliveries?.map((delivery: any) => (
-          <div key={delivery.id} className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[24px] p-5 shadow-[0_0_30px_rgba(0,0,0,0.35)]">
-            <div className="flex items-start gap-3">
-              <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
-              <div>
-                <p className="text-[#F5F1E8] font-semibold">{delivery.language}</p>
-                {delivery.deliveryLink ? (
-                  <a href={formatUrl(delivery.deliveryLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
-                    {delivery.deliveryLink}
-                  </a>
-                ) : (
-                  <p className="text-sm text-zinc-600 mt-1">No delivery link added yet</p>
-                )}
+      {!editedOrder.broadcast?.deliveries?.length ? (
+        <div className="bg-[#111111] border border-[#242424] rounded-[28px] p-5 text-sm text-zinc-600">
+          No delivery assets added yet
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {editedOrder.broadcast.deliveries.map((delivery: any) => (
+            <div key={delivery.id} className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[24px] p-5 shadow-[0_0_30px_rgba(0,0,0,0.35)]">
+              <div className="flex items-start gap-3">
+                <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
+                <div>
+                  <p className="text-[#F5F1E8] font-semibold">{delivery.language}</p>
+                  {delivery.deliveryLink ? (
+                    <a href={formatUrl(delivery.deliveryLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
+                      {delivery.deliveryLink}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-zinc-600 mt-1">No delivery link added yet</p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
 
@@ -493,7 +548,9 @@ export default function OrderDetailsSidebar({
         <div className="flex justify-between items-center">
           <p className="text-zinc-500 text-sm">Content Title</p>
           <p className="text-[#F5F1E8] font-medium">
-            {editedOrder.marketing?.contentTitle || "-"}
+            {editedOrder.marketing?.contentTitle
+              ? editedOrder.marketing.contentTitle
+              : <span className="text-zinc-600">—</span>}
           </p>
         </div>
 
@@ -510,24 +567,32 @@ export default function OrderDetailsSidebar({
 
         <div className="flex flex-col gap-3">
           <p className="text-zinc-500 text-sm">Translated From</p>
-          <div className="flex flex-wrap gap-2">
-            {editedOrder.marketing?.sourceLanguage?.map((lang: string) => (
-              <div key={lang} className="min-w-[46px] h-[34px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-3 text-xs font-semibold tracking-wide text-white">
-                {getLanguageCode(lang)}
-              </div>
-            ))}
-          </div>
+          {!editedOrder.marketing?.sourceLanguage?.length ? (
+            <span className="text-zinc-600 text-sm">—</span>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {editedOrder.marketing.sourceLanguage.map((lang: string) => (
+                <div key={lang} className="min-w-[46px] h-[34px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-3 text-xs font-semibold tracking-wide text-white">
+                  {getLanguageCode(lang)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-3">
           <p className="text-zinc-500 text-sm">To Be Translated To</p>
-          <div className="flex flex-wrap gap-2">
-            {editedOrder.marketing?.targetLanguages?.map((lang: string) => (
-              <div key={lang} className="min-w-[46px] h-[34px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-3 text-xs font-bold tracking-wide text-black">
-                {getLanguageCode(lang)}
-              </div>
-            ))}
-          </div>
+          {!editedOrder.marketing?.targetLanguages?.length ? (
+            <span className="text-zinc-600 text-sm">—</span>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {editedOrder.marketing.targetLanguages.map((lang: string) => (
+                <div key={lang} className="min-w-[46px] h-[34px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-3 text-xs font-bold tracking-wide text-black">
+                  {getLanguageCode(lang)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
@@ -535,7 +600,7 @@ export default function OrderDetailsSidebar({
     </div>
 
 {/* DELIVERY FORMATS */}
-<div className="mt-10">
+{/* <div className="mt-10">
 
   <SectionTitle title="Delivery Formats" />
 
@@ -561,7 +626,32 @@ export default function OrderDetailsSidebar({
 
   </div>
 
-</div>
+</div> */}
+
+    {/* SRT AVAILABLE LINK — marketing */}
+    {editedOrder.marketing?.srtAvailableLink && (
+      <div className="mt-10">
+
+        <SectionTitle title="SRT Available Link" />
+
+        <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+          <div className="flex items-start gap-3">
+            <img src="/google-drive.png" alt="Link" className="w-5 h-5 mt-[2px]" />
+            <div className="flex-1 min-w-0">
+              <a
+                href={formatUrl(editedOrder.marketing.srtAvailableLink)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#D6B36A] underline text-sm break-all"
+              >
+                {editedOrder.marketing.srtAvailableLink}
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    )}
 
     {/* SOURCE FILE */}
     <div className="mt-10">
@@ -574,9 +664,13 @@ export default function OrderDetailsSidebar({
           <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
           <div className="flex-1 min-w-0">
             <p className="text-zinc-500 text-sm">Source File</p>
-            <a href={formatUrl(editedOrder.marketing?.sourceFileLink)} target="_blank" rel="noopener noreferrer" className="mt-2 block text-sm text-[#D6B36A] hover:text-[#E7C989] underline transition-colors break-all">
-              {editedOrder.marketing?.sourceFileLink}
-            </a>
+            {editedOrder.marketing?.sourceFileLink ? (
+              <a href={formatUrl(editedOrder.marketing.sourceFileLink)} target="_blank" rel="noopener noreferrer" className="mt-2 block text-sm text-[#D6B36A] hover:text-[#E7C989] underline transition-colors break-all">
+                {editedOrder.marketing.sourceFileLink}
+              </a>
+            ) : (
+              <p className="text-zinc-600 text-sm mt-1">No file added</p>
+            )}
           </div>
         </div>
 
@@ -584,32 +678,38 @@ export default function OrderDetailsSidebar({
 
     </div>
 
+
+
     {/* DELIVERY ASSETS */}
     <div className="mt-10">
 
       <SectionTitle title="Delivery Assets" />
 
-      <div className="space-y-4">
-
-        {editedOrder.marketing?.deliveries?.map((delivery: any) => (
-          <div key={delivery.id} className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[24px] p-5 shadow-[0_0_30px_rgba(0,0,0,0.35)]">
-            <div className="flex items-start gap-3">
-              <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
-              <div>
-                <p className="text-[#F5F1E8] font-semibold">{delivery.language}</p>
-                {delivery.deliveryLink ? (
-                  <a href={formatUrl(delivery.deliveryLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
-                    {delivery.deliveryLink}
-                  </a>
-                ) : (
-                  <p className="text-sm text-zinc-600 mt-1">No delivery link added yet</p>
-                )}
+      {!editedOrder.marketing?.deliveries?.length ? (
+        <div className="bg-[#111111] border border-[#242424] rounded-[28px] p-5 text-sm text-zinc-600">
+          No delivery assets added yet
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {editedOrder.marketing.deliveries.map((delivery: any) => (
+            <div key={delivery.id} className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[24px] p-5 shadow-[0_0_30px_rgba(0,0,0,0.35)]">
+              <div className="flex items-start gap-3">
+                <img src="/google-drive.png" alt="Drive" className="w-5 h-5 mt-[2px]" />
+                <div>
+                  <p className="text-[#F5F1E8] font-semibold">{delivery.language}</p>
+                  {delivery.deliveryLink ? (
+                    <a href={formatUrl(delivery.deliveryLink)} target="_blank" rel="noreferrer" className="text-[#D6B36A] underline text-sm break-all mt-1 block">
+                      {delivery.deliveryLink}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-zinc-600 mt-1">No delivery link added yet</p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
 
@@ -631,7 +731,7 @@ export default function OrderDetailsSidebar({
           title: selectedOrder.title,
           contentTitle: selectedOrder.marketing?.contentTitle || "",
           game: selectedOrder.broadcast?.gameId || "",
-          type: selectedOrder.type === "MARKETING" ? "Marketing" : "Broadcast",
+          type: selectedOrder.type,
           event: selectedOrder.event || "EWC",
           status: selectedOrder.status,
           priority: selectedOrder.priority,
@@ -653,6 +753,10 @@ export default function OrderDetailsSidebar({
             selectedOrder.type === "MARKETING"
               ? selectedOrder.marketing?.sourceFileLink || ""
               : selectedOrder.broadcast?.sourceFileLink || "",
+          srtAvailableLink:
+            selectedOrder.type === "MARKETING"
+              ? selectedOrder.marketing?.srtAvailableLink || ""
+              : selectedOrder.broadcast?.srtAvailableLink || "",
           estimatedMinutes: String(selectedOrder.broadcast?.estimatedMinutes || ""),
           deliveries:
             selectedOrder.type === "MARKETING"

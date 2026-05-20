@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
   LANGUAGES,
   type Language,
@@ -38,9 +38,15 @@ type Props = {
   games: any[]
   fetchGames: () => void
 
-  createOrder: () => void
+  createOrder: (assignUserIds?: string[]) => void
 
   updateOrder: () => void
+
+  onAssignUsers?: (orderId: string, userIds: string[]) => Promise<void>
+  editingOrderId?: string
+  canAssignUsers?: boolean
+  setIsEditing: (value: boolean) => void
+  setEditingOrderId: (id: string) => void
 }
 
 
@@ -59,13 +65,44 @@ export default function OrderModal({
   fetchGames,
   updateOrder,
   selectedEvent,
+  onAssignUsers,
+  editingOrderId,
+  canAssignUsers,
+  setIsEditing,
+  setEditingOrderId,
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [languageSearch, setLanguageSearch] = useState("")
 
+  // Assign users state
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+
   const clearError = useCallback((field: string) => {
     setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
   }, [])
+
+  // Seed selected users from existing assignments when editing
+  useEffect(() => {
+    if (isEditing && newOrder.type === "MARKETING" && selectedOrder?.marketing?.assignments) {
+      setSelectedUserIds(selectedOrder.marketing.assignments.map((a: any) => a.user.id))
+    } else if (!isEditing) {
+      setSelectedUserIds([])
+    }
+  }, [isEditing, selectedOrder?.id, newOrder.type])
+
+  // Load all users once when modal opens for MARKETING
+  useEffect(() => {
+    if (!showModal || newOrder.type !== "MARKETING") return
+    setIsLoadingUsers(true)
+    fetch(`${import.meta.env.VITE_API_URL}/auth/users/search`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : [])
+      .then((users) => setAllUsers(users))
+      .catch(() => setAllUsers([]))
+      .finally(() => setIsLoadingUsers(false))
+  }, [showModal, newOrder.type])
+
 
   function validate() {
     const e: Record<string, string> = {}
@@ -83,7 +120,7 @@ export default function OrderModal({
   function handleSubmit() {
     if (!validate()) return
     if (isEditing) updateOrder()
-    else createOrder()
+    else createOrder(newOrder.type === "MARKETING" ? selectedUserIds : [])
   }
 
   if (!showModal) {
@@ -91,6 +128,11 @@ export default function OrderModal({
   }
   function handleClose() {
   setShowModal(false)
+  setIsEditing(false)
+  setEditingOrderId("")
+
+  setSelectedUserIds([])
+  setAllUsers([])
 
 setNewOrder({
   title: "",
@@ -116,6 +158,8 @@ setNewOrder({
 
   sourceFileLink: "",
 
+  srtAvailableLink: "",
+
   estimatedMinutes: "",
 
   deliveryDate: "",
@@ -127,93 +171,79 @@ setNewOrder({
   const darkSelectStyles = {
   control: (base: any) => ({
     ...base,
-    backgroundColor: "#000000",
-    borderColor: "#3f3f46",
-    minHeight: 52,
+    backgroundColor: "#0A0A0A",
+    borderColor: "#2A2A2A",
+    minHeight: 48,
     borderRadius: 16,
     boxShadow: "none",
-
     ":hover": {
-      borderColor: "#52525b",
+      borderColor: "#3A3A3A",
     },
   }),
 
   menu: (base: any) => ({
     ...base,
-    backgroundColor: "#09090b",
-    border: "1px solid #27272a",
+    backgroundColor: "#111111",
+    border: "1px solid #242424",
     borderRadius: 16,
     overflow: "hidden",
     zIndex: 9999,
+    boxShadow: "0 0 40px rgba(0,0,0,0.6)",
   }),
 
   menuList: (base: any) => ({
     ...base,
-    backgroundColor: "#09090b",
+    backgroundColor: "#111111",
     padding: 8,
   }),
 
-  option: (
-    base: any,
-    state: any
-  ) => ({
+  option: (base: any, state: any) => ({
     ...base,
-    backgroundColor: state.isFocused
-      ? "#18181b"
-      : "#09090b",
-    color: "white",
+    backgroundColor: state.isFocused ? "#1A1A1A" : "transparent",
+    color: state.isFocused ? "#F5F1E8" : "#A1A1AA",
     borderRadius: 10,
     cursor: "pointer",
     fontSize: 14,
-    marginBottom: 4,
+    marginBottom: 2,
   }),
 
   multiValue: (base: any) => ({
     ...base,
-    backgroundColor: "#18181b",
-    border: "1px solid #27272a",
-    borderRadius: 10,
+    backgroundColor: "#1A1A1A",
+    border: "1px solid #2A2A2A",
+    borderRadius: 8,
     paddingLeft: 4,
   }),
 
-  multiValueLabel: (
-    base: any
-  ) => ({
+  multiValueLabel: (base: any) => ({
     ...base,
-    color: "white",
+    color: "#F5F1E8",
     fontSize: 12,
     fontWeight: 500,
   }),
 
-  multiValueRemove: (
-    base: any
-  ) => ({
+  multiValueRemove: (base: any) => ({
     ...base,
-    color: "#a1a1aa",
-
+    color: "#71717a",
     ":hover": {
-      backgroundColor: "#27272a",
+      backgroundColor: "#2A2A2A",
       color: "white",
     },
   }),
 
   input: (base: any) => ({
     ...base,
-    color: "white",
+    color: "#F5F1E8",
   }),
 
-  placeholder: (
-    base: any
-  ) => ({
+  placeholder: (base: any) => ({
     ...base,
-    color: "#71717a",
+    color: "#52525b",
   }),
 
-  singleValue: (
-    base: any
-  ) => ({
+  singleValue: (base: any) => ({
     ...base,
-    color: "white",
+    color: "#F5F1E8",
   }),
 }
 
@@ -232,35 +262,35 @@ today.setHours(0, 0, 0, 0)
     ease: [0.22, 1, 0.36, 1],
   },
 }}
-  className={`bg-[#0E0E0E] border border-zinc-800 rounded-3xl flex flex-col max-h-[90vh] ${
-    newOrder.deliveries?.length > 0 ||
-    newOrder.deliveryFormats?.length > 0
+  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl flex flex-col max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] ${
+    newOrder.deliveries?.length > 0
       ? "w-[1200px]"
       : "w-[700px]"
   }`}
 >
       {/* HEADER */}
-      <div className="flex items-center justify-between px-8 pt-8 pb-5 border-b border-zinc-800">
-        <h2 className="text-2xl font-bold">
-  {isEditing
-    ? "Edit Order"
-    : "Create Order"}
-</h2>
-
+      <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">
+            {isEditing ? "Editing" : "New Order"}
+          </p>
+          <h2 className="text-xl font-bold text-[#F5F1E8]">
+            {isEditing ? "Edit Order" : "Create Order"}
+          </h2>
+        </div>
         <button
           onClick={handleClose}
-          className="text-zinc-500 hover:text-white transition"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
         >
           ✕
         </button>
       </div>
-<div className="flex-1 overflow-auto p-8">
+<div className="flex-1 overflow-auto p-8 dark-scroll">
       {/* FORM */}
   {/* FORM */}
 <div
   className={`grid gap-6 ${
-    newOrder.deliveries?.length > 0 ||
-    newOrder.deliveryFormats?.length > 0
+    newOrder.deliveries?.length > 0
       ? "grid-cols-[1fr_380px]"
       : "grid-cols-1"
   }`}
@@ -270,7 +300,7 @@ today.setHours(0, 0, 0, 0)
   <div className="space-y-6">
 
     {/* GENERAL */}
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+    <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
 
       <h3 className="text-lg font-semibold mb-5">
         General Information
@@ -280,21 +310,21 @@ today.setHours(0, 0, 0, 0)
 
         {/* TITLE */}
         <div className="col-span-2">
-          <label className="text-sm text-zinc-400 mb-2 block">
+          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
             Order Title <span className="text-red-400">*</span>
           </label>
           <input
             value={newOrder.title}
             onChange={(e) => { setNewOrder({ ...newOrder, title: e.target.value }); clearError("title") }}
             placeholder="Enter title"
-            className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none transition ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-zinc-700 focus:border-[#D6B36A]"}`}
+            className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none transition ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-[#2A2A2A] focus:border-[#D6B36A]"}`}
           />
           {errors.title && <p className="text-red-400 text-xs mt-1.5">{errors.title}</p>}
         </div>
 
         {/* NOTES */}
 <div className="col-span-2">
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Notes
   </label>
 
@@ -310,13 +340,14 @@ today.setHours(0, 0, 0, 0)
     rows={5}
     className="
       w-full
-      bg-black
+      bg-[#0A0A0A]
       border
-      border-zinc-700
+      border-[#2A2A2A]
       rounded-2xl
       px-4
       py-3
-      resize-none
+      text-[#F5F1E8]
+      resize-y
       outline-none
       focus:border-[#D6B36A]
       transition
@@ -326,7 +357,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* TYPE */}
         <div>
-          <label className="text-sm text-zinc-400 mb-2 block">
+          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
             Order Type
           </label>
 
@@ -337,19 +368,18 @@ today.setHours(0, 0, 0, 0)
               setNewOrder({
                 ...newOrder,
                 type,
-                sourceLanguage: [],
-                targetLanguages: [],
-                deliveries: [],
-                deliveryFormats: [],
+                // broadcast-only — reset when switching away
                 game: "",
                 estimatedMinutes: "",
-                deadline: "",
                 deliveryDate: "",
+                // marketing-only — reset when switching away
                 contentTitle: "",
               })
+              setSelectedUserIds([])
+              setAllUsers([])
               setErrors({})
             }}
-            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
           >
             <option value="BROADCAST">Broadcast</option>
             <option value="MARKETING">Marketing</option>
@@ -358,7 +388,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* STATUS */}
         <div>
-          <label className="text-sm text-zinc-400 mb-2 block">
+          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
             Status
           </label>
 
@@ -374,7 +404,7 @@ today.setHours(0, 0, 0, 0)
                   e.target.value,
               })
             }
-            className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
           >
             <option value="PENDING">
               Pending
@@ -391,7 +421,7 @@ today.setHours(0, 0, 0, 0)
         </div>
 
         <div>
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Priority
   </label>
 
@@ -403,7 +433,7 @@ today.setHours(0, 0, 0, 0)
         priority: e.target.value,
       })
     }
-    className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+    className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
   >
     <option value="LOW">
       Low
@@ -426,7 +456,7 @@ today.setHours(0, 0, 0, 0)
     {/* BROADCAST */}
     {newOrder.type ===
       "BROADCAST" && (
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
 
         <h3 className="text-lg font-semibold mb-5">
           Broadcast Details
@@ -436,7 +466,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* GAME */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Game <span className="text-red-400">*</span>
             </label>
             <Select
@@ -458,21 +488,21 @@ today.setHours(0, 0, 0, 0)
 
           {/* MINUTES */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Estimated Minutes <span className="text-red-400">*</span>
             </label>
             <input
               type="number"
               value={newOrder.estimatedMinutes}
               onChange={(e) => { setNewOrder({ ...newOrder, estimatedMinutes: e.target.value }); clearError("estimatedMinutes") }}
-              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none transition ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-zinc-700 focus:border-[#D6B36A]"}`}
+              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none transition ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-[#2A2A2A] focus:border-[#D6B36A]"}`}
             />
             {errors.estimatedMinutes && <p className="text-red-400 text-xs mt-1.5">{errors.estimatedMinutes}</p>}
           </div>
 
           {/* SOURCE LANGUAGES */}
           <div className="col-span-2">
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Source Languages
             </label>
 
@@ -526,7 +556,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* TARGET LANGUAGES */}
           <div className="col-span-2">
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Translate To
             </label>
 
@@ -602,7 +632,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* FORMAT */}
 <div>
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Delivery Format
   </label>
 
@@ -659,7 +689,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* SOURCE FILE */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Source File
             </label>
 
@@ -675,13 +705,33 @@ today.setHours(0, 0, 0, 0)
                     e.target.value,
                 })
               }
-              className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+            />
+          </div>
+
+          {/* SRT AVAILABLE LINK */}
+          <div>
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+              SRT Available Link
+              <span className="text-zinc-600 text-xs ml-1">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={newOrder.srtAvailableLink || ""}
+              onChange={(e) =>
+                setNewOrder({
+                  ...newOrder,
+                  srtAvailableLink: e.target.value,
+                })
+              }
+              placeholder="Paste SRT link..."
+              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
             />
           </div>
 
           {/* DELIVERY DATE */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Delivery Date <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -690,14 +740,14 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select delivery date"
-              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deliveryDate ? "border-red-500/60" : "border-zinc-700"}`}
+              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deliveryDate ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deliveryDate && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryDate}</p>}
           </div>
 
           {/* DEADLINE */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -706,7 +756,7 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
-              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deadline ? "border-red-500/60" : "border-zinc-700"}`}
+              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
@@ -719,7 +769,7 @@ today.setHours(0, 0, 0, 0)
 {/* MARKETING */}
 {newOrder.type ===
   "MARKETING" && (
-  <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
 
     <h3 className="text-lg font-semibold mb-5">
       Marketing Details
@@ -730,7 +780,7 @@ today.setHours(0, 0, 0, 0)
       {/* CONTENT TITLE */}
 <div className="col-span-2">
 
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Content Title
   </label>
 
@@ -750,12 +800,13 @@ today.setHours(0, 0, 0, 0)
 
     className="
       w-full
-      bg-black
+      bg-[#0A0A0A]
       border
-      border-zinc-700
+      border-[#2A2A2A]
       rounded-2xl
       px-4
       py-3
+      text-[#F5F1E8]
     "
   >
 
@@ -785,7 +836,7 @@ today.setHours(0, 0, 0, 0)
 
       {/* FORMAT */}
       <div>
-        <label className="text-sm text-zinc-400 mb-2 block">
+        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
           Delivery Format
         </label>
 
@@ -842,7 +893,7 @@ today.setHours(0, 0, 0, 0)
       {/* SOURCE LANGUAGES */}
 <div className="col-span-2">
 
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Source Languages
   </label>
 
@@ -888,7 +939,7 @@ today.setHours(0, 0, 0, 0)
 {/* TARGET LANGUAGES */}
 <div className="col-span-2">
 
-  <label className="text-sm text-zinc-400 mb-2 block">
+  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Translate To
   </label>
 
@@ -964,7 +1015,7 @@ today.setHours(0, 0, 0, 0)
 
       {/* SOURCE FILE */}
       <div>
-        <label className="text-sm text-zinc-400 mb-2 block">
+        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
           Source File
         </label>
 
@@ -981,13 +1032,33 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste source link..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+        />
+      </div>
+
+      {/* SRT AVAILABLE LINK */}
+      <div>
+        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+          SRT Available Link
+          <span className="text-zinc-600 text-xs ml-1">(optional)</span>
+        </label>
+        <input
+          type="url"
+          value={newOrder.srtAvailableLink || ""}
+          onChange={(e) =>
+            setNewOrder({
+              ...newOrder,
+              srtAvailableLink: e.target.value,
+            })
+          }
+          placeholder="Paste SRT link..."
+          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
         />
       </div>
 
        {/* DEADLINE */}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">
+            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -996,14 +1067,14 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
-              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deadline ? "border-red-500/60" : "border-zinc-700"}`}
+              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
 
       {/* DELIVERED LINK
       <div className="col-span-2">
-        <label className="text-sm text-zinc-400 mb-2 block">
+        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
           Delivered Link
         </label>
 
@@ -1020,11 +1091,52 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste delivered file link..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl px-4 py-3"
+          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
         />
       </div> */}
 
     </div>
+
+  </div>
+)}
+
+{/* ASSIGN USERS — marketing only */}
+{newOrder.type === "MARKETING" && canAssignUsers && (
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+
+    <div className="mb-5">
+      <h3 className="text-lg font-semibold">Assign Users</h3>
+      <p className="text-sm text-zinc-500 mt-0.5">
+        {selectedUserIds.length > 0
+          ? `${selectedUserIds.length} user${selectedUserIds.length > 1 ? "s" : ""} selected`
+          : "No users assigned"}
+      </p>
+    </div>
+
+        <Select
+          isMulti
+          isLoading={isLoadingUsers}
+          styles={darkSelectStyles}
+          options={allUsers.map((u: any) => ({
+            value: u.id,
+            label: `${u.firstName} ${u.lastName}${u.position ? ` — ${u.position.replace(/_/g, " ")}` : ""}`,
+          }))}
+          value={allUsers
+            .filter((u: any) => selectedUserIds.includes(u.id))
+            .map((u: any) => ({
+              value: u.id,
+              label: `${u.firstName} ${u.lastName}${u.position ? ` — ${u.position.replace(/_/g, " ")}` : ""}`,
+            }))}
+          onChange={(selected) => {
+            const ids = (selected || []).map((s: any) => s.value)
+            setSelectedUserIds(ids)
+            if (isEditing && editingOrderId && onAssignUsers) {
+              onAssignUsers(editingOrderId, ids)
+            }
+          }}
+          placeholder="Search and select users..."
+          className="text-sm"
+        />
 
   </div>
 )}
@@ -1057,7 +1169,7 @@ transition={{
   ease: [0.22, 1, 0.36, 1],
 }}
 
-  className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6 flex flex-col h-fit sticky top-0"
+  className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 flex flex-col h-fit sticky top-0 shadow-[0_0_40px_rgba(0,0,0,0.4)]"
 >
 
     <div className="mb-5">
@@ -1070,7 +1182,7 @@ transition={{
       </p>
     </div>
 
-    <div className="space-y-4 max-h-[650px] overflow-auto pr-1">
+    <div className="space-y-4 max-h-[650px] overflow-auto pr-1 dark-scroll">
 
       {newOrder.deliveries.map(
         (
@@ -1081,7 +1193,7 @@ transition={{
             key={
               delivery.language
             }
-            className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4"
+            className="bg-[#0D0D0D] border border-[#1E1E1E] rounded-2xl p-4"
           >
 
             <p className="text-sm font-medium mb-3">
@@ -1118,100 +1230,42 @@ transition={{
 
               placeholder="Paste delivery link..."
 
-              className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 outline-none"
+              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
             />
 
           </div>
         )
       )}
 
-      {/* FORMAT DELIVERY LINKS */}
+      {/* FORMAT DELIVERY LINKS — commented out, kept for future use
 {newOrder.deliveryFormats
   ?.length > 0 && (
   <div className="mt-8">
-
     <div className="mb-5">
-
-      <h3 className="text-lg font-semibold">
-        Format Links
-      </h3>
-
-      <p className="text-sm text-zinc-500 mt-1">
-        Add links for each format
-      </p>
-
+      <h3 className="text-lg font-semibold">Format Links</h3>
+      <p className="text-sm text-zinc-500 mt-1">Add links for each format</p>
     </div>
-
     <div className="space-y-4">
-
-      {newOrder.deliveryFormats.map(
-        (
-          formatItem: any,
-          index: number
-        ) => (
-          <div
-            key={formatItem.format}
-            className="
-              bg-zinc-950
-              border
-              border-zinc-800
-              rounded-2xl
-              p-4
-            "
-          >
-
-            <p className="text-sm font-medium mb-3">
-              {formatItem.format}
-            </p>
-
-            <input
-              type="url"
-              value={
-                formatItem.deliveryLink || ""
-              }
-              onChange={(e) => {
-
-                const updated = [
-                  ...newOrder.deliveryFormats,
-                ]
-
-                updated[index] = {
-                  ...updated[index],
-
-                  deliveryLink:
-                    e.target.value,
-                }
-
-                setNewOrder({
-                  ...newOrder,
-
-                  deliveryFormats:
-                    updated,
-                })
-              }}
-
-              placeholder={`Paste ${formatItem.format} link...`}
-
-              className="
-                w-full
-                bg-black
-                border
-                border-zinc-700
-                rounded-xl
-                px-4
-                py-3
-                outline-none
-              "
-            />
-
-          </div>
-        )
-      )}
-
+      {newOrder.deliveryFormats.map((formatItem: any, index: number) => (
+        <div key={formatItem.format} className="bg-[#0D0D0D] border border-[#1E1E1E] rounded-2xl p-4">
+          <p className="text-sm font-medium mb-3">{formatItem.format}</p>
+          <input
+            type="url"
+            value={formatItem.deliveryLink || ""}
+            onChange={(e) => {
+              const updated = [...newOrder.deliveryFormats]
+              updated[index] = { ...updated[index], deliveryLink: e.target.value }
+              setNewOrder({ ...newOrder, deliveryFormats: updated })
+            }}
+            placeholder={`Paste ${formatItem.format} link...`}
+            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+          />
+        </div>
+      ))}
     </div>
-
   </div>
 )}
+*/}
 
     </div>
 
@@ -1221,15 +1275,15 @@ transition={{
 </div>
 </div>
 {/* BUTTONS */}
-<div className="border-t border-zinc-800 bg-[#0E0E0E] p-6 rounded-b-3xl sticky bottom-0 z-20">
+<div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
 
   <button
     disabled={isSavingOrder}
     onClick={handleSubmit}
-    className={`w-full py-4 rounded-2xl font-semibold transition ${
+    className={`w-full py-3.5 rounded-2xl font-semibold transition ${
       isSavingOrder
-        ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-        : "bg-white text-black hover:opacity-90"
+        ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
+        : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
     }`}
   >
     {isSavingOrder

@@ -297,8 +297,9 @@ const [updatingOrderId, setUpdatingOrderId] =
 
                 {/* GAME */}
                 <td className="px-6 py-2.5 text-zinc-300 align-center">
-                  {broadcast?.game
-                    ?.name || "-"}
+                  {broadcast?.game?.name
+                    ? broadcast.game.name
+                    : <span className="text-zinc-600">—</span>}
                 </td>
 
                 {/* LANGUAGES */}
@@ -306,71 +307,38 @@ const [updatingOrderId, setUpdatingOrderId] =
 
                   <div className="flex flex-wrap items-center gap-2">
 
-                    <div className="flex flex-wrap gap-1">
-
-                      {broadcast?.sourceLanguage?.map(
-                        (
-                          lang: string
-                        ) => (
+                    {/* SOURCE */}
+                    {broadcast?.sourceLanguage?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {broadcast.sourceLanguage.map((lang: string) => (
                           <span
                             key={lang}
-                            className="
-                              min-w-[34px]
-                              h-[22px]
-                              inline-flex
-                              items-center
-                              justify-center
-                              rounded-full
-                              border
-                              border-[#2D2D2D]
-                              bg-[#1A1A1A]
-                              text-[#EAEAEA]
-                              text-[10px]
-                              font-bold
-                              tracking-[0.12em]
-                              px-2
-                            "
+                            className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2"
                           >
-                            {getLanguageCode(
-                              lang
-                            )}
+                            {getLanguageCode(lang)}
                           </span>
-                        )
-                      )}
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
 
-                    </div>
+                    <span className="text-zinc-500">→</span>
 
-                    <span className="text-zinc-500">
-                      →
-                    </span>
-
-                    {broadcast?.targetLanguages?.map(
-                      (
-                        lang: string
-                      ) => (
-                        <span
-                          key={lang}
-                          className="
-                            min-w-[34px]
-                            h-[22px]
-                            inline-flex
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-[#F5F1E8]
-                            text-black
-                            text-[10px]
-                            font-bold
-                            tracking-[0.12em]
-                            px-2
-                            shadow-[0_0_15px_rgba(245,241,232,0.08)]
-                          "
-                        >
-                          {getLanguageCode(
-                            lang
-                          )}
-                        </span>
-                      )
+                    {/* TARGET */}
+                    {broadcast?.targetLanguages?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {broadcast.targetLanguages.map((lang: string) => (
+                          <span
+                            key={lang}
+                            className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)]"
+                          >
+                            {getLanguageCode(lang)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
                     )}
 
                   </div>
@@ -380,6 +348,9 @@ const [updatingOrderId, setUpdatingOrderId] =
                 {/* FORMAT */}
                 <td className="px-6 py-2.5 align-center">
 
+  {!broadcast?.deliveryFormats?.length ? (
+    <span className="text-zinc-600">—</span>
+  ) : (
   <div className="flex flex-wrap gap-2">
 
     {broadcast?.deliveryFormats?.map(
@@ -405,6 +376,7 @@ const [updatingOrderId, setUpdatingOrderId] =
     )}
 
   </div>
+  )}
 
 </td>
 
@@ -412,33 +384,21 @@ const [updatingOrderId, setUpdatingOrderId] =
                 <td className="px-6 py-2.5 text-zinc-300 align-center">
 
                   {broadcast?.deadlineDate ? (
-                    <div>
-
-                      <p>
-                        {new Date(
-                          broadcast.deadlineDate
-                        ).toLocaleDateString()}
-                      </p>
-
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <span>
+                        {new Date(broadcast.deadlineDate).toLocaleDateString()}
+                      </span>
                       {(() => {
-
-                        const info =
-                          getDeadlineInfo(
-                            broadcast.deadlineDate
-                          )
-
+                        const info = getDeadlineInfo(broadcast.deadlineDate)
                         return (
-                          <p
-                            className={`text-xs mt-1 ${info.color}`}
-                          >
+                          <span className={`text-xs ${info.color}`}>
                             {info.text}
-                          </p>
+                          </span>
                         )
                       })()}
-
                     </div>
                   ) : (
-                    "-"
+                    <span className="text-zinc-600">—</span>
                   )}
 
                 </td>

@@ -48,10 +48,10 @@ export default function App() {
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
       />
 
-      {/* MAIN APP — show login if not authenticated */}
+      {/* MAIN APP — redirect to login if not authenticated */}
       <Route
         path="/"
-        element={user ? <DashboardPage /> : <LoginPage />}
+        element={user ? <DashboardPage /> : <Navigate to="/login" replace />}
       />
 
       {/* FALLBACK */}

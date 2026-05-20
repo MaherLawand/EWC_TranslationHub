@@ -72,6 +72,7 @@ export default function App() {
     deliveryFormats: [{ format: "SRT", deliveryLink: "" }],
     deadline: "",
     sourceFileLink: "",
+    srtAvailableLink: "",
     estimatedMinutes: "",
     deliveryDate: "",
     deliveries: [],
@@ -419,6 +420,7 @@ export default function App() {
       deliveryFormats: [{ format: "SRT", deliveryLink: "" }],
       deadline: "",
       sourceFileLink: "",
+      srtAvailableLink: "",
       estimatedMinutes: "",
       deliveryDate: "",
       deliveries: [],
@@ -1072,7 +1074,6 @@ export default function App() {
                   isLoading={isLoadingOrders}
                   orders={marketingOrders}
                   currentUser={currentUser}
-                  onAssignUsers={onAssignUsers}
                   setSelectedOrder={setSelectedOrder}
                   setEditedOrder={setEditedOrder}
                   updateOrderStatus={updateOrderStatus}
@@ -1159,6 +1160,11 @@ export default function App() {
           createOrder={createOrder}
           updateOrder={updateOrder}
           selectedEvent={selectedEvent}
+          onAssignUsers={onAssignUsers}
+          editingOrderId={editingOrderId}
+          canAssignUsers={canManageOrders}
+          setIsEditing={setIsEditing}
+          setEditingOrderId={setEditingOrderId}
         />
 
         {/* USER MODAL */}

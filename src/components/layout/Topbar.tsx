@@ -157,6 +157,33 @@ return (
         </h3>
       </div>
 
+      {/* PENDING */}
+      <div
+        className="
+          min-w-[120px]
+          rounded-2xl
+          px-4
+          py-3
+          bg-yellow-500/10
+          text-yellow-400
+          border
+          border-yellow-500/20"
+      >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-yellow-400">
+          Pending
+        </p>
+
+        <h3 className="text-2xl font-bold text-white mt-1">
+          {
+            statsOrders.filter(
+              (o: any) =>
+                o.status ===
+                "PENDING"
+            ).length
+          }
+        </h3>
+      </div>
+      
       {/* IN PROGRESS */}
       <div
         className="
@@ -211,32 +238,7 @@ return (
         </h3>
       </div>
 
-      {/* PENDING */}
-      <div
-        className="
-          min-w-[120px]
-          rounded-2xl
-          px-4
-          py-3
-          bg-yellow-500/10
-          text-yellow-400
-          border
-          border-yellow-500/20"
-      >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-yellow-400">
-          Pending
-        </p>
 
-        <h3 className="text-2xl font-bold text-white mt-1">
-          {
-            statsOrders.filter(
-              (o: any) =>
-                o.status ===
-                "PENDING"
-            ).length
-          }
-        </h3>
-      </div>
 
     </div>
   )}

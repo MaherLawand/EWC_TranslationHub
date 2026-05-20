@@ -209,7 +209,7 @@ formatFilter.forEach((format: string) => {
   }
 }
 
-async function createOrder() {
+async function createOrder(assignUserIds: string[] = []) {
   if (
     !newOrder.title ||
     isSavingOrder
@@ -254,8 +254,27 @@ async function createOrder() {
       )
     }
 
-    const createdOrder =
-      await response.json()
+    let createdOrder = await response.json()
+
+    // Assign users immediately after creation if any were selected
+    if (assignUserIds.length > 0 && createdOrder.id) {
+      try {
+        const assignRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/orders/${createdOrder.id}/assign`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userIds: assignUserIds }),
+          }
+        )
+        if (assignRes.ok) {
+          createdOrder = await assignRes.json()
+        }
+      } catch (assignError) {
+        console.error("Assign users error:", assignError)
+      }
+    }
 
     setOrders((prev) => [
       createdOrder,
