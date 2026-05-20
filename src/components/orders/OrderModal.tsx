@@ -985,6 +985,22 @@ today.setHours(0, 0, 0, 0)
         />
       </div>
 
+       {/* DEADLINE */}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">
+              Deadline <span className="text-red-400">*</span>
+            </label>
+            <DatePicker
+              selected={newOrder.deadline ? new Date(newOrder.deadline) : null}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: date?.toISOString().split("T")[0] || "" }); clearError("deadline") }}
+              minDate={today}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Select deadline"
+              className={`w-full bg-black border rounded-2xl px-4 py-3 outline-none text-white ${errors.deadline ? "border-red-500/60" : "border-zinc-700"}`}
+            />
+            {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
+          </div>
+
       {/* DELIVERED LINK
       <div className="col-span-2">
         <label className="text-sm text-zinc-400 mb-2 block">

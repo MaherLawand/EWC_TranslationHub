@@ -27,7 +27,7 @@ export default function Topbar({
       case "marketing":
         return "Marketing"
 
-      case "games":
+      case "Broadcast":
         return "Broadcast"
 
         case "my-games":
@@ -52,8 +52,8 @@ export default function Topbar({
       case "users":
         return "Manage platform users"
 
-      case "games":
-        return "Manage games"
+      case "Broadcast":
+        return "Manage broadcast translations"
 
       case "my-games":
         return "Manage your games"
@@ -67,7 +67,7 @@ export default function Topbar({
   activePage === "games" ||
   activePage === "marketing" ||
   activePage === "my-games" ||
-  activePage === "broadcast"
+  activePage === "Broadcast"
 
 return (
   <header
