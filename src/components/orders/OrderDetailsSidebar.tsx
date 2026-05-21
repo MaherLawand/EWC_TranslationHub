@@ -201,6 +201,23 @@ export default function OrderDetailsSidebar({
 
         </div>
 
+        {/* NOTES */}
+        <div className="mb-10">
+
+          <SectionTitle title="Notes" />
+
+          <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)]">
+            {selectedOrder.notes ? (
+              <p className="text-sm text-[#F5F1E8] leading-relaxed whitespace-pre-wrap">
+                {selectedOrder.notes}
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-600">No notes added</p>
+            )}
+          </div>
+
+        </div>
+
         {/* EDIT HISTORY */}
 {isAdmin && selectedOrder.editHistory?.length > 0 && (
   <div className="mb-10">
