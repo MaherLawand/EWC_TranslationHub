@@ -4,6 +4,15 @@ export function useUsers() {
   const [users, setUsers] =
     React.useState<any[]>([])
 
+  const [usersPage, setUsersPage] =
+    React.useState(1)
+
+  const [usersTotalPages, setUsersTotalPages] =
+    React.useState(1)
+
+  const [isLoadingUsers, setIsLoadingUsers] =
+    React.useState(false)
+
   const [userSearch, setUserSearch] =
     React.useState("")
 
@@ -30,19 +39,46 @@ export function useUsers() {
   const [isSavingUser, setIsSavingUser] =
     React.useState(false)
 
-  async function fetchUsers() {
+  // Abort ref so we can cancel in-flight fetches when params change
+  const abortRef = React.useRef<AbortController | null>(null)
+
+  async function fetchUsers(page = 1, search = "") {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    setIsLoadingUsers(true)
     try {
+      const params = new URLSearchParams()
+      params.append("page", String(page))
+      if (search.trim()) params.append("search", search.trim())
+
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/auth/getAllUsers`,
-        { credentials: "include" }
+        `${import.meta.env.VITE_API_URL}/auth/getAllUsers?${params.toString()}`,
+        { credentials: "include", signal: controller.signal }
       )
       if (!response.ok) throw new Error("Failed to fetch users")
       const data = await response.json()
       setUsers(Array.isArray(data.users) ? data.users : [])
-    } catch (error) {
-      console.error("Failed to fetch users:", error)
+      setUsersTotalPages(data.totalPages || 1)
+      setUsersPage(data.page || page)
+    } catch (error: any) {
+      if (error?.name !== "AbortError") console.error("Failed to fetch users:", error)
+    } finally {
+      if (abortRef.current === controller) setIsLoadingUsers(false)
     }
   }
+
+  // Re-fetch whenever search changes (debounced 300 ms)
+  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  React.useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      fetchUsers(1, userSearch)
+    }, 300)
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [userSearch])
 
   function openCreateUserModal() {
     setIsEditingUser(false)
@@ -94,7 +130,8 @@ export function useUsers() {
         alert(data.message)
         return
       }
-      setUsers((prev) => [data, ...prev])
+      // Re-fetch page 1 so new user appears at top
+      await fetchUsers(1, userSearch)
       setShowUserModal(false)
     } catch (error) {
       console.error(error)
@@ -118,6 +155,7 @@ export function useUsers() {
       )
       if (!response.ok) throw new Error("Failed to update user")
       const updated = await response.json()
+      // Update in-place so we don't lose page position
       setUsers((prev) =>
         prev.map((u) => (u.id === updated.id ? updated : u))
       )
@@ -140,7 +178,8 @@ export function useUsers() {
         alert(data.message)
         return
       }
-      setUsers((prev) => prev.filter((u) => u.id !== userId))
+      // Re-fetch current page so counts stay accurate
+      await fetchUsers(usersPage, userSearch)
     } catch (error) {
       console.error(error)
     }
@@ -149,6 +188,10 @@ export function useUsers() {
   return {
     users,
     setUsers,
+    usersPage,
+    usersTotalPages,
+    isLoadingUsers,
+    fetchUsers,
     userSearch,
     setUserSearch,
     showUserModal,
@@ -158,7 +201,6 @@ export function useUsers() {
     userForm,
     setUserForm,
     isSavingUser,
-    fetchUsers,
     openCreateUserModal,
     openEditUserModal,
     createUser,

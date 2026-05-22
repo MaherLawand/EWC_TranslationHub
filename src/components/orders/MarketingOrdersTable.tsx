@@ -3,28 +3,34 @@ import {
   LANGUAGES,
 } from "../../constants/languages"
 import StatusBadge from "../shared/StatusBadge"
+import PaginationBar from "../shared/PaginationBar"
 
 type Props = {
   orders: any[]
   currentUser: any
-  setSelectedOrder: (order: any) => void
-  setEditedOrder: (order: any) => void
+  page: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  onRowClick: (order: any) => void
   updateOrderStatus: (orderId: string, status: string) => void
   getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
+  onAssignUsers: (orderId: string, userIds: string[]) => Promise<void>
   isLoading?: boolean
 }
 
 export default function MarketingOrdersTable({
   orders,
-  setSelectedOrder,
-  setEditedOrder,
+  page,
+  totalPages,
+  onPageChange,
+  onRowClick,
   updateOrderStatus,
   currentUser,
   getDeadlineInfo,
+  onAssignUsers,
   isLoading,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 50
 const canUpdateStatus =
   currentUser?.role === "ADMIN" ||
 
@@ -39,33 +45,6 @@ const canUpdateStatus =
     
   currentUser?.position ===
     "EDITOR"
-  const [page, setPage] =
-    React.useState(1)
-
-  const totalPages =
-    Math.ceil(
-      orders.length /
-        ITEMS_PER_PAGE
-    ) || 1
-
-  const paginatedOrders =
-    orders.slice(
-      (page - 1) *
-        ITEMS_PER_PAGE,
-
-      page * ITEMS_PER_PAGE
-    )
-
-  React.useEffect(() => {
-    if (page > totalPages) {
-      setPage(1)
-    }
-  }, [orders, totalPages])
-
-  React.useEffect(() => {
-  setPage(1)
-}, [orders.length])
-
 function getLanguageCode(
   languageName: string
 ) {
@@ -84,6 +63,85 @@ function getLanguageCode(
 const [updatingOrderId, setUpdatingOrderId] =
   React.useState<string | null>(null)
 
+// Assign modal state
+const [assignOrderId, setAssignOrderId] = React.useState<string | null>(null)
+const [assignSearch, setAssignSearch] = React.useState("")
+const [assignSelectedIds, setAssignSelectedIds] = React.useState<string[]>([])
+const [isSavingAssign, setIsSavingAssign] = React.useState(false)
+const [searchResults, setSearchResults] = React.useState<any[]>([])
+const [isSearching, setIsSearching] = React.useState(false)
+const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+// Debounced search — only fires after 300 ms of no typing, min 1 char
+React.useEffect(() => {
+  if (!assignOrderId) return
+  if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+  if (!assignSearch.trim()) { setSearchResults([]); return }
+  searchDebounceRef.current = setTimeout(async () => {
+    setIsSearching(true)
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/users/search?q=${encodeURIComponent(assignSearch.trim())}`,
+        { credentials: "include" }
+      )
+      setSearchResults(res.ok ? await res.json() : [])
+    } catch { setSearchResults([]) }
+    finally { setIsSearching(false) }
+  }, 300)
+  return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current) }
+}, [assignSearch, assignOrderId])
+
+function openAssignModal(e: React.MouseEvent, order: any) {
+  e.stopPropagation()
+  const alreadyAssigned: any[] = order.marketing?.assignments?.map((a: any) => a.user) || []
+  setAssignOrderId(order.id)
+  setAssignSearch("")
+  setSearchResults([])
+  setAssignSelectedIds(alreadyAssigned.map((u) => u.id))
+  setAssignedUserObjects(alreadyAssigned)
+}
+
+// keep a snapshot of the assigned users' full objects so chips render correctly
+const [assignedUserObjects, setAssignedUserObjects] = React.useState<any[]>([])
+React.useEffect(() => {
+  if (!assignOrderId) return
+  // merge newly found users into the snapshot so chips stay visible
+  setAssignedUserObjects((prev) => {
+    const merged = [...prev]
+    searchResults.forEach((u) => {
+      if (!merged.find((m) => m.id === u.id)) merged.push(u)
+    })
+    return merged
+  })
+}, [searchResults])
+
+function closeAssignModal() {
+  setAssignOrderId(null)
+  setAssignSearch("")
+  setSearchResults([])
+  setAssignedUserObjects([])
+  setAssignSelectedIds([])
+}
+
+function toggleUser(user: any) {
+  setAssignedUserObjects((prev) =>
+    prev.find((u) => u.id === user.id) ? prev : [...prev, user]
+  )
+  setAssignSelectedIds((prev) =>
+    prev.includes(user.id) ? prev.filter((id) => id !== user.id) : [...prev, user.id]
+  )
+}
+
+async function saveAssign() {
+  if (!assignOrderId || isSavingAssign) return
+  setIsSavingAssign(true)
+  try {
+    await onAssignUsers(assignOrderId, assignSelectedIds)
+    closeAssignModal()
+  } finally {
+    setIsSavingAssign(false)
+  }
+}
 
   async function handleUpdateStatus(
   orderId: string,
@@ -103,6 +161,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
 
   return (
+    <>
     <div
       className="
         bg-[radial-gradient(ellipse_90%_70%_at_top,rgba(214,179,106,0.05),transparent_80%),linear-gradient(to_bottom,#111111,#090909)]
@@ -191,6 +250,10 @@ const [updatingOrderId, setUpdatingOrderId] =
   </th>
 
   <th className="text-left px-6 py-3">
+    Deadline
+  </th>
+
+  <th className="text-left px-6 py-3">
     Status
   </th>
 
@@ -198,6 +261,9 @@ const [updatingOrderId, setUpdatingOrderId] =
     Priority
   </th>
 
+  <th className="text-left px-6 py-3">
+    Assign
+  </th>
 
 </tr>
 
@@ -209,18 +275,18 @@ const [updatingOrderId, setUpdatingOrderId] =
 
     <tr>
       <td
-        colSpan={6}
+        colSpan={8}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
       </td>
     </tr>
 
-  ) : paginatedOrders.length === 0 ? (
+  ) : orders.length === 0 ? (
 
     <tr>
       <td
-        colSpan={6}
+        colSpan={8}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -229,7 +295,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
   ) : (
 
-    paginatedOrders.map((order) => {
+    orders.map((order) => {
 
             const marketing =
               order.marketing
@@ -240,13 +306,7 @@ const isUpdating =
             return (
              <tr
   key={order.id}
-  onClick={() => {
-    setSelectedOrder(order)
-
-setEditedOrder(
-  structuredClone(order)
-)
-  }}
+  onClick={() => onRowClick(order)}
   className="
     border-b
     border-[#1F1F1F]
@@ -363,6 +423,21 @@ setEditedOrder(
   </div>
   )}
 
+</td>
+
+{/* DEADLINE */}
+<td className="px-6 py-2.5 text-zinc-300 align-center">
+  {marketing?.deadlineDate ? (
+    <div className="flex items-center gap-2 whitespace-nowrap">
+      <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
+      {(() => {
+        const info = getDeadlineInfo(marketing.deadlineDate)
+        return <span className={`text-xs ${info.color}`}>{info.text}</span>
+      })()}
+    </div>
+  ) : (
+    <span className="text-zinc-600">—</span>
+  )}
 </td>
 
 {/* STATUS */}
@@ -579,6 +654,20 @@ disabled:cursor-not-allowed
 
   </td>
 
+  {/* ASSIGN */}
+  <td className="px-6 py-2.5 align-center" onClick={(e) => e.stopPropagation()}>
+    <button
+      onClick={(e) => openAssignModal(e, order)}
+      className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-300 hover:border-[#D6B36A] hover:text-[#D6B36A] transition whitespace-nowrap"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+      {marketing?.assignments?.length
+        ? `${marketing.assignments.length} assigned`
+        : "Assign"}
+    </button>
+  </td>
 
 </tr>
             )
@@ -590,132 +679,133 @@ disabled:cursor-not-allowed
       </table>
 
       {/* PAGINATION */}
-      <div
-  className="
-    sticky
-    bottom-0
-    z-30
-    px-7
-    py-5
-    border-t
-    border-[#242424]
-    flex
-    items-center
-    justify-between
-    bg-[#101010]/95
-    backdrop-blur-xl
-  "
->
-
-        <p className="text-sm text-zinc-500">
-          Page {page} of {totalPages}
-        </p>
-
-        <div className="flex items-center gap-2">
-
-          <button
-            disabled={page === 1}
-            onClick={() =>
-              setPage(page - 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Previous
-          </button>
-
-          {Array.from({
-            length: totalPages,
-          }).map((_, index) => {
-
-            const pageNumber =
-              index + 1
-
-            const active =
-              pageNumber === page
-
-            return (
-              <button
-                key={pageNumber}
-                onClick={() =>
-                  setPage(pageNumber)
-                }
-                className={`
-                  w-[42px]
-                  h-[42px]
-                  rounded-xl
-                  text-sm
-                  font-semibold
-                  transition-all
-
-                  ${
-                    active
-                      ? `
-                        bg-[#D6B36A]
-                        text-black
-                        shadow-[0_0_20px_rgba(214,179,106,0.25)]
-                      `
-                      : `
-                        border
-                        border-[#2A2A2A]
-                        bg-[#151515]
-                        text-zinc-400
-                        hover:border-[#D6B36A]
-                        hover:text-white
-                      `
-                  }
-                `}
-              >
-                {pageNumber}
-              </button>
-            )
-          })}
-
-          <button
-            disabled={
-              page === totalPages
-            }
-            onClick={() =>
-              setPage(page + 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Next
-          </button>
-
-        </div>
-
-      </div>
+      <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
+
+    {/* ASSIGN MODAL */}
+    {assignOrderId && (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={closeAssignModal}>
+        <div
+          className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl w-[480px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]"
+          onClick={(e) => e.stopPropagation()}
+        >
+
+          {/* HEADER */}
+          <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">Marketing Order</p>
+              <h2 className="text-lg font-bold text-[#F5F1E8]">Assign Users</h2>
+            </div>
+            <button
+              onClick={closeAssignModal}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* BODY */}
+          <div className="flex-1 overflow-auto dark-scroll p-6 space-y-4">
+
+            {/* SELECTED CHIPS */}
+            {assignSelectedIds.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {assignedUserObjects
+                  .filter((u) => assignSelectedIds.includes(u.id))
+                  .map((u) => (
+                    <span
+                      key={u.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A1A1A] border border-[#D6B36A]/30 text-[#D6B36A] text-xs font-semibold"
+                    >
+                      {u.firstName} {u.lastName}
+                      <button
+                        onClick={() => toggleUser(u)}
+                        className="text-[#D6B36A]/60 hover:text-white transition leading-none"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            )}
+
+            {/* SEARCH */}
+            <input
+              autoFocus
+              value={assignSearch}
+              onChange={(e) => setAssignSearch(e.target.value)}
+              placeholder="Search users..."
+              className="w-full bg-[#111111] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-[#F5F1E8] placeholder:text-zinc-600 outline-none focus:border-[#D6B36A] transition"
+            />
+
+            {/* USER LIST */}
+            <div className="space-y-1">
+              {isSearching ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-5 h-5 border-2 border-[#D6B36A]/40 border-t-[#D6B36A] rounded-full animate-spin" />
+                </div>
+              ) : !assignSearch.trim() ? (
+                <p className="text-center text-zinc-600 text-sm py-6">Type to search users…</p>
+              ) : searchResults.length === 0 ? (
+                <p className="text-center text-zinc-600 text-sm py-6">No users found</p>
+              ) : (
+                searchResults.map((u) => {
+                  const selected = assignSelectedIds.includes(u.id)
+                  return (
+                    <button
+                      key={u.id}
+                      onClick={() => toggleUser(u)}
+                      className={`cursor-pointer w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition text-left ${
+                        selected
+                          ? "bg-[#1A1A1A] border-[#D6B36A]/30"
+                          : "bg-[#111111] border-[#1E1E1E] hover:border-[#2A2A2A]"
+                      }`}
+                    >
+                      <div>
+                        <p className={`text-sm font-semibold ${selected ? "text-[#F5F1E8]" : "text-zinc-300"}`}>
+                          {u.firstName} {u.lastName}
+                        </p>
+                        {u.position && (
+                          <p className="text-xs text-zinc-600 mt-0.5">{u.position.replace(/_/g, " ")}</p>
+                        )}
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition ${
+                        selected ? "bg-[#D6B36A] border-[#D6B36A]" : "border-[#2A2A2A]"
+                      }`}>
+                        {selected && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5L4 7L8 3" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+
+          </div>
+
+          {/* FOOTER */}
+          <div className="border-t border-[#1E1E1E] p-5 rounded-b-3xl flex-shrink-0">
+            <button
+              onClick={saveAssign}
+              disabled={isSavingAssign}
+              className={`w-full py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
+                isSavingAssign
+                  ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
+                  : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
+              }`}
+            >
+              {isSavingAssign && <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />}
+              {isSavingAssign ? "Saving..." : `Save Assignments${assignSelectedIds.length ? ` (${assignSelectedIds.length})` : ""}`}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+    </>
   )
 }

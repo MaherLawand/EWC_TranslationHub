@@ -1,7 +1,12 @@
 import React from "react"
+import PaginationBar from "../shared/PaginationBar"
 
 type Props = {
   users: any[]
+  page: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  isLoading?: boolean
 
   deleteUser: (
     userId: string
@@ -26,6 +31,10 @@ type Props = {
 
 export default function UsersPage({
   users,
+  page,
+  totalPages,
+  onPageChange,
+  isLoading,
   search,
   setSearch,
   openCreateUserModal,
@@ -34,8 +43,6 @@ export default function UsersPage({
   openAssignGamesModal,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 50
-
   const [
     showDeleteModal,
     setShowDeleteModal,
@@ -43,43 +50,6 @@ export default function UsersPage({
 
   const [userToDelete, setUserToDelete] =
     React.useState<any>(null)
-
-  const [page, setPage] =
-    React.useState(1)
-
-  const filteredUsers = users.filter(
-    (user) =>
-      `${user.firstName} ${user.lastName}`
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        ) ||
-      user.email
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-  )
-
-  const totalPages =
-    Math.ceil(
-      filteredUsers.length /
-        ITEMS_PER_PAGE
-    ) || 1
-
-  const paginatedUsers =
-    filteredUsers.slice(
-      (page - 1) *
-        ITEMS_PER_PAGE,
-
-      page * ITEMS_PER_PAGE
-    )
-
-  React.useEffect(() => {
-    if (page > totalPages) {
-      setPage(1)
-    }
-  }, [filteredUsers])
 
   return (
     <div
@@ -132,7 +102,7 @@ export default function UsersPage({
             shadow-[0_0_20px_rgba(214,179,106,0.08)]
           "
         >
-          {filteredUsers.length} Users
+          {users.length} Users
         </div>
 
       </div>
@@ -241,7 +211,19 @@ export default function UsersPage({
 
         <tbody>
 
-          {paginatedUsers.map(
+          {isLoading ? (
+            <tr>
+              <td colSpan={5} className="py-20 text-center text-zinc-500">
+                Loading users...
+              </td>
+            </tr>
+          ) : users.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="py-20 text-center text-zinc-500">
+                No users found
+              </td>
+            </tr>
+          ) : users.map(
             (user) => (
               <tr
                 key={user.id}
@@ -420,127 +402,7 @@ export default function UsersPage({
       </table>
 
       {/* PAGINATION */}
-      <div
-        className="
-          px-7
-          py-5
-          border-t
-          border-[#242424]
-          flex
-          items-center
-          justify-between
-          bg-[#101010]
-        "
-      >
-
-        <p className="text-sm text-zinc-500">
-          Page {page} of {totalPages}
-        </p>
-
-        <div className="flex items-center gap-2">
-
-          <button
-            disabled={page === 1}
-            onClick={() =>
-              setPage(page - 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Previous
-          </button>
-
-          {Array.from({
-            length: totalPages,
-          }).map((_, index) => {
-
-            const pageNumber =
-              index + 1
-
-            const active =
-              pageNumber === page
-
-            return (
-              <button
-                key={pageNumber}
-                onClick={() =>
-                  setPage(pageNumber)
-                }
-                className={`
-                  w-[42px]
-                  h-[42px]
-                  rounded-xl
-                  text-sm
-                  font-semibold
-                  transition-all
-
-                  ${
-                    active
-                      ? `
-                        bg-[#D6B36A]
-                        text-black
-                        shadow-[0_0_20px_rgba(214,179,106,0.25)]
-                      `
-                      : `
-                        border
-                        border-[#2A2A2A]
-                        bg-[#151515]
-                        text-zinc-400
-                        hover:border-[#D6B36A]
-                        hover:text-white
-                      `
-                  }
-                `}
-              >
-                {pageNumber}
-              </button>
-            )
-          })}
-
-          <button
-            disabled={
-              page === totalPages
-            }
-            onClick={() =>
-              setPage(page + 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Next
-          </button>
-
-        </div>
-
-      </div>
+      <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
       {/* DELETE MODAL */}
       {showDeleteModal && (

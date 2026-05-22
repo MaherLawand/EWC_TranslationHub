@@ -1,6 +1,7 @@
 import React from "react"
 
 import StatusBadge from "../shared/StatusBadge"
+import PaginationBar from "../shared/PaginationBar"
 
 import {
   LANGUAGES,
@@ -8,20 +9,15 @@ import {
 
 type Props = {
   orders: any[]
-currentUser: any
-  setSelectedOrder: (
-    order: any
-  ) => void
-
-  setEditedOrder: (
-    order: any
-  ) => void
-
+  currentUser: any
+  page: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  onRowClick: (order: any) => void
   updateOrderStatus: (
     orderId: string,
     status: string
   ) => void
-
   getDeadlineInfo: (
     deadlineDate: string
   ) => {
@@ -33,15 +29,16 @@ currentUser: any
 
 export default function BroadcastOrdersTable({
   orders,
-  setSelectedOrder,
-  setEditedOrder,
+  page,
+  totalPages,
+  onPageChange,
+  onRowClick,
   updateOrderStatus,
   getDeadlineInfo,
   currentUser,
   isLoading,
 }: Props) {
 
-  const ITEMS_PER_PAGE = 50
 const canUpdateStatus =
   currentUser?.role === "ADMIN" ||
 
@@ -56,35 +53,6 @@ const canUpdateStatus =
 
   currentUser?.position ===
     "EDITOR"
-  const [page, setPage] =
-    React.useState(1)
-
-  const totalPages =
-    Math.ceil(
-      orders.length /
-        ITEMS_PER_PAGE
-    ) || 1
-
-  const paginatedOrders =
-    orders.slice(
-      (page - 1) *
-        ITEMS_PER_PAGE,
-
-      page * ITEMS_PER_PAGE
-    )
-
-  React.useEffect(() => {
-    if (page > totalPages) {
-      setPage(1)
-    }
-  }, [orders,totalPages])
-
-  React.useEffect(() => {
-
-  setPage(1)
-
-}, [orders.length])
-
   function getLanguageCode(
     languageName: string
   ) {
@@ -241,7 +209,7 @@ const [updatingOrderId, setUpdatingOrderId] =
       </td>
     </tr>
 
-  ) : paginatedOrders.length === 0 ? (
+  ) : orders.length === 0 ? (
 
     <tr>
       <td
@@ -254,7 +222,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
   ) : (
 
-    paginatedOrders.map((order) => {
+    orders.map((order) => {
 
             const broadcast =
               order.broadcast
@@ -265,12 +233,7 @@ const [updatingOrderId, setUpdatingOrderId] =
             return (
               <tr
                 key={order.id}
-                onClick={() => {
-                  setSelectedOrder(order)
-
-                  setEditedOrder(structuredClone(order))
-
-                }}
+                onClick={() => onRowClick(order)}
                 className="
                   border-b
                   border-[#1F1F1F]
@@ -627,131 +590,7 @@ disabled:cursor-not-allowed
       </table>
 
       {/* PAGINATION */}
-      <div
-  className="
-    sticky
-    bottom-0
-    z-30
-    px-7
-    py-5
-    border-t
-    border-[#242424]
-    flex
-    items-center
-    justify-between
-    bg-[#101010]/95
-    backdrop-blur-xl
-  "
->
-
-        <p className="text-sm text-zinc-500">
-          Page {page} of {totalPages}
-        </p>
-
-        <div className="flex items-center gap-2">
-
-          <button
-            disabled={page === 1}
-            onClick={() =>
-              setPage(page - 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Previous
-          </button>
-
-          {Array.from({
-            length: totalPages,
-          }).map((_, index) => {
-
-            const pageNumber =
-              index + 1
-
-            const active =
-              pageNumber === page
-
-            return (
-              <button
-                key={pageNumber}
-                onClick={() =>
-                  setPage(pageNumber)
-                }
-                className={`
-                  w-[42px]
-                  h-[42px]
-                  rounded-xl
-                  text-sm
-                  font-semibold
-                  transition-all
-
-                  ${
-                    active
-                      ? `
-                        bg-[#D6B36A]
-                        text-black
-                        shadow-[0_0_20px_rgba(214,179,106,0.25)]
-                      `
-                      : `
-                        border
-                        border-[#2A2A2A]
-                        bg-[#151515]
-                        text-zinc-400
-                        hover:border-[#D6B36A]
-                        hover:text-white
-                      `
-                  }
-                `}
-              >
-                {pageNumber}
-              </button>
-            )
-          })}
-
-          <button
-            disabled={
-              page === totalPages
-            }
-            onClick={() =>
-              setPage(page + 1)
-            }
-            className="
-              h-[42px]
-              px-4
-              rounded-xl
-              border
-              border-[#2A2A2A]
-              bg-[#151515]
-              text-sm
-              font-medium
-              text-zinc-300
-              transition-all
-              hover:border-[#D6B36A]
-              hover:text-white
-              disabled:opacity-40
-              disabled:cursor-not-allowed
-            "
-          >
-            Next
-          </button>
-
-        </div>
-
-      </div>
+      <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
   )

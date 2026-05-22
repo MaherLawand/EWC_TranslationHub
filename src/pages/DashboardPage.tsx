@@ -104,6 +104,10 @@ export default function App() {
   */
   const {
     users,
+    usersPage,
+    usersTotalPages,
+    isLoadingUsers,
+    fetchUsers,
     userSearch,
     setUserSearch,
     showUserModal,
@@ -113,7 +117,6 @@ export default function App() {
     userForm,
     setUserForm,
     isSavingUser,
-    fetchUsers,
     openCreateUserModal,
     openEditUserModal,
     createUser,
@@ -139,8 +142,18 @@ export default function App() {
   } = useGames({ activePage, selectedGameFilter, fetchUsers })
 
   const {
-    orders,
-    isLoadingOrders,
+    broadcastOrders,
+    setBroadcastOrders,
+    broadcastPage,
+    broadcastTotalPages,
+    isLoadingBroadcast,
+    fetchBroadcastOrders,
+    marketingOrders,
+    setMarketingOrders,
+    marketingPage,
+    marketingTotalPages,
+    isLoadingMarketing,
+    fetchMarketingOrders,
     editedOrder,
     setEditedOrder,
     isSavingOrder,
@@ -153,7 +166,11 @@ export default function App() {
     updateOrderStatus,
     deleteOrder,
     statsOrders,
-    setOrders,
+    selectedOrderDetail,
+    setSelectedOrderDetail,
+    isLoadingDetail,
+    fetchOrderDetail,
+    toListOrder,
   } = useOrders({
     activePage,
     search,
@@ -187,7 +204,7 @@ export default function App() {
 
   React.useEffect(() => {
     if (activePage !== "users") return
-    fetchUsers()
+    fetchUsers(1, userSearch)
   }, [activePage])
 
   React.useEffect(() => {
@@ -207,16 +224,18 @@ export default function App() {
       setSearch(pending.search)
       if (pending.order) {
         setSelectedOrder(pending.order)
-        setEditedOrder(JSON.parse(JSON.stringify(pending.order)))
+        fetchOrderDetail(pending.order.id)
       }
     } else {
       setSelectedOrder(null)
+      setSelectedOrderDetail(null)
       resetFilters()
     }
   }, [activePage])
 
   React.useEffect(() => {
     setSelectedOrder(null)
+    setSelectedOrderDetail(null)
     setEditedOrder(null)
   }, [selectedEvent])
 
@@ -398,11 +417,22 @@ export default function App() {
     )
     if (!response.ok) throw new Error("Failed to assign users")
     const updated = await response.json()
-    setOrders((prev: any[]) =>
-      prev.map((o: any) => (o.id === updated.id ? updated : o))
-    )
-    setSelectedOrder(updated)
+    if (updated.type === "BROADCAST") {
+      setBroadcastOrders((prev: any[]) =>
+        prev.map((o: any) => (o.id === updated.id ? toListOrder(updated) : o))
+      )
+    } else {
+      setMarketingOrders((prev: any[]) =>
+        prev.map((o: any) => (o.id === updated.id ? toListOrder(updated) : o))
+      )
+    }
+    setSelectedOrderDetail(updated)
     setEditedOrder(JSON.parse(JSON.stringify(updated)))
+  }
+
+  function onRowClick(order: any) {
+    setSelectedOrder(order)
+    fetchOrderDetail(order.id)
   }
 
   function resetOrderState() {
@@ -478,9 +508,6 @@ export default function App() {
     activePage === "Broadcast" ||
     activePage === "my-games"
 
-  const safeOrders = Array.isArray(orders) ? orders : []
-  const broadcastOrders = safeOrders.filter((o) => o.type === "BROADCAST")
-  const marketingOrders = safeOrders.filter((o) => o.type === "MARKETING")
 
   return (
     <div
@@ -1015,6 +1042,10 @@ export default function App() {
             {activePage === "users" && (
               <UsersPage
                 users={users}
+                page={usersPage}
+                totalPages={usersTotalPages}
+                onPageChange={(p) => fetchUsers(p, userSearch)}
+                isLoading={isLoadingUsers}
                 deleteUser={deleteUser}
                 search={userSearch}
                 setSearch={setUserSearch}
@@ -1038,11 +1069,13 @@ export default function App() {
 
               {(activePage === "dashboard" || activePage === "Broadcast") && (
                 <BroadcastOrdersTable
-                  isLoading={isLoadingOrders}
+                  isLoading={isLoadingBroadcast}
                   currentUser={currentUser}
                   orders={broadcastOrders}
-                  setSelectedOrder={setSelectedOrder}
-                  setEditedOrder={setEditedOrder}
+                  page={broadcastPage}
+                  totalPages={broadcastTotalPages}
+                  onPageChange={(p) => fetchBroadcastOrders(p)}
+                  onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
                 />
@@ -1050,11 +1083,13 @@ export default function App() {
 
               {activePage === "my-games" && (
                 <BroadcastOrdersTable
-                  isLoading={isLoadingOrders}
+                  isLoading={isLoadingBroadcast}
                   currentUser={currentUser}
                   orders={broadcastOrders}
-                  setSelectedOrder={setSelectedOrder}
-                  setEditedOrder={setEditedOrder}
+                  page={broadcastPage}
+                  totalPages={broadcastTotalPages}
+                  onPageChange={(p) => fetchBroadcastOrders(p)}
+                  onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
                 />
@@ -1064,20 +1099,23 @@ export default function App() {
                 <NotificationsPage
                   notifications={currentUser?.notifications || []}
                   markNotificationsAsRead={markNotificationsAsRead}
-                  orders={orders}
+                  orders={[...broadcastOrders, ...marketingOrders]}
                   navigateToOrder={navigateToOrder}
                 />
               )}
 
               {(activePage === "dashboard" || activePage === "marketing") && (
                 <MarketingOrdersTable
-                  isLoading={isLoadingOrders}
+                  isLoading={isLoadingMarketing}
                   orders={marketingOrders}
                   currentUser={currentUser}
-                  setSelectedOrder={setSelectedOrder}
-                  setEditedOrder={setEditedOrder}
+                  page={marketingPage}
+                  totalPages={marketingTotalPages}
+                  onPageChange={(p) => fetchMarketingOrders(p)}
+                  onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
+                  onAssignUsers={onAssignUsers}
                 />
               )}
             </>
@@ -1088,9 +1126,13 @@ export default function App() {
           {selectedOrder && (
             <OrderDetailsSidebar
               selectedOrder={selectedOrder}
-              editedOrder={editedOrder}
+              orderDetail={selectedOrderDetail}
+              isLoadingDetail={isLoadingDetail}
               currentUser={currentUser}
-              setSelectedOrder={setSelectedOrder}
+              setSelectedOrder={(v) => {
+                setSelectedOrder(v)
+                if (!v) setSelectedOrderDetail(null)
+              }}
               setIsEditingOrder={setIsEditingOrder}
               setIsEditing={setIsEditing}
               setEditingOrderId={setEditingOrderId}
