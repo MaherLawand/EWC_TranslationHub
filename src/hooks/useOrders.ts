@@ -70,7 +70,7 @@ export function useOrders({
         targetLanguages: full.broadcast.targetLanguages,
         deadlineDate: full.broadcast.deadlineDate,
         deliveryFormats: full.broadcast.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
-        game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name } : null,
+        game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null } : null,
       } : null,
       marketing: full.marketing ? {
         id: full.marketing.id,
@@ -79,7 +79,12 @@ export function useOrders({
         targetLanguages: full.marketing.targetLanguages,
         deadlineDate: full.marketing.deadlineDate,
         deliveryFormats: full.marketing.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
-        assignments: full.marketing.assignments?.map((a: any) => ({ id: a.id })),
+        assignments: full.marketing.assignments?.map((a: any) => ({
+          id: a.id,
+          user: a.user
+            ? { id: a.user.id, firstName: a.user.firstName, lastName: a.user.lastName, position: a.user.position }
+            : undefined,
+        })),
       } : null,
     }
   }

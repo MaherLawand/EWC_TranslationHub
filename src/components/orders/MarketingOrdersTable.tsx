@@ -93,7 +93,7 @@ React.useEffect(() => {
 
 function openAssignModal(e: React.MouseEvent, order: any) {
   e.stopPropagation()
-  const alreadyAssigned: any[] = order.marketing?.assignments?.map((a: any) => a.user) || []
+  const alreadyAssigned: any[] = order.marketing?.assignments?.map((a: any) => a.user).filter(Boolean) || []
   setAssignOrderId(order.id)
   setAssignSearch("")
   setSearchResults([])
@@ -745,43 +745,53 @@ disabled:cursor-not-allowed
                 <div className="flex items-center justify-center py-8">
                   <div className="w-5 h-5 border-2 border-[#D6B36A]/40 border-t-[#D6B36A] rounded-full animate-spin" />
                 </div>
-              ) : !assignSearch.trim() ? (
-                <p className="text-center text-zinc-600 text-sm py-6">Type to search users…</p>
-              ) : searchResults.length === 0 ? (
-                <p className="text-center text-zinc-600 text-sm py-6">No users found</p>
               ) : (
-                searchResults.map((u) => {
-                  const selected = assignSelectedIds.includes(u.id)
-                  return (
-                    <button
-                      key={u.id}
-                      onClick={() => toggleUser(u)}
-                      className={`cursor-pointer w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition text-left ${
-                        selected
-                          ? "bg-[#1A1A1A] border-[#D6B36A]/30"
-                          : "bg-[#111111] border-[#1E1E1E] hover:border-[#2A2A2A]"
-                      }`}
-                    >
-                      <div>
-                        <p className={`text-sm font-semibold ${selected ? "text-[#F5F1E8]" : "text-zinc-300"}`}>
-                          {u.firstName} {u.lastName}
-                        </p>
-                        {u.position && (
-                          <p className="text-xs text-zinc-600 mt-0.5">{u.position.replace(/_/g, " ")}</p>
-                        )}
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition ${
-                        selected ? "bg-[#D6B36A] border-[#D6B36A]" : "border-[#2A2A2A]"
-                      }`}>
-                        {selected && (
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5L4 7L8 3" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })
+                (() => {
+                  const listUsers = assignSearch.trim()
+                    ? searchResults
+                    : assignedUserObjects.filter((u) => assignSelectedIds.includes(u.id))
+
+                  if (listUsers.length === 0) {
+                    return (
+                      <p className="text-center text-zinc-600 text-sm py-6">
+                        {assignSearch.trim() ? "No users found" : "Type to search users…"}
+                      </p>
+                    )
+                  }
+
+                  return listUsers.map((u) => {
+                    const selected = assignSelectedIds.includes(u.id)
+                    return (
+                      <button
+                        key={u.id}
+                        onClick={() => toggleUser(u)}
+                        className={`cursor-pointer w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition text-left ${
+                          selected
+                            ? "bg-[#1A1A1A] border-[#D6B36A]/30"
+                            : "bg-[#111111] border-[#1E1E1E] hover:border-[#2A2A2A]"
+                        }`}
+                      >
+                        <div>
+                          <p className={`text-sm font-semibold ${selected ? "text-[#F5F1E8]" : "text-zinc-300"}`}>
+                            {u.firstName} {u.lastName}
+                          </p>
+                          {u.position && (
+                            <p className="text-xs text-zinc-600 mt-0.5">{u.position.replace(/_/g, " ")}</p>
+                          )}
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition ${
+                          selected ? "bg-[#D6B36A] border-[#D6B36A]" : "border-[#2A2A2A]"
+                        }`}>
+                          {selected && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5L4 7L8 3" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })
+                })()
               )}
             </div>
 

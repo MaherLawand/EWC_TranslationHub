@@ -15,7 +15,7 @@ import { toast, ToastContainer } from "react-toastify"
 import { useOrders } from "../hooks/useOrders"
 import { useUsers } from "../hooks/useUsers"
 import { useGames } from "../hooks/useGames"
-import PusherClient from "pusher-js"
+import { io as socketIo } from "socket.io-client"
 
 export default function App() {
 
@@ -272,40 +272,13 @@ export default function App() {
   React.useEffect(() => {
     if (!currentUser) return
 
-    const pusher = new PusherClient(
-      import.meta.env.VITE_PUSHER_KEY,
-      {
-        cluster: import.meta.env.VITE_PUSHER_CLUSTER,
-        channelAuthorization: {
-          endpoint: `${import.meta.env.VITE_API_URL}/auth/pusher/auth`,
-          transport: "ajax",
-          customHandler: async ({ socketId, channelName }, callback) => {
-            try {
-              const res = await fetch(
-                `${import.meta.env.VITE_API_URL}/auth/pusher/auth`,
-                {
-                  method: "POST",
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    socket_id: socketId,
-                    channel_name: channelName,
-                  }),
-                }
-              )
-              const data = await res.json()
-              callback(null, data)
-            } catch {
-              callback(new Error("Pusher auth failed"), null)
-            }
-          },
-        },
-      }
-    )
+    // The server reads the httpOnly JWT cookie automatically — no separate
+    // auth handshake needed. withCredentials sends the cookie on the upgrade.
+    const socket = socketIo(import.meta.env.VITE_API_URL, {
+      withCredentials: true,
+    })
 
-    const channel = pusher.subscribe(`private-user-${currentUser.id}`)
-
-    channel.bind("new-notification", (notification: any) => {
+    socket.on("new-notification", (notification: any) => {
       setCurrentUser((prev: any) => {
         if (!prev) return prev
         const already = prev.notifications?.some((n: any) => n.id === notification.id)
@@ -318,9 +291,7 @@ export default function App() {
     })
 
     return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(`private-user-${currentUser.id}`)
-      pusher.disconnect()
+      socket.disconnect()
     }
   }, [currentUser?.id])
 

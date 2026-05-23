@@ -1,3 +1,4 @@
+import React from "react"
 import StatusBadge from "../shared/StatusBadge"
 import SectionTitle from "../shared/SectionTitle"
 import { LANGUAGES } from "../../constants/languages"
@@ -81,6 +82,8 @@ export default function OrderDetailsSidebar({
   }
 
   const isAdmin = currentUser?.role === "ADMIN"
+
+  const [historyOpen, setHistoryOpen] = React.useState(false)
 
   function formatUrl(url: string) {
     if (!url) return "#"
@@ -234,28 +237,42 @@ export default function OrderDetailsSidebar({
 {isAdmin && orderDetail?.editHistory?.length > 0 && (
   <div className="mb-10">
 
-    <SectionTitle title="Edit History" />
+    <button
+      onClick={() => setHistoryOpen((o) => !o)}
+      className="w-full flex items-center justify-between mb-4 group"
+    >
+      <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-zinc-500 group-hover:text-zinc-400 transition">
+        Edit History
+        <span className="ml-2 text-zinc-600">({orderDetail.editHistory.length})</span>
+      </span>
+      <svg
+        className={`w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-transform duration-200 ${historyOpen ? "rotate-180" : ""}`}
+        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
 
-    <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-4">
-
-      {orderDetail.editHistory.map((edit: any) => (
-        <div
-          key={edit.id}
-          className="flex items-center justify-between border-b border-[#1F1F1F] pb-4 last:border-0 last:pb-0"
-        >
-          <div>
-            <p className="text-[#F5F1E8] font-medium">
-              {edit.editedBy?.firstName} {edit.editedBy?.lastName}
+    {historyOpen && (
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] space-y-4">
+        {orderDetail.editHistory.map((edit: any) => (
+          <div
+            key={edit.id}
+            className="flex items-center justify-between border-b border-[#1F1F1F] pb-4 last:border-0 last:pb-0"
+          >
+            <div>
+              <p className="text-[#F5F1E8] font-medium">
+                {edit.editedBy?.firstName} {edit.editedBy?.lastName}
+              </p>
+              <p className="text-xs text-zinc-500 mt-1">Edited order</p>
+            </div>
+            <p className="text-sm text-zinc-400">
+              {new Date(edit.editedAt).toLocaleString()}
             </p>
-            <p className="text-xs text-zinc-500 mt-1">Edited order</p>
           </div>
-          <p className="text-sm text-zinc-400">
-            {new Date(edit.editedAt).toLocaleString()}
-          </p>
-        </div>
-      ))}
-
-    </div>
+        ))}
+      </div>
+    )}
 
   </div>
 )}
