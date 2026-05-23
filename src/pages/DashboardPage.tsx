@@ -1124,7 +1124,7 @@ export default function App() {
                           })
                           .filter(Boolean)
                       : filteredGames
-                    ).map((game) => {
+                    ).map((game: any) => {
                       const active = selectedGameFilter === game.id
                       return (
                         <button
