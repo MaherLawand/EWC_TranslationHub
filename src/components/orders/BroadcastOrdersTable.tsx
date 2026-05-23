@@ -375,7 +375,7 @@ function keepStatusPortal() {
                       {(() => {
                         const info = getDeadlineInfo(broadcast.deadlineDate)
                         return (
-                          <span className={`text-xs ${info.color}`}>
+                          <span className={`text-sm ${info.color}`}>
                             {info.text}
                           </span>
                         )

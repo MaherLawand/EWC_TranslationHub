@@ -205,7 +205,7 @@ paginatedNotifications.map(
 
               <p
                 className={`
-                  text-sm
+                  text-base
                   font-semibold
                   leading-snug
                   ${!notification.isRead ? "text-white" : "text-[#F5F1E8]"}
@@ -216,7 +216,7 @@ paginatedNotifications.map(
 
               <p
                 className={`
-                  text-xs
+                  text-sm
                   mt-0.5
                   leading-snug
                   ${!notification.isRead ? "text-zinc-300" : "text-zinc-500"}
@@ -227,7 +227,7 @@ paginatedNotifications.map(
 
               <p
                 className={`
-                  text-[11px]
+                  text-xs
                   mt-1
                   ${!notification.isRead ? "text-[#D6B36A]" : "text-zinc-600"}
                 `}

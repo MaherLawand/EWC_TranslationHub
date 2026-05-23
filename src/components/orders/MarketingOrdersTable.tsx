@@ -472,7 +472,7 @@ const isUpdating =
       <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
       {(() => {
         const info = getDeadlineInfo(marketing.deadlineDate)
-        return <span className={`text-xs ${info.color}`}>{info.text}</span>
+        return <span className={`text-sm ${info.color}`}>{info.text}</span>
       })()}
     </div>
   ) : (
