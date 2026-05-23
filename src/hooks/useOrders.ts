@@ -11,6 +11,7 @@ export function useOrders({
   selectedGameFilter,
   deadlineSort,
   selectedEvent,
+  orderIdFilter,
   newOrder,
   resetOrderState,
   selectedOrder,
@@ -92,6 +93,13 @@ export function useOrders({
   // ─── Build common filter params ───────────────────────────────────────────
   function buildFilterParams() {
     const params = new URLSearchParams()
+
+    if (orderIdFilter) {
+      // Deep-link exact match — skip all other filters
+      params.append("orderId", orderIdFilter)
+      if (selectedEvent) params.append("event", selectedEvent)
+      return params
+    }
 
     if (search.trim()) params.append("search", search)
     if (statusFilter !== "All Statuses")
@@ -177,6 +185,7 @@ export function useOrders({
       const data = await res.json()
       setSelectedOrderDetail(data)
       setEditedOrder(JSON.parse(JSON.stringify(data)))
+      return data as any
     } catch {
       // silent — sidebar shows last known state
     } finally {
@@ -380,6 +389,7 @@ export function useOrders({
     selectedGameFilter,
     deadlineSort,
     selectedEvent,
+    orderIdFilter,
   ])
 
   return {

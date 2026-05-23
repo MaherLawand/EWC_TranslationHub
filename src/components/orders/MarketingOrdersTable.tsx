@@ -60,6 +60,17 @@ function getLanguageCode(
 const [updatingOrderId, setUpdatingOrderId] =
   React.useState<string | null>(null)
 
+const [copiedId, setCopiedId] =
+  React.useState<string | null>(null)
+
+function copyOrderLink(e: React.MouseEvent, orderId: string) {
+  e.stopPropagation()
+  const url = `${window.location.origin}${window.location.pathname}?page=marketing&orderId=${orderId}`
+  navigator.clipboard.writeText(url)
+  setCopiedId(orderId)
+  setTimeout(() => setCopiedId(null), 2000)
+}
+
 // Portal dropdown for status
 const [statusPortal, setStatusPortal] = React.useState<{
   orderId: string
@@ -348,6 +359,7 @@ const isUpdating =
   key={order.id}
   onClick={() => onRowClick(order)}
   className="
+    group
     border-b
     border-[#1F1F1F]
     hover:bg-[rgba(214,179,106,0.03)]
@@ -361,12 +373,28 @@ const isUpdating =
   {/* ORDER */}
   <td className="px-6 py-2.5 align-center">
 
-    <div>
+    <div className="flex items-center gap-2">
 
       <p className="font-semibold text-[#F5F1E8]">
         {order.title}
       </p>
 
+      <button
+        onClick={(e) => copyOrderLink(e, order.id)}
+        title="Copy link"
+        className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+      >
+        {copiedId === order.id ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="2" width="6" height="4" rx="1" />
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          </svg>
+        )}
+      </button>
 
     </div>
 

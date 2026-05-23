@@ -55,6 +55,9 @@ export default function App() {
   const [contentTitleFilter, setContentTitleFilter] =
     React.useState("")
 
+  const [orderIdFilter, setOrderIdFilter] =
+    React.useState("")
+
   const [selectedEvent, setSelectedEvent] =
     React.useState("EWC")
 
@@ -91,6 +94,76 @@ export default function App() {
     search: string
     order: any | null
   } | null>(null)
+
+  // ── Favicon pulse ──────────────────────────────────────────────────────────
+  const faviconPulseRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
+  const originalFaviconHref = React.useRef<string>("/favicon.ico")
+
+  function getFaviconLink(): HTMLLinkElement {
+    let el = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+    if (!el) {
+      el = document.createElement("link")
+      el.rel = "icon"
+      document.head.appendChild(el)
+    }
+    return el
+  }
+
+  function startFaviconPulse() {
+    if (faviconPulseRef.current) return   // already running
+    const link = getFaviconLink()
+    originalFaviconHref.current = link.href || "/favicon.ico"
+
+    const canvas = document.createElement("canvas")
+    canvas.width = 32
+    canvas.height = 32
+    const ctx = canvas.getContext("2d")!
+
+    function buildAndStart(notifDataUrl: string) {
+      let showDot = true
+      link.href = notifDataUrl
+      faviconPulseRef.current = setInterval(() => {
+        showDot = !showDot
+        link.href = showDot ? notifDataUrl : originalFaviconHref.current
+      }, 900)
+    }
+
+    const img = new Image()
+    img.onload = () => {
+      ctx.clearRect(0, 0, 32, 32)
+      ctx.drawImage(img, 0, 0, 32, 32)
+      // Golden glow dot — top-right corner
+      ctx.save()
+      ctx.shadowColor = "#D6B36A"
+      ctx.shadowBlur = 6
+      ctx.beginPath()
+      ctx.arc(24, 8, 7, 0, Math.PI * 2)
+      ctx.fillStyle = "#D6B36A"
+      ctx.fill()
+      ctx.restore()
+      buildAndStart(canvas.toDataURL())
+    }
+    img.onerror = () => {
+      // Fallback: solid golden circle
+      ctx.beginPath()
+      ctx.arc(16, 16, 14, 0, Math.PI * 2)
+      ctx.fillStyle = "#D6B36A"
+      ctx.fill()
+      buildAndStart(canvas.toDataURL())
+    }
+    img.src = "/favicon.ico"
+  }
+
+  function stopFaviconPulse() {
+    if (!faviconPulseRef.current) return
+    clearInterval(faviconPulseRef.current)
+    faviconPulseRef.current = null
+    getFaviconLink().href = originalFaviconHref.current
+  }
+
+  // Deep-link: ?page=Broadcast&orderId=xxx
+  const urlPageRef = React.useRef<string | null>(null)
+  const urlOrderIdRef = React.useRef<string | null>(null)
 
   const canManageOrders =
     currentUser?.role === "ADMIN" ||
@@ -181,6 +254,7 @@ export default function App() {
     selectedGameFilter,
     deadlineSort,
     selectedEvent,
+    orderIdFilter,
     newOrder,
     resetOrderState,
     selectedOrder,
@@ -200,6 +274,26 @@ export default function App() {
   */
   React.useEffect(() => {
     fetchCurrentUser()
+  }, [])
+
+  // Stop favicon pulse when the user tabs back in
+  React.useEffect(() => {
+    function onVisibilityChange() {
+      if (!document.hidden) stopFaviconPulse()
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange)
+  }, [])
+
+  // Parse deep-link query params on first mount, then clean the URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const page = params.get("page")
+    const orderId = params.get("orderId")
+    if (page) urlPageRef.current = page
+    if (orderId) urlOrderIdRef.current = orderId
+    if (page || orderId)
+      window.history.replaceState({}, "", window.location.pathname)
   }, [])
 
   React.useEffect(() => {
@@ -242,7 +336,11 @@ export default function App() {
   React.useEffect(() => {
     if (!currentUser || hasInitializedPage) return
 
-    if (currentUser.role === "ADMIN") {
+    // Deep-link: honour URL page param over role-based default
+    if (urlPageRef.current) {
+      setActivePage(urlPageRef.current)
+      urlPageRef.current = null
+    } else if (currentUser.role === "ADMIN") {
       setActivePage("Broadcast")
     } else if (
       currentUser.role === "VIEWER" &&
@@ -268,6 +366,19 @@ export default function App() {
 
     setHasInitializedPage(true)
   }, [currentUser, hasInitializedPage])
+
+  // Deep-link: open the specific order once the page is ready
+  React.useEffect(() => {
+    if (!hasInitializedPage || !currentUser || !urlOrderIdRef.current) return
+    const orderId = urlOrderIdRef.current
+    urlOrderIdRef.current = null
+    fetchOrderDetail(orderId).then((order) => {
+      if (!order) return
+      setSelectedOrder(order)
+      // Filter table to show only this order by exact ID — avoids title collisions
+      setOrderIdFilter(orderId)
+    })
+  }, [hasInitializedPage, currentUser?.id])
 
   // Request browser notification permission once the user is loaded
   React.useEffect(() => {
@@ -303,21 +414,24 @@ export default function App() {
         }
       })
 
-      // Fire an OS-level browser notification when the user is on another tab
-      if (
-        document.hidden &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        const n = new Notification(notification.title ?? "New Notification", {
-          body: notification.message ?? "",
-          icon: "/favicon.ico",
-          tag: notification.id, // deduplicate: same id = replace, not stack
-        })
-        // Clicking the OS notification brings the tab back into focus
-        n.onclick = () => {
-          window.focus()
-          n.close()
+      // Pulse the favicon + fire OS notification when the user is on another tab
+      if (document.hidden) {
+        startFaviconPulse()
+
+        if (
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          const n = new Notification(notification.title ?? "New Notification", {
+            body: notification.message ?? "",
+            icon: "/favicon.ico",
+            tag: notification.id, // deduplicate: same id = replace, not stack
+          })
+          // Clicking the OS notification brings the tab back into focus
+          n.onclick = () => {
+            window.focus()
+            n.close()
+          }
         }
       }
     })
@@ -381,6 +495,7 @@ export default function App() {
           isRead: true,
         })),
       }))
+      stopFaviconPulse()
     } catch (error) {
       console.error(error)
     }
@@ -468,6 +583,7 @@ export default function App() {
     setDeadlineSort("")
     setSelectedGameFilter("")
     setContentTitleFilter("")
+    setOrderIdFilter("")
     setSelectedEvent(selectedEvent)
   }
 
