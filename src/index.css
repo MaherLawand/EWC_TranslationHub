@@ -128,3 +128,20 @@
     @apply font-sans;
     }
 }
+
+/* ── Dark horizontal scroll wrapper for tables ─────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  /* CSS scroll-shadow trick: cover layers scroll with content, shadow layers stay fixed */
+  background:
+    linear-gradient(to right,  #0E0E0E 20%, transparent) left   center / 48px 100% no-repeat local,
+    linear-gradient(to left,   #0E0E0E 20%, transparent) right  center / 48px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,   rgba(0,0,0,0.55), transparent) left  center / 20px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.55), transparent) right center / 20px 100% no-repeat scroll;
+}
+
+/* Slim dark scrollbar */
+.table-scroll::-webkit-scrollbar        { height: 4px; }
+.table-scroll::-webkit-scrollbar-track  { background: transparent; }
+.table-scroll::-webkit-scrollbar-thumb  { background: #2A2A2A; border-radius: 9999px; }
+.table-scroll::-webkit-scrollbar-thumb:hover { background: #404040; }

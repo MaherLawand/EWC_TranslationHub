@@ -169,6 +169,7 @@ export default function UsersPage({
       </div>
 
       {/* TABLE */}
+      <div className="table-scroll">
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -400,6 +401,7 @@ export default function UsersPage({
         </tbody>
 
       </table>
+      </div>
 
       {/* PAGINATION */}
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />

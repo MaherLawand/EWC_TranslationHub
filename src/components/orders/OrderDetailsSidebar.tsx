@@ -88,7 +88,19 @@ export default function OrderDetailsSidebar({
   const marketing = orderDetail?.marketing
 
   return (
-    <div className="w-[480px] border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0 flex flex-col">
+    <>
+      {/* Backdrop — visible on small screens only, closes sidebar on click */}
+      <div
+        className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        onClick={() => { setSelectedOrder(null); setIsEditingOrder(false) }}
+      />
+
+    <div className="
+      fixed inset-y-0 right-0 z-50
+      w-full sm:w-[480px]
+      lg:relative lg:inset-auto lg:z-auto lg:w-[480px]
+      border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0 flex flex-col
+    ">
 
       {/* HEADER */}
       <div className="sticky top-0 z-40 px-6 pt-6 pb-4 border-b border-[#242424] bg-[#090909]/95 backdrop-blur-xl">
@@ -472,5 +484,6 @@ export default function OrderDetailsSidebar({
       )}
 
     </div>
+    </>
   )
 }

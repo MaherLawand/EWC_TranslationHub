@@ -217,6 +217,7 @@ async function saveAssign() {
       </div>
 
       {/* TABLE */}
+      <div className="table-scroll">
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -677,6 +678,7 @@ disabled:cursor-not-allowed
         </tbody>
 
       </table>
+      </div>
 
       {/* PAGINATION */}
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
