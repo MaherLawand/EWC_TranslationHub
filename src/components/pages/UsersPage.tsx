@@ -203,6 +203,10 @@ export default function UsersPage({
             </th>
 
             <th className="text-left px-6 py-5">
+              Department
+            </th>
+
+            <th className="text-left px-6 py-5">
               Actions
             </th>
 
@@ -214,13 +218,13 @@ export default function UsersPage({
 
           {isLoading ? (
             <tr>
-              <td colSpan={5} className="py-20 text-center text-zinc-500">
+              <td colSpan={6} className="py-20 text-center text-zinc-500">
                 Loading users...
               </td>
             </tr>
           ) : users.length === 0 ? (
             <tr>
-              <td colSpan={5} className="py-20 text-center text-zinc-500">
+              <td colSpan={6} className="py-20 text-center text-zinc-500">
                 No users found
               </td>
             </tr>
@@ -313,7 +317,12 @@ export default function UsersPage({
 
                 {/* POSITION */}
                 <td className="px-6 py-6 text-zinc-300">
-                  {user.position || "-"}
+                  {user.position?.replace(/_/g, " ") || "-"}
+                </td>
+
+                {/* DEPARTMENT */}
+                <td className="px-6 py-6 text-zinc-300">
+                  {user.department || "-"}
                 </td>
 
                 {/* ACTIONS */}

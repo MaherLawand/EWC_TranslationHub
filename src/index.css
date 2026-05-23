@@ -129,6 +129,13 @@
     }
 }
 
+/* ── Dark vertical scrollbar (modals, panels) ──────────────────────────── */
+.dark-scroll                              { overflow: auto; }
+.dark-scroll::-webkit-scrollbar          { width: 4px; }
+.dark-scroll::-webkit-scrollbar-track    { background: transparent; }
+.dark-scroll::-webkit-scrollbar-thumb    { background: #2A2A2A; border-radius: 9999px; }
+.dark-scroll::-webkit-scrollbar-thumb:hover { background: #404040; }
+
 /* ── Dark horizontal scroll wrapper for tables ─────────────────────────── */
 .table-scroll {
   overflow-x: auto;

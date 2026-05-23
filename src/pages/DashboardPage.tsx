@@ -269,6 +269,20 @@ export default function App() {
     setHasInitializedPage(true)
   }, [currentUser, hasInitializedPage])
 
+  // Request browser notification permission once the user is loaded
+  React.useEffect(() => {
+    if (!currentUser) return
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission()
+    }
+  }, [currentUser?.id])
+
+  // Keep document.title in sync with unread notification count
+  React.useEffect(() => {
+    const unread = currentUser?.notifications?.filter((n: any) => !n.isRead).length ?? 0
+    document.title = unread > 0 ? `(${unread}) EWC Translations` : "EWC Translations"
+  }, [currentUser?.notifications])
+
   React.useEffect(() => {
     if (!currentUser) return
 
@@ -288,6 +302,24 @@ export default function App() {
           notifications: [notification, ...(prev.notifications || [])].slice(0, 20),
         }
       })
+
+      // Fire an OS-level browser notification when the user is on another tab
+      if (
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        const n = new Notification(notification.title ?? "New Notification", {
+          body: notification.message ?? "",
+          icon: "/favicon.ico",
+          tag: notification.id, // deduplicate: same id = replace, not stack
+        })
+        // Clicking the OS notification brings the tab back into focus
+        n.onclick = () => {
+          window.focus()
+          n.close()
+        }
+      }
     })
 
     return () => {
@@ -476,6 +508,7 @@ export default function App() {
   */
   const showFilters =
     activePage === "marketing" ||
+    activePage === "my-orders" ||
     activePage === "Broadcast" ||
     activePage === "my-games"
 
@@ -588,7 +621,7 @@ export default function App() {
                     </div>
 
                     {/* MARKETING FILTERS */}
-                    {activePage === "marketing" && (
+                    {(activePage === "marketing" || activePage === "my-orders") && (
                       <>
                         {/* CONTENT */}
                         <div className="relative">
@@ -696,7 +729,7 @@ export default function App() {
                     )}
 
                     {/* NON MARKETING FILTERS */}
-                    {activePage !== "marketing" && (
+                    {activePage !== "marketing" && activePage !== "my-orders" && (
                       <>
                         {/* STATUS */}
                         <div className="relative">
@@ -911,7 +944,7 @@ export default function App() {
                     </button>
 
                     {/* ACTIVE */}
-                    <div
+                    {/* <div
                       className="
                         h-[54px]
                         px-5
@@ -940,7 +973,7 @@ export default function App() {
                         ].filter(Boolean).length
                       }{" "}
                       Active
-                    </div>
+                    </div> */}
 
                   </div>
 
@@ -1075,7 +1108,7 @@ export default function App() {
                 />
               )}
 
-              {(activePage === "dashboard" || activePage === "marketing") && (
+              {(activePage === "dashboard" || activePage === "marketing" || activePage === "my-orders") && (
                 <MarketingOrdersTable
                   isLoading={isLoadingMarketing}
                   orders={marketingOrders}

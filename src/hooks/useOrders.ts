@@ -49,7 +49,7 @@ export function useOrders({
 
   // ─── statsOrders (for any summary / stat cards) ───────────────────────────
   const statsOrders =
-    activePage === "marketing"
+    activePage === "marketing" || activePage === "my-orders"
       ? marketingOrders
       : activePage === "Broadcast" || activePage === "my-games"
       ? broadcastOrders
@@ -147,6 +147,7 @@ export function useOrders({
       params.append("type", "MARKETING")
       params.append("page", String(page))
       params.append("limit", "50")
+      if (activePage === "my-orders") params.append("assignedOnly", "true")
 
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/orders?${params.toString()}`,
@@ -361,6 +362,7 @@ export function useOrders({
       activePage === "Broadcast" ||
       activePage === "my-games" ||
       activePage === "marketing" ||
+      activePage === "my-orders" ||
       activePage === "notifications" ||
       activePage === "dashboard"
 

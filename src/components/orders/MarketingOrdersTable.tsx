@@ -1,7 +1,6 @@
 import React from "react"
-import {
-  LANGUAGES,
-} from "../../constants/languages"
+import ReactDOM from "react-dom"
+import { LANGUAGES } from "../../constants/languages"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 
@@ -33,18 +32,16 @@ export default function MarketingOrdersTable({
 
 const canUpdateStatus =
   currentUser?.role === "ADMIN" ||
+  currentUser?.position === "PRODUCER" ||
+  currentUser?.position === "POST_PRODUCTION_MANAGER" ||
+  currentUser?.position === "TRANSLATOR" ||
+  currentUser?.position === "EDITOR"
 
-  currentUser?.position ===
-    "PRODUCER" ||
-
-  currentUser?.position ===
-    "POST_PRODUCTION_MANAGER" ||
-
-  currentUser?.position ===
-    "TRANSLATOR" ||
-    
-  currentUser?.position ===
-    "EDITOR"
+const canAssignUsers =
+  currentUser?.role === "ADMIN" ||
+  (currentUser?.department === "MARKETING" &&
+    (currentUser?.position === "PRODUCER" ||
+      currentUser?.position === "POST_PRODUCTION_MANAGER"))
 function getLanguageCode(
   languageName: string
 ) {
@@ -62,6 +59,47 @@ function getLanguageCode(
 
 const [updatingOrderId, setUpdatingOrderId] =
   React.useState<string | null>(null)
+
+// Portal dropdown for status
+const [statusPortal, setStatusPortal] = React.useState<{
+  orderId: string
+  status: string
+  top: number
+  left: number
+} | null>(null)
+const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
+  if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  setStatusPortal({ orderId, status, top: rect.bottom + 6, left: rect.left })
+}
+function closeStatusPortal() {
+  statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
+}
+function keepStatusPortal() {
+  if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
+}
+
+// Portal tooltip for assign hover
+const [assignPortal, setAssignPortal] = React.useState<{
+  assignments: any[]
+  top: number
+  left: number
+} | null>(null)
+const assignPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+function openAssignPortal(e: React.MouseEvent, assignments: any[]) {
+  if (assignPortalTimer.current) clearTimeout(assignPortalTimer.current)
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  setAssignPortal({ assignments, top: rect.bottom + 6, left: rect.left })
+}
+function closeAssignPortal() {
+  assignPortalTimer.current = setTimeout(() => setAssignPortal(null), 120)
+}
+function keepAssignPortal() {
+  if (assignPortalTimer.current) clearTimeout(assignPortalTimer.current)
+}
 
 // Assign modal state
 const [assignOrderId, setAssignOrderId] = React.useState<string | null>(null)
@@ -93,6 +131,7 @@ React.useEffect(() => {
 
 function openAssignModal(e: React.MouseEvent, order: any) {
   e.stopPropagation()
+  if (!canAssignUsers) return
   const alreadyAssigned: any[] = order.marketing?.assignments?.map((a: any) => a.user).filter(Boolean) || []
   setAssignOrderId(order.id)
   setAssignSearch("")
@@ -444,197 +483,33 @@ const isUpdating =
 {/* STATUS */}
 <td className="px-6 py-2.5 align-center whitespace-nowrap">
 
-  {!canUpdateStatus ? (
-
-    <div className="whitespace-nowrap">
-      <StatusBadge
-        status={order.status}
-      />
-    </div>
-
-  ) : (
-
-    <div className="relative group/status inline-flex flex-shrink-0">
-
+  <div
+    className="inline-flex flex-shrink-0"
+    onMouseEnter={(e) => openStatusPortal(e, order.id, order.status)}
+    onMouseLeave={closeStatusPortal}
+  >
+    {canUpdateStatus ? (
       <button
-  onClick={(e) =>
-    e.stopPropagation()
-  }
-  disabled={isUpdating}
-  className="
-    rounded-xl
-    transition
-    hover:scale-[1.02]
-    disabled:opacity-60
-    disabled:cursor-not-allowed
-  "
->
-  <div className="whitespace-nowrap">
-
-    {isUpdating ? (
-
-      <div
-        className="
-          min-w-[110px]
-          h-[36px]
-          inline-flex
-          items-center
-          justify-center
-          rounded-xl
-          border
-          border-[#2A2A2A]
-          bg-[#171717]
-          text-[#D6B36A]
-          text-xs
-          font-semibold
-          animate-pulse
-          disabled:opacity-50
-disabled:cursor-not-allowed
-        "
+        onClick={(e) => e.stopPropagation()}
+        disabled={isUpdating}
+        className="rounded-xl transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Updating...
-      </div>
-
+        <div className="whitespace-nowrap">
+          {isUpdating ? (
+            <div className="min-w-[110px] h-[36px] inline-flex items-center justify-center rounded-xl border border-[#2A2A2A] bg-[#171717] text-[#D6B36A] text-xs font-semibold animate-pulse">
+              Updating...
+            </div>
+          ) : (
+            <StatusBadge status={order.status} />
+          )}
+        </div>
+      </button>
     ) : (
-
-      <StatusBadge
-        status={order.status}
-      />
-
-    )}
-
-  </div>
-</button>
-
-      {/* DROPDOWN */}
-      <div
-        className="
-          absolute
-          bottom-full
-          left-0
-          mb-3
-          w-48
-          flex
-          flex-col
-          bg-[#101010]/95
-          backdrop-blur-xl
-          border
-          border-[#242424]
-          rounded-2xl
-          p-2
-          opacity-0
-          invisible
-          translate-y-2
-          group-hover/status:translate-y-0
-          group-hover/status:opacity-100
-          group-hover/status:visible
-          transition-all
-          duration-200
-          z-[9999]
-          shadow-[0_0_40px_rgba(0,0,0,0.55)]
-        "
-      >
-
-        {order.status ===
-          "PENDING" && (
-          <>
-            <button
-            disabled={isUpdating}
-              onClick={(e) => {
-                e.stopPropagation()
-
-                handleUpdateStatus(
-                  order.id,
-                  "IN_PROGRESS"
-                )
-              }}
-              className="
-                w-full
-                text-left
-                px-3
-                py-2
-                rounded-xl
-                hover:bg-zinc-800
-                text-sm
-                transition
-                disabled:opacity-50
-disabled:cursor-not-allowed
-              "
-            >
-              Start Progress
-            </button>
-
-            <button
-            disabled={isUpdating}
-              onClick={(e) => {
-                e.stopPropagation()
-
-                handleUpdateStatus(
-                  order.id,
-                  "COMPLETED"
-                )
-              }}
-              className="
-                w-full
-                text-left
-                px-3
-                py-2
-                rounded-xl
-                hover:bg-zinc-800
-                text-sm
-                text-green-400
-                transition
-                disabled:opacity-50
-disabled:cursor-not-allowed
-              "
-            >
-              Mark Completed
-            </button>
-          </>
-        )}
-
-        {order.status ===
-          "IN_PROGRESS" && (
-          <button
-          disabled={isUpdating}
-            onClick={(e) => {
-              e.stopPropagation()
-
-              handleUpdateStatus(
-                order.id,
-                "COMPLETED"
-              )
-            }}
-            className="
-              w-full
-              text-left
-              px-3
-              py-2
-              rounded-xl
-              hover:bg-zinc-800
-              text-sm
-              text-green-400
-              transition
-              disabled:opacity-50
-disabled:cursor-not-allowed
-            "
-          >
-            Mark Completed
-          </button>
-        )}
-
-        {order.status ===
-          "COMPLETED" && (
-          <div className="px-3 py-2 text-xs text-zinc-500">
-            No actions available
-          </div>
-        )}
-
+      <div className="whitespace-nowrap">
+        <StatusBadge status={order.status} />
       </div>
-
-    </div>
-
-  )}
+    )}
+  </div>
 
 </td>
 
@@ -657,17 +532,37 @@ disabled:cursor-not-allowed
 
   {/* ASSIGN */}
   <td className="px-6 py-2.5 align-center" onClick={(e) => e.stopPropagation()}>
-    <button
-      onClick={(e) => openAssignModal(e, order)}
-      className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-300 hover:border-[#D6B36A] hover:text-[#D6B36A] transition whitespace-nowrap"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-      {marketing?.assignments?.length
-        ? `${marketing.assignments.length} assigned`
-        : "Assign"}
-    </button>
+    {(() => {
+      const validAssignments = marketing?.assignments?.filter((a: any) => a.user) || []
+      return (
+        <div
+          className="inline-flex"
+          onMouseEnter={validAssignments.length > 0 ? (e) => openAssignPortal(e, validAssignments) : undefined}
+          onMouseLeave={validAssignments.length > 0 ? closeAssignPortal : undefined}
+        >
+          {canAssignUsers ? (
+            <button
+              onClick={(e) => openAssignModal(e, order)}
+              className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-300 hover:border-[#D6B36A] hover:text-[#D6B36A] transition whitespace-nowrap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {validAssignments.length ? `${validAssignments.length} assigned` : "Assign"}
+            </button>
+          ) : validAssignments.length > 0 ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-500 whitespace-nowrap cursor-default select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {validAssignments.length} assigned
+            </div>
+          ) : (
+            <span className="text-zinc-600 text-xs">—</span>
+          )}
+        </div>
+      )
+    })()}
   </td>
 
 </tr>
@@ -684,6 +579,69 @@ disabled:cursor-not-allowed
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
+
+    {/* STATUS PORTAL */}
+    {statusPortal && ReactDOM.createPortal(
+      <div
+        style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999 }}
+        onMouseEnter={keepStatusPortal}
+        onMouseLeave={closeStatusPortal}
+        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+      >
+        {canUpdateStatus && statusPortal.status === "PENDING" && (
+          <>
+            <button
+              disabled={updatingOrderId === statusPortal.orderId}
+              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "IN_PROGRESS"); setStatusPortal(null) }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Start Progress
+            </button>
+            <button
+              disabled={updatingOrderId === statusPortal.orderId}
+              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark Completed
+            </button>
+          </>
+        )}
+        {canUpdateStatus && statusPortal.status === "IN_PROGRESS" && (
+          <button
+            disabled={updatingOrderId === statusPortal.orderId}
+            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
+            className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Mark Completed
+          </button>
+        )}
+        {(!canUpdateStatus || statusPortal.status === "COMPLETED") && (
+          <div className="px-3 py-2 text-xs text-zinc-400">No actions available</div>
+        )}
+      </div>,
+      document.body
+    )}
+
+    {/* ASSIGN TOOLTIP PORTAL */}
+    {assignPortal && ReactDOM.createPortal(
+      <div
+        style={{ position: "fixed", top: assignPortal.top, left: assignPortal.left, zIndex: 9999 }}
+        onMouseEnter={keepAssignPortal}
+        onMouseLeave={closeAssignPortal}
+        className="w-52 max-h-48 overflow-y-auto bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-3 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+      >
+        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-zinc-500 mb-2">Assigned To</p>
+        <div className="space-y-1.5">
+          {assignPortal.assignments.map((a: any) => (
+            <div key={a.id} className="flex items-center gap-2 min-w-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#D6B36A] flex-shrink-0" />
+              <span className="text-xs text-[#F5F1E8] font-medium truncate">{a.user.firstName} {a.user.lastName}</span>
+            </div>
+          ))}
+        </div>
+      </div>,
+      document.body
+    )}
 
     {/* ASSIGN MODAL */}
     {assignOrderId && (

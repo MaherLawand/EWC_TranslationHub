@@ -1,5 +1,5 @@
 import React from "react"
-
+import ReactDOM from "react-dom"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 
@@ -68,9 +68,28 @@ const canUpdateStatus =
     )
   }
 const [updatingOrderId, setUpdatingOrderId] =
-  React.useState<string | null>(
-    null
-  )
+  React.useState<string | null>(null)
+
+// Portal dropdown for status
+const [statusPortal, setStatusPortal] = React.useState<{
+  orderId: string
+  status: string
+  top: number
+  left: number
+} | null>(null)
+const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
+  if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  setStatusPortal({ orderId, status, top: rect.bottom + 6, left: rect.left })
+}
+function closeStatusPortal() {
+  statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
+}
+function keepStatusPortal() {
+  if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
+}
 
   async function handleUpdateStatus(
   orderId: string,
@@ -92,6 +111,7 @@ const [updatingOrderId, setUpdatingOrderId] =
 
 
   return (
+    <>
     <div
       className="
         bg-[radial-gradient(ellipse_at_top,rgba(214,179,106,0.06),transparent_0%)]
@@ -370,195 +390,33 @@ const [updatingOrderId, setUpdatingOrderId] =
 {/* STATUS */}
 <td className="px-6 py-2.5 align-center whitespace-nowrap">
 
-  {!canUpdateStatus ? (
-
-    <div className="whitespace-nowrap">
-      <StatusBadge
-        status={order.status}
-      />
-    </div>
-
-  ) : (
-
-    <div className="relative group/status inline-flex flex-shrink-0">
-
+  <div
+    className="inline-flex flex-shrink-0"
+    onMouseEnter={(e) => openStatusPortal(e, order.id, order.status)}
+    onMouseLeave={closeStatusPortal}
+  >
+    {canUpdateStatus ? (
       <button
-  onClick={(e) =>
-    e.stopPropagation()
-  }
-  disabled={isUpdating}
-  className="
-    rounded-xl
-    transition
-    hover:scale-[1.02]
-    disabled:opacity-60
-    disabled:cursor-not-allowed
-  "
->
-  <div className="whitespace-nowrap">
-
-    {isUpdating ? (
-
-      <div
-        className="
-          min-w-[110px]
-          h-[36px]
-          inline-flex
-          items-center
-          justify-center
-          rounded-xl
-          border
-          border-[#2A2A2A]
-          bg-[#171717]
-          text-[#D6B36A]
-          text-xs
-          font-semibold
-          animate-pulse
-          disabled:opacity-50
-disabled:cursor-not-allowed
-        "
+        onClick={(e) => e.stopPropagation()}
+        disabled={isUpdating}
+        className="rounded-xl transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Updating...
-      </div>
-
+        <div className="whitespace-nowrap">
+          {isUpdating ? (
+            <div className="min-w-[110px] h-[36px] inline-flex items-center justify-center rounded-xl border border-[#2A2A2A] bg-[#171717] text-[#D6B36A] text-xs font-semibold animate-pulse">
+              Updating...
+            </div>
+          ) : (
+            <StatusBadge status={order.status} />
+          )}
+        </div>
+      </button>
     ) : (
-
-      <StatusBadge
-        status={order.status}
-      />
-
-    )}
-
-  </div>
-</button>
-
-      {/* DROPDOWN */}
-      <div
-        className="
-          absolute
-          bottom-full
-          left-0
-          mb-3
-          w-48
-          flex
-          flex-col
-          bg-[#101010]/95
-          backdrop-blur-xl
-          border
-          border-[#242424]
-          rounded-2xl
-          p-2
-          opacity-0
-          invisible
-          translate-y-2
-          group-hover/status:translate-y-0
-          group-hover/status:opacity-100
-          group-hover/status:visible
-          transition-all
-          duration-200
-          z-[9999]
-          shadow-[0_0_40px_rgba(0,0,0,0.55)]
-        "
-      >
-
-        {order.status ===
-          "PENDING" && (
-          <>
-            <button
-            disabled={isUpdating}
-              onClick={(e) => {
-                e.stopPropagation()
-
-                handleUpdateStatus(
-                  order.id,
-                  "IN_PROGRESS"
-                )
-              }}
-              className="
-                w-full
-                text-left
-                px-3
-                py-2
-                rounded-xl
-                hover:bg-zinc-800
-                text-sm
-                transition
-                disabled:opacity-50
-disabled:cursor-not-allowed
-              "
-            >
-              Start Progress
-            </button>
-
-            <button
-            disabled={isUpdating}
-              onClick={(e) => {
-                e.stopPropagation()
-
-                handleUpdateStatus(
-                  order.id,
-                  "COMPLETED"
-                )
-              }}
-              className="
-                w-full
-                text-left
-                px-3
-                py-2
-                rounded-xl
-                hover:bg-zinc-800
-                text-sm
-                text-green-400
-                transition
-              "
-            >
-              Mark Completed
-            </button>
-          </>
-        )}
-
-        {order.status ===
-          "IN_PROGRESS" && (
-          <button
-          disabled={isUpdating}
-            onClick={(e) => {
-              e.stopPropagation()
-
-              handleUpdateStatus(
-                order.id,
-                "COMPLETED"
-              )
-            }}
-            className="
-              w-full
-              text-left
-              px-3
-              py-2
-              rounded-xl
-              hover:bg-zinc-800
-              text-sm
-              text-green-400
-              transition
-              disabled:opacity-50
-disabled:cursor-not-allowed
-            "
-          >
-            Mark Completed
-          </button>
-        )}
-
-        {order.status ===
-          "COMPLETED" && (
-          <div className="px-3 py-2 text-xs text-zinc-500">
-            No actions available
-          </div>
-        )}
-
+      <div className="whitespace-nowrap">
+        <StatusBadge status={order.status} />
       </div>
-
-    </div>
-
-  )}
+    )}
+  </div>
 
 </td>
 
@@ -595,5 +453,48 @@ disabled:cursor-not-allowed
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
+
+    {/* STATUS PORTAL — rendered in document.body to escape overflow clipping */}
+    {statusPortal && ReactDOM.createPortal(
+      <div
+        style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999 }}
+        onMouseEnter={keepStatusPortal}
+        onMouseLeave={closeStatusPortal}
+        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+      >
+        {canUpdateStatus && statusPortal.status === "PENDING" && (
+          <>
+            <button
+              disabled={updatingOrderId === statusPortal.orderId}
+              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "IN_PROGRESS"); setStatusPortal(null) }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Start Progress
+            </button>
+            <button
+              disabled={updatingOrderId === statusPortal.orderId}
+              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark Completed
+            </button>
+          </>
+        )}
+        {canUpdateStatus && statusPortal.status === "IN_PROGRESS" && (
+          <button
+            disabled={updatingOrderId === statusPortal.orderId}
+            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
+            className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Mark Completed
+          </button>
+        )}
+        {(!canUpdateStatus || statusPortal.status === "COMPLETED") && (
+          <div className="px-3 py-2 text-xs text-zinc-400">No actions available</div>
+        )}
+      </div>,
+      document.body
+    )}
+    </>
   )
 }

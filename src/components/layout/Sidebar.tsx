@@ -274,6 +274,18 @@ const canManageOrders =
       }
     />
 )}
+
+{/* MY ORDERS */}
+{(currentUser?.role === "ADMIN" ||
+  (currentUser?.department === "MARKETING" &&
+    (currentUser?.position === "PRODUCER" ||
+      currentUser?.position === "POST_PRODUCTION_MANAGER"))) && (
+  <SidebarItem
+    active={activePage === "my-orders"}
+    label="My Orders"
+    onClick={() => setActivePage("my-orders")}
+  />
+)}
 {/* NOTIFICATIONS */}
 {(
     currentUser?.role === "ADMIN" ||

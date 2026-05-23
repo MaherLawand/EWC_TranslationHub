@@ -25,8 +25,8 @@ type Props = {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex justify-between items-center gap-4">
-      <span className="text-zinc-500 text-xs shrink-0">{label}</span>
-      <span className="text-[#F5F1E8] text-xs font-medium text-right">{children}</span>
+      <span className="text-zinc-500 text-sm shrink-0">{label}</span>
+      <span className="text-[#F5F1E8] text-sm font-medium text-right">{children}</span>
     </div>
   )
 }
@@ -41,7 +41,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function SectionLabel({ title }: { title: string }) {
   return (
-    <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#D6B36A] mb-2">
+    <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[#D6B36A] mb-2">
       {title}
     </p>
   )
@@ -111,14 +111,14 @@ export default function OrderDetailsSidebar({
           ✕
         </button>
 
-        <h1 className="text-[17px] font-bold tracking-tight text-[#F5F1E8] leading-snug pr-8">
+        <h1 className="text-[19px] font-bold tracking-tight text-[#F5F1E8] leading-snug pr-8">
           {selectedOrder.title}
         </h1>
 
         <div className="mt-3 flex items-center gap-2">
           <StatusBadge status={selectedOrder.status} />
           {selectedOrder.priority && (
-            <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${
+            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
               selectedOrder.priority === "HIGH"
                 ? "bg-red-500/10 border-red-500/20 text-red-400"
                 : selectedOrder.priority === "MEDIUM"
@@ -207,7 +207,7 @@ export default function OrderDetailsSidebar({
                     <span>
                       {orderDetail.lastEditedBy.firstName} {orderDetail.lastEditedBy.lastName}
                       {orderDetail.lastEditedAt && (
-                        <span className="text-zinc-500 ml-1.5 text-[10px]">
+                        <span className="text-zinc-500 ml-1.5 text-xs">
                           {new Date(orderDetail.lastEditedAt).toLocaleString()}
                         </span>
                       )}
@@ -222,7 +222,7 @@ export default function OrderDetailsSidebar({
               <div>
                 <SectionLabel title="Notes" />
                 <Card>
-                  <p className="text-xs text-[#F5F1E8] leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm text-[#F5F1E8] leading-relaxed whitespace-pre-wrap">
                     {orderDetail.notes}
                   </p>
                 </Card>
@@ -240,11 +240,11 @@ export default function OrderDetailsSidebar({
                   <Card className="py-3 space-y-2">
                     {src.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-600 text-[10px] w-6 shrink-0">From</span>
+                        <span className="text-zinc-600 text-xs w-7 shrink-0">From</span>
                         <div className="flex flex-wrap gap-1">
                           {src.map((lang: string) => (
                             <div key={lang} className="group relative">
-                              <div className="h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-2 text-[10px] font-semibold tracking-wide text-white hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
+                              <div className="h-[24px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-2.5 text-[11px] font-semibold tracking-wide text-white hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
                                 {getLanguageCode(lang)}
                               </div>
                               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -259,11 +259,11 @@ export default function OrderDetailsSidebar({
                     )}
                     {tgt.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-600 text-[10px] w-6 shrink-0">To</span>
+                        <span className="text-zinc-600 text-xs w-7 shrink-0">To</span>
                         <div className="flex flex-wrap gap-1">
                           {tgt.map((lang: string) => (
                             <div key={lang} className="group relative">
-                              <div className="h-[22px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-2 text-[10px] font-bold tracking-wide text-black hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
+                              <div className="h-[24px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-2.5 text-[11px] font-bold tracking-wide text-black hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
                                 {getLanguageCode(lang)}
                               </div>
                               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -289,16 +289,16 @@ export default function OrderDetailsSidebar({
                   {marketing.assignments.map((a: any) => (
                     <div key={a.id} className="flex items-center justify-between">
                       <div>
-                        <p className="text-[#F5F1E8] text-xs font-medium">
+                        <p className="text-[#F5F1E8] text-sm font-medium">
                           {a.user.firstName} {a.user.lastName}
                         </p>
                         {a.user.position && (
-                          <p className="text-[10px] text-zinc-500 mt-0.5">
+                          <p className="text-xs text-zinc-500 mt-0.5">
                             {a.user.position.replace(/_/g, " ")}
                           </p>
                         )}
                       </div>
-                      <p className="text-[10px] text-zinc-600">
+                      <p className="text-xs text-zinc-600">
                         {new Date(a.assignedAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -320,9 +320,9 @@ export default function OrderDetailsSidebar({
                       <div className="flex items-start gap-2.5">
                         <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-zinc-500 text-[10px] mb-0.5">Source File</p>
+                          <p className="text-zinc-500 text-xs mb-0.5">Source File</p>
                           <a href={formatUrl(sourceLink)} target="_blank" rel="noopener noreferrer"
-                            className="text-[#D6B36A] underline text-xs break-all hover:text-[#E7C989] transition">
+                            className="text-[#D6B36A] underline text-sm break-all hover:text-[#E7C989] transition">
                             {sourceLink}
                           </a>
                         </div>
@@ -332,9 +332,9 @@ export default function OrderDetailsSidebar({
                       <div className="flex items-start gap-2.5">
                         <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-zinc-500 text-[10px] mb-0.5">SRT Available</p>
+                          <p className="text-zinc-500 text-xs mb-0.5">SRT Available</p>
                           <a href={formatUrl(srtLink)} target="_blank" rel="noopener noreferrer"
-                            className="text-[#D6B36A] underline text-xs break-all hover:text-[#E7C989] transition">
+                            className="text-[#D6B36A] underline text-sm break-all hover:text-[#E7C989] transition">
                             {srtLink}
                           </a>
                         </div>
@@ -357,14 +357,14 @@ export default function OrderDetailsSidebar({
                       <div key={d.id} className="flex items-start gap-2.5 bg-[#111111] border border-[#242424] rounded-xl px-3 py-2.5">
                         <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-[#F5F1E8] text-xs font-semibold">{d.language}</p>
+                          <p className="text-[#F5F1E8] text-sm font-semibold">{d.language}</p>
                           {d.deliveryLink ? (
                             <a href={formatUrl(d.deliveryLink)} target="_blank" rel="noreferrer"
-                              className="text-[#D6B36A] underline text-xs break-all mt-0.5 block">
+                              className="text-[#D6B36A] underline text-sm break-all mt-0.5 block">
                               {d.deliveryLink}
                             </a>
                           ) : (
-                            <p className="text-[10px] text-zinc-600 mt-0.5">No link yet</p>
+                            <p className="text-xs text-zinc-600 mt-0.5">No link yet</p>
                           )}
                         </div>
                       </div>
@@ -381,7 +381,7 @@ export default function OrderDetailsSidebar({
                   onClick={() => setHistoryOpen((o) => !o)}
                   className="w-full flex items-center justify-between group py-1"
                 >
-                  <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#D6B36A] group-hover:text-[#E7C989] transition">
+                  <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-[#D6B36A] group-hover:text-[#E7C989] transition">
                     Edit History
                     <span className="ml-1.5 text-[#D6B36A]/50">({orderDetail.editHistory.length})</span>
                   </span>
@@ -397,10 +397,10 @@ export default function OrderDetailsSidebar({
                   <Card className="mt-2 space-y-2.5">
                     {orderDetail.editHistory.map((edit: any) => (
                       <div key={edit.id} className="flex items-center justify-between border-b border-[#1F1F1F] pb-2.5 last:border-0 last:pb-0">
-                        <p className="text-[#F5F1E8] text-xs font-medium">
+                        <p className="text-[#F5F1E8] text-sm font-medium">
                           {edit.editedBy?.firstName} {edit.editedBy?.lastName}
                         </p>
-                        <p className="text-[10px] text-zinc-500">
+                        <p className="text-xs text-zinc-500">
                           {new Date(edit.editedAt).toLocaleString()}
                         </p>
                       </div>
