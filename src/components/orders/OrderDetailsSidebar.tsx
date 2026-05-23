@@ -222,7 +222,7 @@ export default function OrderDetailsSidebar({
               <div>
                 <SectionLabel title="Notes" />
                 <Card>
-                  <p className="text-base text-[#F5F1E8] leading-relaxed whitespace-pre-wrap">
+                  <p className="text-base text-[#F5F1E8] leading-relaxed whitespace-pre-wrap break-words overflow-hidden">
                     {orderDetail.notes}
                   </p>
                 </Card>

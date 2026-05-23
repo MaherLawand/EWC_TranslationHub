@@ -29,7 +29,6 @@ export default function Sidebar({
 
   /* ── dropdown child visibility (same rules as before) ── */
   const showMyGames =
-    currentUser?.role === "ADMIN" ||
     currentUser?.department === "BROADCAST" &&
     (currentUser?.position === "PRODUCER" ||
       currentUser?.position === "POST_PRODUCTION_MANAGER")

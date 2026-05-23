@@ -164,6 +164,8 @@ export default function App() {
   // Deep-link: ?page=Broadcast&orderId=xxx
   const urlPageRef = React.useRef<string | null>(null)
   const urlOrderIdRef = React.useRef<string | null>(null)
+  // Prevents the activePage effect from calling resetFilters() during deep-link init
+  const skipResetRef = React.useRef(false)
 
   const canManageOrders =
     currentUser?.role === "ADMIN" ||
@@ -320,6 +322,12 @@ export default function App() {
         setSelectedOrder(pending.order)
         fetchOrderDetail(pending.order.id)
       }
+    } else if (skipResetRef.current) {
+      // Deep-link init set activePage + orderIdFilter together — skip resetFilters()
+      // so it doesn't wipe orderIdFilter and cause a second unfiltered fetch
+      skipResetRef.current = false
+      setSelectedOrder(null)
+      setSelectedOrderDetail(null)
     } else {
       setSelectedOrder(null)
       setSelectedOrderDetail(null)
@@ -364,19 +372,27 @@ export default function App() {
       setActivePage("Broadcast")
     }
 
+    // Batch orderIdFilter with activePage so useOrders only fetches once.
+    // Also flag skipResetRef so the activePage effect doesn't call resetFilters()
+    // and wipe orderIdFilter before useOrders gets to use it.
+    if (urlOrderIdRef.current) {
+      skipResetRef.current = true
+      setOrderIdFilter(urlOrderIdRef.current)
+    }
+
     setHasInitializedPage(true)
   }, [currentUser, hasInitializedPage])
 
-  // Deep-link: open the specific order once the page is ready
+  // Deep-link: open the specific order sidebar once page is ready
   React.useEffect(() => {
     if (!hasInitializedPage || !currentUser || !urlOrderIdRef.current) return
     const orderId = urlOrderIdRef.current
     urlOrderIdRef.current = null
+    // orderIdFilter already set synchronously in the initialization effect above
+    // (batched with setActivePage so useOrders only fires once)
     fetchOrderDetail(orderId).then((order) => {
       if (!order) return
       setSelectedOrder(order)
-      // Filter table to show only this order by exact ID — avoids title collisions
-      setOrderIdFilter(orderId)
     })
   }, [hasInitializedPage, currentUser?.id])
 
@@ -1100,12 +1116,13 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-3 pt-1">
 
                     {(activePage === "my-games"
-                      ? filteredGames.filter((game) =>
-                          Array.isArray(currentUser?.assignedGames) &&
-                          currentUser.assignedGames.some(
-                            (assignment: any) => assignment.gameId === game.id
-                          )
-                        )
+                      ? (currentUser?.assignedGames || [])
+                          .map((assignment: any) => {
+                            // Prefer entry from filteredGames (has server-rewritten logo URL)
+                            // Fall back to game object embedded in the assignment
+                            return filteredGames.find((g) => g.id === assignment.gameId) ?? assignment.game
+                          })
+                          .filter(Boolean)
                       : filteredGames
                     ).map((game) => {
                       const active = selectedGameFilter === game.id

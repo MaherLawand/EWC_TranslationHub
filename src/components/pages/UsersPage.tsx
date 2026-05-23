@@ -186,27 +186,27 @@ export default function UsersPage({
 
           <tr>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Name
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Email
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Role
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Position
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Department
             </th>
 
-            <th className="text-left px-6 py-5">
+            <th className="text-left px-6 py-3">
               Actions
             </th>
 
@@ -248,7 +248,7 @@ export default function UsersPage({
               >
 
                 {/* NAME */}
-                <td className="px-6 py-6">
+                <td className="px-6 py-2.5">
 
                   <div>
 
@@ -289,12 +289,12 @@ export default function UsersPage({
                 </td>
 
                 {/* EMAIL */}
-                <td className="px-6 py-6 text-zinc-300">
+                <td className="px-6 py-2.5 text-zinc-300">
                   {user.email}
                 </td>
 
                 {/* ROLE */}
-                <td className="px-6 py-6">
+                <td className="px-6 py-2.5">
 
                   <span
                     className="
@@ -316,17 +316,17 @@ export default function UsersPage({
                 </td>
 
                 {/* POSITION */}
-                <td className="px-6 py-6 text-zinc-300">
+                <td className="px-6 py-2.5 text-zinc-300">
                   {user.position?.replace(/_/g, " ") || "-"}
                 </td>
 
                 {/* DEPARTMENT */}
-                <td className="px-6 py-6 text-zinc-300">
+                <td className="px-6 py-2.5 text-zinc-300">
                   {user.department || "-"}
                 </td>
 
                 {/* ACTIONS */}
-                <td className="px-6 py-6">
+                <td className="px-6 py-2.5">
 
                   <div className="flex items-center gap-3">
 
