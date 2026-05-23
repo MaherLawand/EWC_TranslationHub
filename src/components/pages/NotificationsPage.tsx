@@ -151,7 +151,7 @@ paginatedNotifications.map(
 
         className={`
           px-7
-          py-5
+          py-3
           transition-all
           relative
           overflow-hidden
@@ -171,18 +171,18 @@ paginatedNotifications.map(
         `}
       >
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
 
           {/* LEFT */}
-          <div className="flex items-start gap-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
 
             {/* GAME LOGO */}
             {logo && (
               <div
                 className="
-                  w-[46px]
-                  h-[46px]
-                  rounded-2xl
+                  w-[34px]
+                  h-[34px]
+                  rounded-xl
                   border
                   border-[#242424]
                   bg-[#121212]
@@ -192,17 +192,11 @@ paginatedNotifications.map(
                   flex-shrink-0
                 "
               >
-
                 <img
                   src={logo}
                   alt="Game"
-                  className="
-                    w-[28px]
-                    h-[28px]
-                    object-contain
-                  "
+                  className="w-[20px] h-[20px] object-contain"
                 />
-
               </div>
             )}
 
@@ -211,12 +205,10 @@ paginatedNotifications.map(
 
               <p
                 className={`
+                  text-sm
                   font-semibold
-                  ${
-                    !notification.isRead
-                      ? "text-white"
-                      : "text-[#F5F1E8]"
-                  }
+                  leading-snug
+                  ${!notification.isRead ? "text-white" : "text-[#F5F1E8]"}
                 `}
               >
                 {notification.title}
@@ -224,15 +216,10 @@ paginatedNotifications.map(
 
               <p
                 className={`
-                  text-sm
-                  mt-2
-                  leading-relaxed
-
-                  ${
-                    !notification.isRead
-                      ? "text-zinc-300"
-                      : "text-zinc-400"
-                  }
+                  text-xs
+                  mt-0.5
+                  leading-snug
+                  ${!notification.isRead ? "text-zinc-300" : "text-zinc-500"}
                 `}
               >
                 {notification.message}
@@ -240,19 +227,12 @@ paginatedNotifications.map(
 
               <p
                 className={`
-                  text-xs
-                  mt-4
-
-                  ${
-                    !notification.isRead
-                      ? "text-[#D6B36A]"
-                      : "text-zinc-600"
-                  }
+                  text-[11px]
+                  mt-1
+                  ${!notification.isRead ? "text-[#D6B36A]" : "text-zinc-600"}
                 `}
               >
-                {new Date(
-                  notification.createdAt
-                ).toLocaleString()}
+                {new Date(notification.createdAt).toLocaleString()}
               </p>
 
             </div>
@@ -261,19 +241,11 @@ paginatedNotifications.map(
 
           {/* NEW BADGE */}
           {!notification.isRead && (
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-                flex-shrink-0
-              "
-            >
-
+            <div className="flex-shrink-0">
               <div
                 className="
                   px-2.5
-                  h-[24px]
+                  h-[20px]
                   rounded-full
                   bg-[#D6B36A]
                   text-black
@@ -287,7 +259,6 @@ paginatedNotifications.map(
               >
                 NEW
               </div>
-
             </div>
           )}
 
