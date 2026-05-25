@@ -114,6 +114,9 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [showDeleteModal, setShowDeleteModal] =
     React.useState(false)
 
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    React.useState(false)
+
   const pendingNavRef = React.useRef<{
     search: string
     order: any | null
@@ -702,11 +705,16 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       {/* LEFT SIDEBAR */}
       <Sidebar
         activePage={activePage}
-        setActivePage={setActivePage}
+        setActivePage={(page) => {
+          setActivePage(page)
+          setMobileMenuOpen(false)
+        }}
         currentUser={currentUser}
         logout={logout}
         selectedEvent={selectedEvent}
         setSelectedEvent={setSelectedEvent}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       {/* MAIN */}
@@ -721,13 +729,14 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
           currentUser={currentUser}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
+          onMobileMenuToggle={() => setMobileMenuOpen((o) => !o)}
         />
 
         {/* CONTENT */}
         <div className="flex-1 flex overflow-hidden">
 
           {/* TABLE AREA */}
-          <div className="flex-1 overflow-auto px-8 py-7 space-y-7 bg-[#070707]">
+          <div className="flex-1 overflow-auto px-4 sm:px-8 py-5 sm:py-7 space-y-5 sm:space-y-7 bg-[#070707]">
 
             {/* FILTERS */}
             {showFilters && (
@@ -752,7 +761,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                     items-start
                     justify-between
                     gap-5
-                    flex-nowrap
+                    flex-wrap
                   "
                 >
                   {/* LEFT */}
@@ -1196,7 +1205,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
           <div
             className={
               selectedOrder || sidebarPrereserved
-                ? "w-[480px] h-full flex-shrink-0 overflow-hidden"
+                ? "w-0 overflow-hidden lg:w-[480px] lg:h-full lg:flex-shrink-0"
                 : "hidden"
             }
           >
@@ -1230,8 +1239,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
 
         {/* DELETE CONFIRM MODAL */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
-            <div className="w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8">
+          <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center px-4">
+            <div className="w-full max-w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8">
 
               <div className="mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl mb-5">

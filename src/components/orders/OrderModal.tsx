@@ -253,7 +253,7 @@ today.setHours(0, 0, 0, 0)
 
 
   return (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
 <motion.div
   layout
   transition={{
@@ -262,10 +262,10 @@ today.setHours(0, 0, 0, 0)
     ease: [0.22, 1, 0.36, 1],
   },
 }}
-  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl flex flex-col max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] ${
+  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] w-full ${
     newOrder.deliveries?.length > 0
-      ? "w-[1200px]"
-      : "w-[700px]"
+      ? "sm:max-w-[1200px]"
+      : "sm:max-w-[700px]"
   }`}
 >
       {/* HEADER */}
@@ -291,7 +291,7 @@ today.setHours(0, 0, 0, 0)
 <div
   className={`grid gap-6 ${
     newOrder.deliveries?.length > 0
-      ? "grid-cols-[1fr_380px]"
+      ? "grid-cols-1 lg:grid-cols-[1fr_380px]"
       : "grid-cols-1"
   }`}
 >
@@ -306,7 +306,7 @@ today.setHours(0, 0, 0, 0)
         General Information
       </h3>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* TITLE */}
         <div className="col-span-2">
@@ -462,7 +462,7 @@ today.setHours(0, 0, 0, 0)
           Broadcast Details
         </h3>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           {/* GAME */}
           <div>
@@ -775,7 +775,7 @@ today.setHours(0, 0, 0, 0)
       Marketing Details
     </h3>
 
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
       {/* CONTENT TITLE */}
 <div className="col-span-2">

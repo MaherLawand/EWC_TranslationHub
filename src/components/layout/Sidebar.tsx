@@ -8,6 +8,8 @@ type Props = {
   currentUser: any
   selectedEvent: string
   setSelectedEvent: (value: string) => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 export default function Sidebar({
@@ -17,6 +19,8 @@ export default function Sidebar({
   logout,
   selectedEvent,
   setSelectedEvent,
+  mobileOpen = false,
+  onMobileClose,
 }: Props) {
 
   const unreadNotifications =
@@ -62,17 +66,33 @@ export default function Sidebar({
   const marketingActive = activePage === "marketing" || activePage === "my-orders"
 
   return (
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-[199] bg-black/60 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
     <aside
-      className="
+      className={`
+        fixed inset-y-0 left-0 z-[200] flex flex-col
         w-[260px]
         bg-[radial-gradient(circle_at_center,rgba(214,179,106,0.03),transparent_100%)]
         bg-[#0A0A0A]
         border-r
         border-[#1F1F1F]
-        flex
-        flex-col
-        backdrop-blur-2xl
-      "
+        transform
+        transition-transform
+        duration-300
+        ease-in-out
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:relative
+        lg:inset-auto
+        lg:z-auto
+        lg:translate-x-0
+      `}
     >
 
       {/* LOGO */}
@@ -308,8 +328,7 @@ export default function Sidebar({
           border-[#1F1F1F]
           px-5
           py-5
-          bg-[#090909]/80
-          backdrop-blur-xl
+          bg-[#090909]
         "
       >
         <div className="flex items-center gap-4">
@@ -375,6 +394,7 @@ export default function Sidebar({
       </div>
 
     </aside>
+    </>
   )
 }
 

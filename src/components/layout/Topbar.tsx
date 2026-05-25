@@ -8,6 +8,7 @@ type Props = {
   canManageOrders: boolean
   statusFilter: string
   setStatusFilter: (v: string) => void
+  onMobileMenuToggle?: () => void
 }
 
 function Topbar({
@@ -18,6 +19,7 @@ function Topbar({
   currentUser,
   statusFilter,
   setStatusFilter,
+  onMobileMenuToggle,
 }: Props) {
   function getTitle() {
     switch (activePage) {
@@ -83,8 +85,10 @@ function Topbar({
 return (
   <header
     className="
-      px-8
-      py-6
+      px-4
+      sm:px-8
+      py-4
+      sm:py-6
       border-b
       border-[#242424]
       bg-[#090909]
@@ -105,6 +109,37 @@ return (
     gap-6
   "
 >
+
+  {/* HAMBURGER — mobile only */}
+  {onMobileMenuToggle && (
+    <button
+      onClick={onMobileMenuToggle}
+      className="
+        lg:hidden
+        flex-shrink-0
+        w-10
+        h-10
+        flex
+        items-center
+        justify-center
+        rounded-xl
+        border
+        border-[#2A2A2A]
+        bg-[#111111]
+        text-zinc-400
+        hover:text-white
+        hover:border-[#3A3A3A]
+        transition-colors
+      "
+      aria-label="Open menu"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <line x1="2" y1="4.5" x2="16" y2="4.5" />
+        <line x1="2" y1="9" x2="16" y2="9" />
+        <line x1="2" y1="13.5" x2="16" y2="13.5" />
+      </svg>
+    </button>
+  )}
 
   {/* LEFT */}
   <div className="min-w-fit">
@@ -127,6 +162,8 @@ return (
         text-zinc-500
         mt-2
         tracking-wide
+        hidden
+        sm:block
       "
     >
       {getDescription()}
@@ -138,8 +175,9 @@ return (
   {showStats && (
     <div
       className="
+        hidden
+        lg:flex
         flex-1
-        flex
         items-center
         justify-center
         gap-3
@@ -215,11 +253,15 @@ return (
           setShowModal(true)
         }
         className="
-          h-[52px]
-          px-6
+          h-[44px]
+          sm:h-[52px]
+          px-4
+          sm:px-6
           rounded-2xl
           bg-[#D6B36A]
           text-black
+          text-sm
+          sm:text-base
           font-semibold
           tracking-wide
           shadow-[0_0_25px_rgba(214,179,106,0.18)]

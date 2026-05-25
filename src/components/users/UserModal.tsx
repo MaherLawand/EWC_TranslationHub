@@ -54,8 +54,8 @@ export default function UserModal({
   const inputError = `${inputBase} border-red-500/60 focus:border-red-500`
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl w-[600px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] sm:max-h-[90vh]">
 
         {/* HEADER */}
         <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
@@ -81,7 +81,7 @@ export default function UserModal({
           {/* NAME ROW */}
           <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
             <h3 className="text-sm font-semibold text-[#F5F1E8] mb-4">Identity</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               {/* FIRST NAME */}
               <div>
