@@ -22,10 +22,13 @@ export default function Sidebar({
   const unreadNotifications =
     currentUser?.notifications?.filter((n: any) => !n.isRead).length || 0
 
+  const isViewer = currentUser?.position === "VIEWER"
+
   const canViewBroadcastOrders =
+    currentUser?.role === "ADMIN" ||
+    currentUser?.position === "VIEWER" ||
     currentUser?.department === "BROADCAST" ||
-    currentUser?.department === "MARKETING" ||
-    currentUser?.role === "ADMIN"
+    currentUser?.department === "MARKETING"
 
   /* ── dropdown child visibility (same rules as before) ── */
   const showMyGames =
@@ -248,7 +251,7 @@ export default function Sidebar({
           )}
 
           {/* ── NOTIFICATIONS ── */}
-          {(currentUser?.role === "ADMIN" ||
+          {!isViewer && (currentUser?.role === "ADMIN" ||
             currentUser?.position === "PRODUCER" ||
             currentUser?.position === "POST_PRODUCTION_MANAGER" ||
             currentUser?.position === "TRANSLATOR") && (
@@ -341,7 +344,7 @@ export default function Sidebar({
               {currentUser?.firstName} {currentUser?.lastName}
             </p>
             <p className="text-xs text-zinc-500 mt-1 truncate">
-              {currentUser?.position || currentUser?.role}
+              {currentUser?.role === "ADMIN" ? "Admin" : currentUser?.position?.replace(/_/g, " ") || "User"}
             </p>
           </div>
 

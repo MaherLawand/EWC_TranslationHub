@@ -98,12 +98,13 @@ export default function OrderDetailsSidebar({
     <div className="
       fixed inset-y-0 right-0 z-50
       w-full sm:w-[480px]
-      lg:relative lg:inset-auto lg:z-auto lg:w-[480px]
-      border-l border-[#2A2A2A] bg-[#090909] overflow-auto flex-shrink-0 flex flex-col
+      lg:relative lg:inset-auto lg:z-auto lg:w-[480px] lg:h-full
+      border-l border-[#2A2A2A] bg-[#090909] flex-shrink-0 flex flex-col
     ">
 
-      {/* HEADER */}
-      <div className="sticky top-0 z-40 px-6 pt-6 pb-4 border-b border-[#242424] bg-[#090909]/95 backdrop-blur-xl">
+      {/* HEADER — flex-shrink-0 keeps it pinned at top; no sticky needed
+          because the body (not the whole sidebar) is the scroll container */}
+      <div className="flex-shrink-0 z-40 px-6 pt-6 pb-4 border-b border-[#242424] bg-[#090909]">
         <button
           onClick={() => { setSelectedOrder(null); setIsEditingOrder(false) }}
           className="absolute top-5 right-4 text-zinc-500 hover:text-white transition text-lg leading-none"
@@ -131,8 +132,9 @@ export default function OrderDetailsSidebar({
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="flex-1 px-6 py-5 space-y-4 pb-4">
+      {/* BODY — only this section scrolls; min-h-0 lets flexbox shrink it
+          below intrinsic height so the footer stays anchored at the bottom */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4 pb-4">
 
         {isLoadingDetail ? (
           <div className="space-y-3 animate-pulse">
@@ -414,9 +416,10 @@ export default function OrderDetailsSidebar({
         )}
       </div>
 
-      {/* BOTTOM ACTIONS */}
+      {/* BOTTOM ACTIONS — flex-shrink-0 keeps it anchored at the very bottom
+          regardless of how much content is in the body above */}
       {canManageOrders && !isBroadcastReadOnly && (
-        <div className="sticky bottom-0 bg-[#0A0A0A] border-t border-[#1F1F1F] px-6 py-4">
+        <div className="flex-shrink-0 bg-[#0A0A0A] border-t border-[#1F1F1F] px-6 py-4">
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => {

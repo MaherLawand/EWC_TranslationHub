@@ -161,8 +161,7 @@ export default function UserModal({
                 >
                   <option value="">Select Role</option>
                   <option value="ADMIN">Admin</option>
-                  <option value="EDITOR">Editor</option>
-                  <option value="VIEWER">Viewer</option>
+                  <option value="USER">User</option>
                 </select>
               </div>
 

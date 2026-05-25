@@ -1,23 +1,23 @@
-import { act } from "react"
+import React from "react"
 
 type Props = {
   activePage: string
-statsOrders: any
-
+  statsOrders: any
   currentUser: any
-  setShowModal: (
-    value: boolean
-  ) => void
-
+  setShowModal: (value: boolean) => void
   canManageOrders: boolean
+  statusFilter: string
+  setStatusFilter: (v: string) => void
 }
 
-export default function Topbar({
+function Topbar({
   activePage,
   setShowModal,
   canManageOrders,
   statsOrders,
   currentUser,
+  statusFilter,
+  setStatusFilter,
 }: Props) {
   function getTitle() {
     switch (activePage) {
@@ -32,6 +32,9 @@ export default function Topbar({
 
         case "my-games":
           return "My Games"
+
+          case "my-orders":
+            return "My Orders"
 
       case "users":
         return "Users"
@@ -57,6 +60,9 @@ export default function Topbar({
 
       case "my-games":
         return "Manage your games"
+      
+      case "my-orders":
+        return "Manage your translation requests"
 
       default:
         return "Manage translation requests"
@@ -64,10 +70,15 @@ export default function Topbar({
   }
 
   const showStats =
-  activePage === "games" ||
-  activePage === "marketing" ||
-  activePage === "my-games" ||
-  activePage === "Broadcast"
+    activePage === "games" ||
+    activePage === "marketing" ||
+    activePage === "my-games" ||
+    activePage === "Broadcast"
+
+  // Memoized counts — avoid re-filtering on every render
+  const pendingCount    = React.useMemo(() => statsOrders.filter((o: any) => o.status === "PENDING").length,     [statsOrders])
+  const inProgressCount = React.useMemo(() => statsOrders.filter((o: any) => o.status === "IN_PROGRESS").length, [statsOrders])
+  const completedCount  = React.useMemo(() => statsOrders.filter((o: any) => o.status === "COMPLETED").length,   [statsOrders])
 
 return (
   <header
@@ -76,8 +87,7 @@ return (
       py-6
       border-b
       border-[#242424]
-      bg-[#090909]/95
-      backdrop-blur-xl
+      bg-[#090909]
       shadow-[0_0_30px_rgba(0,0,0,0.35)]
       flex
       flex-col
@@ -136,107 +146,61 @@ return (
       "
     >
 
-      {/* TOTAL */}
-      <div
-        className="
-          min-w-[120px]
-          rounded-2xl
-          border
-          border-[#242424]
-          bg-[#111111]
-          px-4
-          py-3
-        "
+      {/* TOTAL — resets filter */}
+      <button
+        onClick={() => setStatusFilter("All Statuses")}
+        className={`
+          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          ${statusFilter === "All Statuses"
+            ? "border-[#3A3A3A] bg-[#1A1A1A]"
+            : "border-[#242424] bg-[#111111] opacity-50 hover:opacity-80"}
+        `}
       >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Total
-        </p>
-
-        <h3 className="text-2xl font-bold text-white mt-1">
-          {statsOrders.length}
-        </h3>
-      </div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">Total</p>
+        <h3 className="text-2xl font-bold text-white mt-1">{statsOrders.length}</h3>
+      </button>
 
       {/* PENDING */}
-      <div
-        className="
-          min-w-[120px]
-          rounded-2xl
-          px-4
-          py-3
-          bg-yellow-500/10
-          text-yellow-400
-          border
-          border-yellow-500/20"
+      <button
+        onClick={() => setStatusFilter(statusFilter === "Pending" ? "All Statuses" : "Pending")}
+        className={`
+          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          ${statusFilter === "Pending"
+            ? "bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+            : "bg-yellow-500/10 border-yellow-500/20 opacity-50 hover:opacity-80"}
+        `}
       >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-yellow-400">
-          Pending
-        </p>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-yellow-400">Pending</p>
+        <h3 className="text-2xl font-bold text-white mt-1">{pendingCount}</h3>
+      </button>
 
-        <h3 className="text-2xl font-bold text-white mt-1">
-          {
-            statsOrders.filter(
-              (o: any) =>
-                o.status ===
-                "PENDING"
-            ).length
-          }
-        </h3>
-      </div>
-      
       {/* IN PROGRESS */}
-      <div
-        className="
-          min-w-[120px]
-          rounded-2xl
-          border
-          border-blue-500/10
-          bg-blue-500/[0.06]
-          px-4
-          py-3
-        "
+      <button
+        onClick={() => setStatusFilter(statusFilter === "In Progress" ? "All Statuses" : "In Progress")}
+        className={`
+          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          ${statusFilter === "In Progress"
+            ? "bg-blue-500/20 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+            : "bg-blue-500/[0.06] border-blue-500/10 opacity-50 hover:opacity-80"}
+        `}
       >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-blue-400">
-          In Progress
-        </p>
-
-        <h3 className="text-2xl font-bold text-white mt-1">
-          {
-            statsOrders.filter(
-              (o: any) =>
-                o.status ===
-                "IN_PROGRESS"
-            ).length
-          }
-        </h3>
-      </div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-blue-400">In Progress</p>
+        <h3 className="text-2xl font-bold text-white mt-1">{inProgressCount}</h3>
+      </button>
 
       {/* COMPLETED */}
-      <div
-        className="
-          min-w-[120px]
-          rounded-2xl
-          border
-          border-green-500/10
-          bg-green-500/[0.06]
-          px-4
-          py-3
-        "
+      <button
+        onClick={() => setStatusFilter(statusFilter === "Completed" ? "All Statuses" : "Completed")}
+        className={`
+          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          ${statusFilter === "Completed"
+            ? "bg-green-500/20 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.15)]"
+            : "bg-green-500/[0.06] border-green-500/10 opacity-50 hover:opacity-80"}
+        `}
       >
-        <p className="text-[10px] uppercase tracking-[0.18em] text-green-400">
-          Completed
-        </p>
-
-        <h3 className="text-2xl font-bold text-white mt-1">
-          {
-            statsOrders.filter(
-              (o: any) =>
-                o.status ===
-                "COMPLETED"
-            ).length
-          }
-        </h3>
-      </div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-green-400">Completed</p>
+        <h3 className="text-2xl font-bold text-white mt-1">{completedCount}</h3>
+      </button>
 
 
 
@@ -278,3 +242,5 @@ return (
   </header>
 )
 }
+
+export default React.memo(Topbar)

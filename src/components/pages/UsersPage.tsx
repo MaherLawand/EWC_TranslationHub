@@ -1,5 +1,6 @@
 import React from "react"
 import PaginationBar from "../shared/PaginationBar"
+import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 
 type Props = {
   users: any[]
@@ -50,6 +51,8 @@ export default function UsersPage({
 
   const [userToDelete, setUserToDelete] =
     React.useState<any>(null)
+
+  const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
   return (
     <div
@@ -169,7 +172,7 @@ export default function UsersPage({
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll">
+      <div className="table-scroll" ref={scrollRef}>
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -195,7 +198,7 @@ export default function UsersPage({
             </th>
 
             <th className="text-left px-6 py-3">
-              Role
+              Role / Position
             </th>
 
             <th className="text-left px-6 py-3">
@@ -296,22 +299,41 @@ export default function UsersPage({
                 {/* ROLE */}
                 <td className="px-6 py-2.5">
 
-                  <span
-                    className="
-                      border
-                      border-[#2B2B2B]
-                      bg-[#171717]
-                      px-3
-                      py-1.5
-                      rounded-xl
-                      text-xs
-                      font-semibold
-                      tracking-wide
-                      text-[#F5F1E8]
-                    "
-                  >
-                    {user.role}
-                  </span>
+                  {user.role === "ADMIN" ? (
+                    <span
+                      className="
+                        border
+                        border-[#D6B36A]/30
+                        bg-[#D6B36A]/10
+                        px-3
+                        py-1.5
+                        rounded-xl
+                        text-xs
+                        font-semibold
+                        tracking-wide
+                        text-[#D6B36A]
+                      "
+                    >
+                      Admin
+                    </span>
+                  ) : (
+                    <span
+                      className="
+                        border
+                        border-[#2B2B2B]
+                        bg-[#171717]
+                        px-3
+                        py-1.5
+                        rounded-xl
+                        text-xs
+                        font-semibold
+                        tracking-wide
+                        text-[#F5F1E8]
+                      "
+                    >
+                      {user.position?.replace(/_/g, " ") || "User"}
+                    </span>
+                  )}
 
                 </td>
 

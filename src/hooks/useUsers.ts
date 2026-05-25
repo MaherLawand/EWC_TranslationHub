@@ -104,7 +104,7 @@ export function useUsers() {
       lastName: user.lastName || "",
       email: user.email || "",
       password: "",
-      role: user.role || "EDITOR",
+      role: user.role || "USER",
       department: user.department || "BROADCAST",
       position: user.position || "",
       isActive: user.isActive || false,

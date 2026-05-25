@@ -3,6 +3,15 @@ import ReactDOM from "react-dom"
 import { LANGUAGES } from "../../constants/languages"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
+import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
+
+// Pre-built O(1) lookup — avoids a linear .find() scan on every render per pill
+const LANG_CODE_MAP = new Map(
+  LANGUAGES.map((l) => [l.name, l.code.toUpperCase()])
+)
+function getLanguageCode(name: string) {
+  return LANG_CODE_MAP.get(name) ?? name.slice(0, 2).toUpperCase()
+}
 
 type Props = {
   orders: any[]
@@ -14,6 +23,9 @@ type Props = {
   updateOrderStatus: (orderId: string, status: string) => void
   getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
   onAssignUsers: (orderId: string, userIds: string[]) => Promise<void>
+  deadlineSort: string
+  setDeadlineSort: (v: string) => void
+  onResetFilters: () => void
   isLoading?: boolean
 }
 
@@ -27,6 +39,9 @@ export default function MarketingOrdersTable({
   currentUser,
   getDeadlineInfo,
   onAssignUsers,
+  deadlineSort,
+  setDeadlineSort,
+  onResetFilters,
   isLoading,
 }: Props) {
 
@@ -42,20 +57,6 @@ const canAssignUsers =
   (currentUser?.department === "MARKETING" &&
     (currentUser?.position === "PRODUCER" ||
       currentUser?.position === "POST_PRODUCTION_MANAGER"))
-function getLanguageCode(
-  languageName: string
-) {
-  return (
-    LANGUAGES.find(
-      (l) =>
-        l.name ===
-        languageName
-    )?.code.toUpperCase() ||
-    languageName
-      .slice(0, 2)
-      .toUpperCase()
-  )
-}
 
 const [updatingOrderId, setUpdatingOrderId] =
   React.useState<string | null>(null)
@@ -209,18 +210,18 @@ async function saveAssign() {
   }
 }
 
+const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
   return (
     <>
     <div
       className="
-        bg-[radial-gradient(ellipse_90%_70%_at_top,rgba(214,179,106,0.05),transparent_80%),linear-gradient(to_bottom,#111111,#090909)]
         border
         border-[#242424]
         rounded-[32px]
         overflow-hidden
         shadow-[0_0_50px_rgba(0,0,0,0.45)]
-        backdrop-blur-xl
+        bg-[#0E0E0E]
       "
     >
 
@@ -234,8 +235,7 @@ async function saveAssign() {
           flex
           items-center
           justify-between
-          bg-[#111111]/80
-          backdrop-blur-xl
+          bg-[#111111]
         "
       >
 
@@ -247,27 +247,54 @@ async function saveAssign() {
 
         </div>
 
-        <div
-          className="
-            bg-[#151515]
-            border
-            border-[#2A2A2A]
-            px-4
-            py-2
-            rounded-2xl
-            text-sm
-            text-[#D6B36A]
-            font-medium
-            shadow-[0_0_20px_rgba(214,179,106,0.08)]
-          "
-        >
-          {orders.length} Orders
+        <div className="flex items-center gap-3">
+
+          <div
+            className="
+              bg-[#151515]
+              border
+              border-[#2A2A2A]
+              px-4
+              py-2
+              rounded-2xl
+              text-sm
+              text-[#D6B36A]
+              font-medium
+              shadow-[0_0_20px_rgba(214,179,106,0.08)]
+            "
+          >
+            {orders.length} Orders
+          </div>
+
+          <button
+            onClick={onResetFilters}
+            className="
+              h-[36px]
+              px-4
+              rounded-2xl
+              bg-[#D6B36A]
+              text-black
+              text-sm
+              font-bold
+              tracking-wide
+              shadow-[0_0_18px_rgba(214,179,106,0.25)]
+              transition-all
+              duration-200
+              hover:bg-[#E4C27C]
+              hover:shadow-[0_0_28px_rgba(214,179,106,0.4)]
+              hover:scale-[1.03]
+              active:scale-[0.98]
+            "
+          >
+            Reset Filters
+          </button>
+
         </div>
 
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll">
+      <div className="table-scroll" ref={scrollRef}>
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -300,8 +327,16 @@ async function saveAssign() {
     Format
   </th>
 
-  <th className="text-left px-6 py-3">
-    Deadline
+  <th className="px-6 py-3">
+    <button
+      onClick={() => setDeadlineSort(deadlineSort === "ASC" ? "DESC" : deadlineSort === "DESC" ? "" : "ASC")}
+      className={`flex items-center gap-1.5 text-left cursor-pointer transition-colors ${deadlineSort ? "text-[#D6B36A]" : "hover:text-white"}`}
+    >
+      Deadline
+      <span className={`text-[10px] ${deadlineSort ? "opacity-100" : "opacity-60"}`}>
+        {deadlineSort === "ASC" ? "↑" : deadlineSort === "DESC" ? "↓" : "↕"}
+      </span>
+    </button>
   </th>
 
   <th className="text-left px-6 py-3">
@@ -359,14 +394,13 @@ const isUpdating =
   key={order.id}
   onClick={() => onRowClick(order)}
   className="
-    group
+    group/row
     border-b
     border-[#1F1F1F]
     hover:bg-[rgba(214,179,106,0.03)]
-    hover:shadow-[inset_0_0_0_1px_rgba(214,179,106,0.04)]
     cursor-pointer
-    transition-all
-    duration-300
+    transition-colors
+    duration-150
   "
 >
 
@@ -382,7 +416,7 @@ const isUpdating =
       <button
         onClick={(e) => copyOrderLink(e, order.id)}
         title="Copy link"
-        className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+        className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
       >
         {copiedId === order.id ? (
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
@@ -424,12 +458,16 @@ const isUpdating =
       {marketing?.sourceLanguage?.length ? (
         <div className="flex flex-wrap gap-1">
           {marketing.sourceLanguage.map((lang: string) => (
-            <span
-              key={lang}
-              className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2"
-            >
-              {getLanguageCode(lang)}
-            </span>
+            <div key={lang} className="group/pill relative">
+              <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
+                {getLanguageCode(lang)}
+              </div>
+              <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
+                <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
+                  {lang}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
@@ -442,12 +480,16 @@ const isUpdating =
       {marketing?.targetLanguages?.length ? (
         <div className="flex flex-wrap gap-1">
           {marketing.targetLanguages.map((lang: string) => (
-            <span
-              key={lang}
-              className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)]"
-            >
-              {getLanguageCode(lang)}
-            </span>
+            <div key={lang} className="group/pill relative">
+              <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
+                {getLanguageCode(lang)}
+              </div>
+              <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
+                <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
+                  {lang}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
@@ -513,8 +555,8 @@ const isUpdating =
 
   <div
     className="inline-flex flex-shrink-0"
-    onMouseEnter={(e) => openStatusPortal(e, order.id, order.status)}
-    onMouseLeave={closeStatusPortal}
+    onMouseEnter={(e) => canUpdateStatus && openStatusPortal(e, order.id, order.status)}
+    onMouseLeave={canUpdateStatus ? closeStatusPortal : undefined}
   >
     {canUpdateStatus ? (
       <button

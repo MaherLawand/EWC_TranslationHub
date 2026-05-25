@@ -41,11 +41,15 @@ export function useOrders({
   // ─── Detail view state ────────────────────────────────────────────────────
   const [selectedOrderDetail, setSelectedOrderDetail] = React.useState<any | null>(null)
   const [isLoadingDetail, setIsLoadingDetail] = React.useState(false)
+  const detailAbortRef = React.useRef<AbortController | null>(null)
 
   // ─── Other state ──────────────────────────────────────────────────────────
   const [isEditingOrder, setIsEditingOrder] = React.useState(false)
   const [editedOrder, setEditedOrder] = React.useState<any>(null)
   const [isSavingOrder, setIsSavingOrder] = React.useState(false)
+  // Synchronous ref guard — prevents double-submit from rapid clicks before
+  // the async setIsSavingOrder(true) has committed to React state.
+  const isSavingRef = React.useRef(false)
   const [deletingOrderId, setDeletingOrderId] = React.useState("")
 
   // ─── statsOrders (for any summary / stat cards) ───────────────────────────
@@ -175,27 +179,39 @@ export function useOrders({
 
   // ─── Fetch full order detail for sidebar ─────────────────────────────────
   async function fetchOrderDetail(orderId: string) {
+    // Cancel any in-flight detail fetch so a slower previous request
+    // can never overwrite the result of a more recent one.
+    detailAbortRef.current?.abort()
+    const controller = new AbortController()
+    detailAbortRef.current = controller
+
     setIsLoadingDetail(true)
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/orders/${orderId}`,
-        { credentials: "include" }
+        { credentials: "include", signal: controller.signal }
       )
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setSelectedOrderDetail(data)
-      setEditedOrder(JSON.parse(JSON.stringify(data)))
+      // Only update state if this fetch is still the latest one
+      if (detailAbortRef.current === controller) {
+        setSelectedOrderDetail(data)
+        setEditedOrder(JSON.parse(JSON.stringify(data)))
+      }
       return data as any
-    } catch {
-      // silent — sidebar shows last known state
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        // silent — sidebar shows last known state
+      }
     } finally {
-      setIsLoadingDetail(false)
+      if (detailAbortRef.current === controller) setIsLoadingDetail(false)
     }
   }
 
   // ─── Create order ─────────────────────────────────────────────────────────
   async function createOrder(assignUserIds: string[] = []) {
-    if (!newOrder.title || isSavingOrder) return
+    if (!newOrder.title || isSavingRef.current) return
+    isSavingRef.current = true
     try {
       setIsSavingOrder(true)
       const response = await fetch(
@@ -251,13 +267,15 @@ export function useOrders({
     } catch (error) {
       console.error("Create order error:", error)
     } finally {
+      isSavingRef.current = false
       setIsSavingOrder(false)
     }
   }
 
   // ─── Update order (full edit) ─────────────────────────────────────────────
   async function updateOrder() {
-    if (isSavingOrder) return
+    if (isSavingRef.current) return
+    isSavingRef.current = true
     try {
       setIsSavingOrder(true)
       const response = await fetch(
@@ -304,6 +322,7 @@ export function useOrders({
       console.error(error)
       toast.error("Something went wrong")
     } finally {
+      isSavingRef.current = false
       setIsSavingOrder(false)
     }
   }

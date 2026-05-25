@@ -17,13 +17,31 @@ import { useUsers } from "../hooks/useUsers"
 import { useGames } from "../hooks/useGames"
 import { io as socketIo } from "socket.io-client"
 
-export default function App() {
+// Compute the user's landing page from their role/department/position.
+// Called synchronously at useState initialisation time so the correct page
+// (and therefore showFilters) is known on the very first render — preventing
+// the filter-panel appearing/disappearing CLS.
+function computeInitialPage(user: any): string {
+  if (!user) return ""
+  if (user.role === "ADMIN") return "Broadcast"
+  if (user.position === "VIEWER") return "Broadcast"
+  if (
+    (user.position === "PRODUCER" || user.position === "POST_PRODUCTION_MANAGER") &&
+    user.department === "BROADCAST"
+  ) return "my-games"
+  if (user.department === "MARKETING") return "marketing"
+  return "Broadcast"
+}
+
+export default function App({ initialUser }: { initialUser?: any } = {}) {
 
   const [hasInitializedPage, setHasInitializedPage] =
     React.useState(false)
 
+  // Seed currentUser from the auth check that already completed in App.tsx —
+  // avoids a blank currentUser on first render.
   const [currentUser, setCurrentUser] =
-    React.useState<any>(null)
+    React.useState<any>(initialUser ?? null)
 
   const [search, setSearch] =
     React.useState("")
@@ -31,8 +49,14 @@ export default function App() {
   const [statusFilter, setStatusFilter] =
     React.useState("All Statuses")
 
-  const [activePage, setActivePage] =
-    React.useState("")
+  // Lazy initialiser: read URL params synchronously + use initialUser so the
+  // correct activePage (and therefore showFilters) is set before first paint.
+  const [activePage, setActivePage] = React.useState<string>(() => {
+    const params = new URLSearchParams(window.location.search)
+    const urlPage = params.get("page")
+    if (urlPage) return urlPage
+    return computeInitialPage(initialUser)
+  })
 
   const [showModal, setShowModal] =
     React.useState(false)
@@ -166,6 +190,15 @@ export default function App() {
   const urlOrderIdRef = React.useRef<string | null>(null)
   // Prevents the activePage effect from calling resetFilters() during deep-link init
   const skipResetRef = React.useRef(false)
+
+  // If the URL already contains an orderId the sidebar will appear after data
+  // loads. Pre-reserve its 480 px width from the very first render so the
+  // table never shifts when the sidebar mounts (would be CLS because it happens
+  // without user interaction).
+  const [sidebarPrereserved] = React.useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search)
+    return !!params.get("orderId")
+  })
 
   const canManageOrders =
     currentUser?.role === "ADMIN" ||
@@ -350,16 +383,8 @@ export default function App() {
       urlPageRef.current = null
     } else if (currentUser.role === "ADMIN") {
       setActivePage("Broadcast")
-    } else if (
-      currentUser.role === "VIEWER" &&
-      currentUser.department === "BROADCAST"
-    ) {
+    } else if (currentUser.position === "VIEWER") {
       setActivePage("Broadcast")
-    } else if (
-      (currentUser.role === "VIEWER" || currentUser.role === "EDITOR") &&
-      currentUser.department === "MARKETING"
-    ) {
-      setActivePage("marketing")
     } else if (
       (currentUser.position === "PRODUCER" ||
         currentUser.position === "POST_PRODUCTION_MANAGER") &&
@@ -404,11 +429,28 @@ export default function App() {
     }
   }, [currentUser?.id])
 
-  // Keep document.title in sync with unread notification count
+  // Keep document.title in sync with active page, open order, and unread count
   React.useEffect(() => {
     const unread = currentUser?.notifications?.filter((n: any) => !n.isRead).length ?? 0
-    document.title = unread > 0 ? `(${unread}) EWC Translations` : "EWC Translations"
-  }, [currentUser?.notifications])
+    const badge = unread > 0 ? `(${unread}) ` : ""
+
+    let pageLabel = "EWC Translations"
+    if (selectedOrderDetail?.title) {
+      pageLabel = selectedOrderDetail.title
+    } else {
+      switch (activePage) {
+        case "Broadcast":     pageLabel = `${selectedEvent} | Broadcast Orders`; break
+        case "my-games":      pageLabel = `${selectedEvent} | My Games`;         break
+        case "marketing":     pageLabel = `${selectedEvent} | Marketing Orders`; break
+        case "my-orders":     pageLabel = `${selectedEvent} | My Orders`;        break
+        case "notifications": pageLabel = "Notifications";                       break
+        case "users":         pageLabel = "Users";                               break
+        default:              pageLabel = "EWC Translations";                    break
+      }
+    }
+
+    document.title = `${badge}${pageLabel}`
+  }, [activePage, selectedEvent, selectedOrderDetail?.title, currentUser?.notifications])
 
   React.useEffect(() => {
     if (!currentUser) return
@@ -677,6 +719,8 @@ export default function App() {
           canManageOrders={canManageOrders}
           statsOrders={statsOrders}
           currentUser={currentUser}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
         />
 
         {/* CONTENT */}
@@ -697,7 +741,6 @@ export default function App() {
                   px-6
                   py-5
                   shadow-[0_15px_50px_rgba(0,0,0,0.45)]
-                  backdrop-blur-2xl
                   space-y-5
                 "
               >
@@ -755,75 +798,6 @@ export default function App() {
                     {/* MARKETING FILTERS */}
                     {(activePage === "marketing" || activePage === "my-orders") && (
                       <>
-                        {/* CONTENT */}
-                        <div className="relative">
-                          <select
-                            value={contentTitleFilter}
-                            onChange={(e) => setContentTitleFilter(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[220px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option value="">All Content</option>
-                            <option value="Content 1">Content 1</option>
-                            <option value="Content 2">Content 2</option>
-                            <option value="Content 3">Content 3</option>
-                            <option value="Others">Others</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
-
-                        {/* STATUS */}
-                        <div className="relative">
-                          <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[170px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option>All Statuses</option>
-                            <option>Pending</option>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
-
                         {/* PRIORITY */}
                         <div className="relative">
                           <select
@@ -863,40 +837,6 @@ export default function App() {
                     {/* NON MARKETING FILTERS */}
                     {activePage !== "marketing" && activePage !== "my-orders" && (
                       <>
-                        {/* STATUS */}
-                        <div className="relative">
-                          <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[170px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option>All Statuses</option>
-                            <option>Pending</option>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
-
                         {/* PRIORITY */}
                         <div className="relative">
                           <select
@@ -1005,38 +945,6 @@ export default function App() {
 
 </div>
 
-                        {/* DEADLINE */}
-                        <div className="relative">
-                          <select
-                            value={deadlineSort}
-                            onChange={(e) => setDeadlineSort(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[180px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option value="">Deadline Order</option>
-                            <option value="ASC">Closest Deadline</option>
-                            <option value="DESC">Furthest Deadline</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
                       </>
                     )}
 
@@ -1052,28 +960,6 @@ export default function App() {
                       min-w-fit
                     "
                   >
-
-                    {/* RESET */}
-                    <button
-                      onClick={resetFilters}
-                      className="
-                        h-[54px]
-                        px-5
-                        rounded-2xl
-                        border
-                        border-[#2A2A2A]
-                        bg-[#141414]
-                        text-sm
-                        font-medium
-                        text-zinc-400
-                        transition-all
-                        hover:text-white
-                        hover:border-[#3A3A3A]
-                        hover:bg-[#1A1A1A]
-                      "
-                    >
-                      Reset
-                    </button>
 
                     {/* ACTIVE */}
                     {/* <div
@@ -1110,6 +996,38 @@ export default function App() {
                   </div>
 
                 </div>
+
+                {/* CONTENT TITLE PILLS */}
+                {(activePage === "marketing" || activePage === "my-orders") && (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {["Content 1", "Content 2", "Content 3", "Others"].map((title) => {
+                      const active = contentTitleFilter === title
+                      return (
+                        <button
+                          key={title}
+                          onClick={() => setContentTitleFilter(active ? "" : title)}
+                          className={`
+                            px-4
+                            py-1.5
+                            rounded-2xl
+                            border
+                            text-sm
+                            font-medium
+                            transition-all
+                            duration-200
+                            cursor-pointer
+                            ${active
+                              ? "bg-[#D6B36A] text-black border-[#D6B36A] shadow-[0_0_18px_rgba(214,179,106,0.25)]"
+                              : "bg-[#151515] text-zinc-400 border-[#2A2A2A] hover:border-[#3A3A3A] hover:text-white"
+                            }
+                          `}
+                        >
+                          {title}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* GAMES */}
                 {(activePage === "Broadcast" || activePage === "my-games") && (
@@ -1215,6 +1133,9 @@ export default function App() {
                   onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
+                  deadlineSort={deadlineSort}
+                  setDeadlineSort={setDeadlineSort}
+                  onResetFilters={resetFilters}
                 />
               )}
 
@@ -1229,6 +1150,9 @@ export default function App() {
                   onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
+                  deadlineSort={deadlineSort}
+                  setDeadlineSort={setDeadlineSort}
+                  onResetFilters={resetFilters}
                 />
               )}
 
@@ -1253,37 +1177,54 @@ export default function App() {
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
                   onAssignUsers={onAssignUsers}
+                  deadlineSort={deadlineSort}
+                  setDeadlineSort={setDeadlineSort}
+                  onResetFilters={resetFilters}
                 />
               )}
             </>
 
           </div>
 
-          {/* RIGHT SIDEBAR */}
-          {selectedOrder && (
-            <OrderDetailsSidebar
-              selectedOrder={selectedOrder}
-              orderDetail={selectedOrderDetail}
-              isLoadingDetail={isLoadingDetail}
-              currentUser={currentUser}
-              setSelectedOrder={(v) => {
-                setSelectedOrder(v)
-                if (!v) setSelectedOrderDetail(null)
-              }}
-              setIsEditingOrder={setIsEditingOrder}
-              setIsEditing={setIsEditing}
-              setEditingOrderId={setEditingOrderId}
-              setNewOrder={setNewOrder}
-              setShowModal={setShowModal}
-              showDeleteModal={showDeleteModal}
-              setShowDeleteModal={setShowDeleteModal}
-              setDeletingOrderId={setDeletingOrderId}
-              deleteOrder={deleteOrder}
-              canManageOrders={canManageOrders}
-              getDeadlineInfo={getDeadlineInfo}
-              activePage={activePage}
-            />
-          )}
+          {/* RIGHT SIDEBAR
+              When arriving via a deep-link (?orderId=…) the sidebar will appear
+              after data loads — without user interaction, so it counts as CLS.
+              sidebarPrereserved pre-allocates the 480 px slot from the very
+              first render so the table never shifts when the sidebar mounts.
+              For normal use (row click) the slot is absent until the click,
+              which is interaction-triggered and excluded from CLS measurement. */}
+          <div
+            className={
+              selectedOrder || sidebarPrereserved
+                ? "w-[480px] h-full flex-shrink-0 overflow-hidden"
+                : "hidden"
+            }
+          >
+            {selectedOrder && (
+              <OrderDetailsSidebar
+                selectedOrder={selectedOrder}
+                orderDetail={selectedOrderDetail}
+                isLoadingDetail={isLoadingDetail}
+                currentUser={currentUser}
+                setSelectedOrder={(v) => {
+                  setSelectedOrder(v)
+                  if (!v) setSelectedOrderDetail(null)
+                }}
+                setIsEditingOrder={setIsEditingOrder}
+                setIsEditing={setIsEditing}
+                setEditingOrderId={setEditingOrderId}
+                setNewOrder={setNewOrder}
+                setShowModal={setShowModal}
+                showDeleteModal={showDeleteModal}
+                setShowDeleteModal={setShowDeleteModal}
+                setDeletingOrderId={setDeletingOrderId}
+                deleteOrder={deleteOrder}
+                canManageOrders={canManageOrders}
+                getDeadlineInfo={getDeadlineInfo}
+                activePage={activePage}
+              />
+            )}
+          </div>
 
         </div>
 

@@ -34,15 +34,54 @@ export default function NotificationsPage({
     )
 
 
-function getOrderFromNotification(
-  notification: any
-) {
-  return orders.find(
-    (order) =>
-      order.id ===
-      notification.order?.id
-  )
-}
+  function getOrderFromNotification(notification: any) {
+    return orders.find((order) => order.id === notification.order?.id)
+  }
+
+  function renderNotificationLine(notification: any, order: any) {
+    const msg = notification.message ?? ""
+    const unread = !notification.isRead
+    const gold = unread ? "text-[#D6B36A]" : "text-[#6B4F1A]"
+    const muted = unread ? "text-zinc-400" : "text-zinc-600"
+
+    // "X has been marked as completed by John Doe"
+    const completedMatch = msg.match(/^(.+) has been marked as completed by (.+)$/)
+    if (completedMatch) {
+      return (
+        <>
+          <span className={gold}>{completedMatch[1]}</span>
+          <span className={muted}> has been marked as completed by </span>
+          <span className={gold}>{completedMatch[2]}</span>
+        </>
+      )
+    }
+
+    // "You have been assigned to the marketing/broadcast order: X"
+    const assignedMatch = msg.match(/^You have been assigned to the (?:\w+ )?order: (.+)$/)
+    if (assignedMatch) {
+      return (
+        <>
+          <span className={gold}>{assignedMatch[1]}</span>
+          <span className={muted}> — you have been assigned</span>
+        </>
+      )
+    }
+
+    // 'A source file was added for "X"'
+    const sourceMatch = msg.match(/^A source file was added for "(.+)"$/)
+    if (sourceMatch) {
+      return (
+        <>
+          <span className={gold}>{sourceMatch[1]}</span>
+          <span className={muted}> — source file added</span>
+        </>
+      )
+    }
+
+    // fallback
+    const fallbackTitle = order?.title || notification.order?.title || "Order"
+    return <><span className={gold}>{fallbackTitle}</span><span className={muted}> — {msg}</span></>
+  }
 
   return (
     <div
@@ -203,33 +242,15 @@ paginatedNotifications.map(
             {/* CONTENT */}
             <div className="min-w-0 flex-1">
 
-              <p
-                className={`
-                  text-base
-                  font-semibold
-                  leading-snug
-                  ${!notification.isRead ? "text-white" : "text-[#F5F1E8]"}
-                `}
-              >
-                {notification.title}
-              </p>
-
-              <p
-                className={`
-                  text-sm
-                  mt-0.5
-                  leading-snug
-                  ${!notification.isRead ? "text-zinc-300" : "text-zinc-500"}
-                `}
-              >
-                {notification.message}
+              <p className="text-sm font-semibold leading-snug">
+                {renderNotificationLine(notification, order)}
               </p>
 
               <p
                 className={`
                   text-xs
                   mt-1
-                  ${!notification.isRead ? "text-[#D6B36A]" : "text-zinc-600"}
+                  ${!notification.isRead ? "text-[#D6B36A]/50" : "text-zinc-700"}
                 `}
               >
                 {new Date(notification.createdAt).toLocaleString()}
