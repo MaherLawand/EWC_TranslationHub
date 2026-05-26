@@ -38,6 +38,11 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [hasInitializedPage, setHasInitializedPage] =
     React.useState(false)
 
+  const [isNotFound, setIsNotFound] =
+    React.useState(false)
+
+  const VALID_PAGES = ["Broadcast", "marketing", "my-games", "my-orders", "users", "notifications"]
+
   // Seed currentUser from the auth check that already completed in App.tsx —
   // avoids a blank currentUser on first render.
   const [currentUser, setCurrentUser] =
@@ -328,6 +333,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     const params = new URLSearchParams(window.location.search)
     const page = params.get("page")
     const orderId = params.get("orderId")
+    // Invalid page param → 404
+    if (page && !VALID_PAGES.includes(page)) {
+      setIsNotFound(true)
+      window.history.replaceState({}, "", window.location.pathname)
+      return
+    }
     if (page) urlPageRef.current = page
     if (orderId) urlOrderIdRef.current = orderId
     if (page || orderId)
@@ -680,6 +691,29 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
 
   /*
   ========================================
+  404
+  ========================================
+  */
+  if (isNotFound) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#070707] text-white gap-5">
+        <h1 className="text-8xl font-bold text-[#D6B36A]">404</h1>
+        <p className="text-zinc-400 text-lg">This page doesn't exist.</p>
+        <button
+          onClick={() => {
+            setIsNotFound(false)
+            setActivePage(computeInitialPage(currentUser))
+          }}
+          className="mt-2 h-[48px] px-8 rounded-2xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide hover:bg-[#E4C27C] transition-all"
+        >
+          Go to Dashboard
+        </button>
+      </div>
+    )
+  }
+
+  /*
+  ========================================
   DERIVED
   ========================================
   */
@@ -753,222 +787,6 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                   space-y-5
                 "
               >
-
-                {/* TOP */}
-                <div
-                  className="
-                    flex
-                    items-start
-                    justify-between
-                    gap-5
-                    flex-wrap
-                  "
-                >
-                  {/* LEFT */}
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                      flex-1
-                      min-w-0
-                      flex-wrap
-                      overflow-hidden
-                    "
-                  >
-
-                    {/* SEARCH */}
-                    <div className="relative flex-1 min-w-[240px]">
-                      <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search orders"
-                        className="
-                          w-full
-                          h-[54px]
-                          bg-[#121212]
-                          border
-                          border-[#2A2A2A]
-                          rounded-2xl
-                          pl-5
-                          pr-5
-                          text-sm
-                          text-white
-                          outline-none
-                          transition-all
-                          placeholder:text-zinc-600
-                          focus:border-[#D6B36A]
-                          focus:bg-[#151515]
-                          focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-                        "
-                      />
-                    </div>
-
-                    {/* MARKETING FILTERS */}
-                    {(activePage === "marketing" || activePage === "my-orders") && (
-                      <>
-                        {/* PRIORITY */}
-                        <div className="relative">
-                          <select
-                            value={priorityFilter}
-                            onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[160px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option>All Priorities</option>
-                            <option>HIGH</option>
-                            <option>MEDIUM</option>
-                            <option>LOW</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* NON MARKETING FILTERS */}
-                    {activePage !== "marketing" && activePage !== "my-orders" && (
-                      <>
-                        {/* PRIORITY */}
-                        <div className="relative">
-                          <select
-                            value={priorityFilter}
-                            onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="
-                              h-[54px]
-                              min-w-[160px]
-                              appearance-none
-                              bg-[#121212]
-                              border
-                              border-[#2A2A2A]
-                              rounded-2xl
-                              px-5
-                              pr-11
-                              text-sm
-                              font-medium
-                              text-[#F5F1E8]
-                              outline-none
-                              transition-all
-                              hover:border-[#3A3A3A]
-                              focus:border-[#D6B36A]
-                              focus:bg-[#151515]
-                              cursor-pointer
-                            "
-                          >
-                            <option>All Priorities</option>
-                            <option>HIGH</option>
-                            <option>MEDIUM</option>
-                            <option>LOW</option>
-                          </select>
-                          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-                        </div>
-
-                        {/* FORMAT */}
-<div className="relative">
-
-  <select
-    value={formatFilter[0] || ""}
-    
-    onChange={(e) => {
-
-      if (!e.target.value) {
-        setFormatFilter([])
-        return
-      }
-
-      setFormatFilter([
-        e.target.value
-      ])
-    }}
-
-    className="
-      h-[54px]
-      min-w-[180px]
-      appearance-none
-      bg-[#121212]
-      border
-      border-[#2A2A2A]
-      rounded-2xl
-      px-5
-      pr-11
-      text-sm
-      font-medium
-      text-[#F5F1E8]
-      outline-none
-      transition-all
-      hover:border-[#3A3A3A]
-      focus:border-[#D6B36A]
-      focus:bg-[#151515]
-      cursor-pointer
-    "
-  >
-
-    <option value="">
-      All Formats
-    </option>
-
-    <option value="SRT">
-      SRT
-    </option>
-
-    <option value="BURNED_IN">
-      BURNED IN
-    </option>
-
-    <option value="TEXT">
-      TEXT
-    </option>
-
-  </select>
-
-  <div
-    className="
-      pointer-events-none
-      absolute
-      right-4
-      top-1/2
-      -translate-y-1/2
-      text-zinc-500
-      text-[10px]
-    "
-  >
-    ▼
-  </div>
-
-</div>
-
-                      </>
-                    )}
-
-                  </div>
-
-                  {/* RIGHT */}
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                      flex-shrink-0
-                      min-w-fit
-                    "
-                  >
 
                     {/* ACTIVE */}
                     {/* <div
@@ -1131,7 +949,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                 />
               )}
 
-              {(activePage === "dashboard" || activePage === "Broadcast") && (
+              {(activePage === "dashboard" || activePage === "Broadcast" || activePage === "my-games") && (
                 <BroadcastOrdersTable
                   isLoading={isLoadingBroadcast}
                   currentUser={currentUser}
@@ -1145,23 +963,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                   deadlineSort={deadlineSort}
                   setDeadlineSort={setDeadlineSort}
                   onResetFilters={resetFilters}
-                />
-              )}
-
-              {activePage === "my-games" && (
-                <BroadcastOrdersTable
-                  isLoading={isLoadingBroadcast}
-                  currentUser={currentUser}
-                  orders={broadcastOrders}
-                  page={broadcastPage}
-                  totalPages={broadcastTotalPages}
-                  onPageChange={(p) => fetchBroadcastOrders(p)}
-                  onRowClick={onRowClick}
-                  updateOrderStatus={updateOrderStatus}
-                  getDeadlineInfo={getDeadlineInfo}
-                  deadlineSort={deadlineSort}
-                  setDeadlineSort={setDeadlineSort}
-                  onResetFilters={resetFilters}
+                  search={search}
+                  setSearch={setSearch}
+                  priorityFilter={priorityFilter}
+                  setPriorityFilter={setPriorityFilter}
+                  formatFilter={formatFilter}
+                  setFormatFilter={setFormatFilter}
                 />
               )}
 
@@ -1189,6 +996,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                   deadlineSort={deadlineSort}
                   setDeadlineSort={setDeadlineSort}
                   onResetFilters={resetFilters}
+                  search={search}
+                  setSearch={setSearch}
+                  priorityFilter={priorityFilter}
+                  setPriorityFilter={setPriorityFilter}
                 />
               )}
             </>

@@ -27,6 +27,10 @@ type Props = {
   setDeadlineSort: (v: string) => void
   onResetFilters: () => void
   isLoading?: boolean
+  search: string
+  setSearch: (v: string) => void
+  priorityFilter: string
+  setPriorityFilter: (v: string) => void
 }
 
 export default function MarketingOrdersTable({
@@ -43,6 +47,10 @@ export default function MarketingOrdersTable({
   setDeadlineSort,
   onResetFilters,
   isLoading,
+  search,
+  setSearch,
+  priorityFilter,
+  setPriorityFilter,
 }: Props) {
 
 const canUpdateStatus =
@@ -226,68 +234,52 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
     >
 
       {/* HEADER */}
-      <div
-        className="
-          px-8
-          py-6
-          border-b
-          border-[#242424]
-          flex
-          items-center
-          justify-between
-          bg-[#111111]
-        "
-      >
+      <div className="px-8 py-5 border-b border-[#242424] bg-[#111111] flex flex-col gap-4">
 
-        <div>
+        {/* ROW 1 — title + count + reset */}
+        <div className="flex items-center justify-between gap-4">
 
-          <h3 className="text-lg font-semibold">
-            Marketing
-          </h3>
+          <h3 className="text-lg font-semibold flex-shrink-0">Marketing</h3>
+
+          <div className="flex items-center gap-3">
+            <div className="bg-[#151515] border border-[#2A2A2A] px-4 py-2 rounded-2xl text-sm text-[#D6B36A] font-medium shadow-[0_0_20px_rgba(214,179,106,0.08)]">
+              {orders.length} Orders
+            </div>
+            <button
+              onClick={onResetFilters}
+              className="h-[36px] px-4 rounded-2xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_18px_rgba(214,179,106,0.25)] transition-all duration-200 hover:bg-[#E4C27C] hover:shadow-[0_0_28px_rgba(214,179,106,0.4)] hover:scale-[1.03] active:scale-[0.98]"
+            >
+              Reset Filters
+            </button>
+          </div>
 
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* ROW 2 — search + priority */}
+        <div className="flex items-center gap-3 flex-wrap">
 
-          <div
-            className="
-              bg-[#151515]
-              border
-              border-[#2A2A2A]
-              px-4
-              py-2
-              rounded-2xl
-              text-sm
-              text-[#D6B36A]
-              font-medium
-              shadow-[0_0_20px_rgba(214,179,106,0.08)]
-            "
-          >
-            {orders.length} Orders
+          {/* SEARCH */}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search orders…"
+            className="flex-1 min-w-[180px] h-[42px] bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-[#D6B36A] focus:bg-[#111111]"
+          />
+
+          {/* PRIORITY */}
+          <div className="relative">
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="h-[42px] min-w-[150px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 pr-9 text-sm font-medium text-[#F5F1E8] outline-none transition-all hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+            >
+              <option>All Priorities</option>
+              <option>HIGH</option>
+              <option>MEDIUM</option>
+              <option>LOW</option>
+            </select>
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
           </div>
-
-          <button
-            onClick={onResetFilters}
-            className="
-              h-[36px]
-              px-4
-              rounded-2xl
-              bg-[#D6B36A]
-              text-black
-              text-sm
-              font-bold
-              tracking-wide
-              shadow-[0_0_18px_rgba(214,179,106,0.25)]
-              transition-all
-              duration-200
-              hover:bg-[#E4C27C]
-              hover:shadow-[0_0_28px_rgba(214,179,106,0.4)]
-              hover:scale-[1.03]
-              active:scale-[0.98]
-            "
-          >
-            Reset Filters
-          </button>
 
         </div>
 
