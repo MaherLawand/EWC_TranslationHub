@@ -29,6 +29,10 @@ type Props = {
   openAssignGamesModal: (
     user: any
   ) => void
+
+  lockedUsers?: { email: string; remainingSeconds: number }[]
+  clearLockout?: (email: string) => void
+  isClearingLockout?: string | null
 }
 
 export default function UsersPage({
@@ -43,7 +47,16 @@ export default function UsersPage({
   openEditUserModal,
   deleteUser,
   openAssignGamesModal,
+  lockedUsers = [],
+  clearLockout,
+  isClearingLockout,
 }: Props) {
+
+  function formatCountdown(seconds: number) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return m > 0 ? `${m}m ${s}s` : `${s}s`
+  }
 
   const [
     showDeleteModal,
@@ -57,6 +70,63 @@ export default function UsersPage({
 
   return (
     <>
+
+    {/* LOCKED ACCOUNTS BANNER — admin only */}
+    {lockedUsers.length > 0 && (
+      <div className="mb-4 rounded-[24px] border border-red-500/20 bg-red-500/10 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v1H10v-1c0-1.1.9-2 2-2zm-5 0V9a5 5 0 0110 0v2h1a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2h1z" />
+          </svg>
+          <p className="text-red-400 text-sm font-semibold">
+            {lockedUsers.length === 1
+              ? "1 account is temporarily locked"
+              : `${lockedUsers.length} accounts are temporarily locked`}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          {lockedUsers.map((u) => (
+            <div
+              key={u.email}
+              className="flex items-center justify-between gap-4 rounded-xl bg-red-500/5 border border-red-500/10 px-4 py-2.5"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-sm text-[#F5F1E8] font-medium truncate">
+                  {u.email}
+                </span>
+                <span className="text-xs text-red-300/70 font-mono flex-shrink-0">
+                  {formatCountdown(u.remainingSeconds)}
+                </span>
+              </div>
+              <button
+                onClick={() => clearLockout?.(u.email)}
+                disabled={isClearingLockout === u.email}
+                className="
+                  h-8
+                  px-4
+                  rounded-lg
+                  bg-red-500/20
+                  border
+                  border-red-500/30
+                  text-red-300
+                  hover:bg-red-500/30
+                  hover:border-red-500/50
+                  text-xs
+                  font-semibold
+                  transition-all
+                  disabled:opacity-50
+                  disabled:cursor-not-allowed
+                  flex-shrink-0
+                "
+              >
+                {isClearingLockout === u.email ? "Clearing…" : "Clear Lockout"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     <div
       className="
         bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_55%)]

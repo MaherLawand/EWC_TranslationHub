@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "../lib/api"
 import { ToastContainer, toast } from "react-toastify"
@@ -11,6 +11,37 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
+  const [lockoutSeconds, setLockoutSeconds] = useState(0)
+  const lockoutInterval = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Countdown timer when locked
+  useEffect(() => {
+    if (lockoutSeconds <= 0) {
+      if (lockoutInterval.current) clearInterval(lockoutInterval.current)
+      return
+    }
+    lockoutInterval.current = setInterval(() => {
+      setLockoutSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(lockoutInterval.current!)
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => {
+      if (lockoutInterval.current) clearInterval(lockoutInterval.current)
+    }
+  }, [lockoutSeconds > 0])
+
+  const isLocked = lockoutSeconds > 0
+
+  function formatCountdown(seconds: number) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return m > 0 ? `${m}m ${s}s` : `${s}s`
+  }
 
   function validate() {
     const e: typeof errors = {}
@@ -29,16 +60,26 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (isLoading) return
+    if (isLoading || isLocked) return
     if (!validate()) return
 
     try {
       setIsLoading(true)
+      setAttemptsRemaining(null)
       await api.post("/auth/login", { email: email.trim().toLowerCase(), password })
       toast.success("Login successful")
       setTimeout(() => window.location.reload(), 700)
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid email or password")
+      const data = err?.response?.data
+      if (data?.locked) {
+        setLockoutSeconds(data.remainingSeconds || 300)
+        setAttemptsRemaining(null)
+      } else if (typeof data?.attemptsRemaining === "number") {
+        setAttemptsRemaining(data.attemptsRemaining)
+        toast.error(data.message || "Invalid credentials")
+      } else {
+        toast.error(data?.message || "Invalid email or password")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -117,6 +158,42 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* LOCKOUT BANNER */}
+        {isLocked && (
+          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <p className="text-red-400 text-sm font-semibold">Account temporarily locked</p>
+            </div>
+            <p className="text-red-300/70 text-xs leading-relaxed">
+              Too many failed attempts. Try again in{" "}
+              <span className="text-red-300 font-bold font-mono">{formatCountdown(lockoutSeconds)}</span>
+              {" "}or{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="text-[#D6B36A] hover:text-[#E4C27C] underline underline-offset-2 transition"
+              >
+                reset your password
+              </button>
+              {" "}to unlock immediately.
+            </p>
+          </div>
+        )}
+
+        {/* LOW ATTEMPTS WARNING */}
+        {!isLocked && attemptsRemaining !== null && attemptsRemaining <= 2 && (
+          <div className="mb-6 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+            <p className="text-yellow-400 text-sm font-semibold">
+              {attemptsRemaining === 1
+                ? "⚠️  1 attempt remaining before lockout"
+                : `⚠️  ${attemptsRemaining} attempts remaining before lockout`}
+            </p>
+          </div>
+        )}
+
         {/* FIELDS */}
         <div className="space-y-5">
 
@@ -139,7 +216,7 @@ export default function LoginPage() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
               onChange={(e) => {
                 setEmail(e.target.value)
                 if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
@@ -190,7 +267,7 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
-                disabled={isLoading}
+                disabled={isLoading || isLocked}
                 onChange={(e) => {
                   setPassword(e.target.value)
                   if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
@@ -248,7 +325,7 @@ export default function LoginPage() {
         {/* BUTTON */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isLocked}
           className="
             w-full
             h-[56px]
@@ -268,7 +345,11 @@ export default function LoginPage() {
             disabled:cursor-not-allowed
           "
         >
-          {isLoading ? "Logging in..." : "Login"}
+          {isLocked
+            ? `Locked — ${formatCountdown(lockoutSeconds)}`
+            : isLoading
+            ? "Logging in..."
+            : "Login"}
         </button>
 
         {/* FORGOT PASSWORD */}

@@ -270,6 +270,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     createUser,
     updateUser,
     deleteUser,
+    lockedUsers,
+    fetchLockedUsers,
+    clearLockout,
+    isClearingLockout,
   } = useUsers()
 
   const {
@@ -381,6 +385,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   React.useEffect(() => {
     if (activePage !== "users") return
     fetchUsers(1, userSearch)
+    if (currentUser?.role === "ADMIN") fetchLockedUsers()
   }, [activePage])
 
   React.useEffect(() => {
@@ -1022,6 +1027,9 @@ React.useEffect(() => {
                 openCreateUserModal={openCreateUserModal}
                 openEditUserModal={openEditUserModal}
                 openAssignGamesModal={openAssignGamesModal}
+                lockedUsers={currentUser?.role === "ADMIN" ? lockedUsers : []}
+                clearLockout={clearLockout}
+                isClearingLockout={isClearingLockout}
               />
             )}
 

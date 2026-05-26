@@ -5,6 +5,12 @@ export function useUsers() {
   const [users, setUsers] =
     React.useState<any[]>([])
 
+  const [lockedUsers, setLockedUsers] =
+    React.useState<{ email: string; remainingSeconds: number }[]>([])
+
+  const [isClearingLockout, setIsClearingLockout] =
+    React.useState<string | null>(null) // email currently being cleared
+
   const [usersPage, setUsersPage] =
     React.useState(1)
 
@@ -168,6 +174,47 @@ export function useUsers() {
     }
   }
 
+  async function fetchLockedUsers() {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/locked-users`,
+        { credentials: "include" }
+      )
+      if (!response.ok) return
+      const data = await response.json()
+      setLockedUsers(Array.isArray(data) ? data : [])
+    } catch {
+      // silently ignore — non-critical
+    }
+  }
+
+  async function clearLockout(email: string) {
+    if (isClearingLockout) return
+    try {
+      setIsClearingLockout(email)
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/users/clear-lockout`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      )
+      const data = await response.json()
+      if (!response.ok) {
+        toast.error(data.message || "Failed to clear lockout")
+        return
+      }
+      toast.success(`Lockout cleared for ${email}`)
+      setLockedUsers((prev) => prev.filter((u) => u.email !== email))
+    } catch {
+      toast.error("Failed to clear lockout")
+    } finally {
+      setIsClearingLockout(null)
+    }
+  }
+
   async function deleteUser(userId: string) {
     try {
       const response = await fetch(
@@ -207,5 +254,9 @@ export function useUsers() {
     createUser,
     updateUser,
     deleteUser,
+    lockedUsers,
+    fetchLockedUsers,
+    clearLockout,
+    isClearingLockout,
   }
 }
