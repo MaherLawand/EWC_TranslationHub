@@ -41,7 +41,6 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [isNotFound, setIsNotFound] =
     React.useState(false)
 
-  const VALID_PAGES = ["Broadcast", "marketing", "my-games", "my-orders", "users", "notifications"]
 
   // Seed currentUser from the auth check that already completed in App.tsx —
   // avoids a blank currentUser on first render.
@@ -56,10 +55,13 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
 
   // Lazy initialiser: read URL params synchronously + use initialUser so the
   // correct activePage (and therefore showFilters) is set before first paint.
+  // Only "Broadcast" and "marketing" are valid deep-link destinations; anything
+  // else is rejected here (URL parsing effect will show 404).
+  const VALID_DEEP_LINK_PAGES = ["Broadcast", "marketing"]
   const [activePage, setActivePage] = React.useState<string>(() => {
     const params = new URLSearchParams(window.location.search)
     const urlPage = params.get("page")
-    if (urlPage) return urlPage
+    if (urlPage && VALID_DEEP_LINK_PAGES.includes(urlPage)) return urlPage
     return computeInitialPage(initialUser)
   })
 
@@ -197,14 +199,19 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   // Initialised synchronously so the currentUser init effect (which runs in
   // the same render cycle as the URL-parsing effect) always sees the correct
   // values, even when currentUser is already available from initialUser.
+  const _initUrlPage = new URLSearchParams(window.location.search).get("page")
   const urlPageRef = React.useRef<string | null>(
-    new URLSearchParams(window.location.search).get("page")
+    _initUrlPage && VALID_DEEP_LINK_PAGES.includes(_initUrlPage) ? _initUrlPage : null
   )
   const urlOrderIdRef = React.useRef<string | null>(
     new URLSearchParams(window.location.search).get("orderId")
   )
-  // Prevents the activePage effect from calling resetFilters() during deep-link init
+  // skipResetRef: set true by currentUser-init when a pendingNav needs to
+  // suppress filter-reset on the next activePage change.
   const skipResetRef = React.useRef(false)
+  // Skip the activePage effect on the very first mount — there is nothing to
+  // clean up yet and it would race with the currentUser init effect.
+  const isInitialActivePage = React.useRef(true)
 
   // If the URL already contains an orderId the sidebar will appear after data
   // loads. Pre-reserve its 480 px width from the very first render so the
@@ -341,7 +348,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     const page = params.get("page")
     const orderId = params.get("orderId")
     // Invalid page param → 404; clear refs so no effect tries to use them
-    if (page && !VALID_PAGES.includes(page)) {
+    if (page && !VALID_DEEP_LINK_PAGES.includes(page)) {
       urlPageRef.current = null
       urlOrderIdRef.current = null
       setIsNotFound(true)
@@ -369,6 +376,13 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }, [activePage, currentUser])
 
   React.useEffect(() => {
+    // Skip on first mount — there is nothing to close/reset yet, and firing here
+    // would race with the currentUser init effect that sets orderIdFilter.
+    if (isInitialActivePage.current) {
+      isInitialActivePage.current = false
+      return
+    }
+
     if (pendingNavRef.current) {
       const pending = pendingNavRef.current
       pendingNavRef.current = null
@@ -378,14 +392,14 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
         fetchOrderDetail(pending.order.id)
       }
     } else if (skipResetRef.current) {
-      // Deep-link init set activePage + orderIdFilter together — skip resetFilters()
-      // so it doesn't wipe orderIdFilter and cause a second unfiltered fetch
       skipResetRef.current = false
       setSelectedOrder(null)
       setSelectedOrderDetail(null)
+      setSidebarPrereserved(false)
     } else {
       setSelectedOrder(null)
       setSelectedOrderDetail(null)
+      setSidebarPrereserved(false)
       resetFilters()
     }
   }, [activePage])
@@ -419,11 +433,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       setActivePage("Broadcast")
     }
 
-    // Batch orderIdFilter with activePage so useOrders only fetches once.
-    // Also flag skipResetRef so the activePage effect doesn't call resetFilters()
-    // and wipe orderIdFilter before useOrders gets to use it.
+    // Set orderIdFilter so useOrders fetches the specific deep-linked order.
+    // No need to set skipResetRef here — the activePage effect skips its first
+    // fire entirely (isInitialActivePage guard), so there is no race.
     if (urlOrderIdRef.current) {
-      skipResetRef.current = true
       setOrderIdFilter(urlOrderIdRef.current)
     }
 
@@ -443,6 +456,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
         setSidebarPrereserved(false)
         return
       }
+      // Switch to the order's event so the table shows the right data
+      if (order.event) setSelectedEvent(order.event)
       setSelectedOrder(order)
     })
   }, [hasInitializedPage, currentUser?.id])
@@ -597,7 +612,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   function navigateToOrder(notification: any, order: any | null) {
     const orderType =
       order?.type ??
+      notification.order?.type ??
       (notification.type === "ASSIGNED_TO_ORDER" ? "MARKETING" : null)
+
+    // Switch event tab if the order belongs to a different event
+    const orderEvent = notification.order?.event
+    if (orderEvent) setSelectedEvent(orderEvent)
 
     pendingNavRef.current = {
       search: notification.order?.title ?? "",
@@ -836,59 +856,49 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                 {(activePage === "Broadcast" || activePage === "my-games") && (
                   <div className="flex flex-wrap items-center gap-3 pt-1">
 
-                    {(activePage === "my-games"
-                      ? (currentUser?.assignedGames || [])
-                          .map((assignment: any) => {
-                            // Prefer entry from filteredGames (has server-rewritten logo URL)
-                            // Fall back to game object embedded in the assignment
-                            return filteredGames.find((g) => g.id === assignment.gameId) ?? assignment.game
-                          })
-                          .filter(Boolean)
-                      : filteredGames
-                    ).map((game: any) => {
-                      const active = selectedGameFilter === game.id
-                      return (
-                        <button
-                          key={game.id}
-                          onClick={() =>
-                            setSelectedGameFilter(active ? "" : game.id)
-                          }
-                          title={game.name}
-                          className={`
-                            relative
-                            w-[80px]
-                            h-[80px]
-                            flex
-                            items-center
-                            justify-center
-                            rounded-2xl
-                            transition-all
-                            duration-200
-                            ${
-                              active
-                                ? "scale-110"
-                                : "opacity-55 hover:opacity-100 hover:scale-110"
-                            }
-                          `}
-                        >
-                          {active && (
-                            <div className="absolute inset-0 rounded-2xl" />
-                          )}
-                          <img
-                            src={game.logo}
-                            alt={game.name}
+                    {(() => {
+                      const gameList = activePage === "my-games"
+                        ? (currentUser?.assignedGames || [])
+                            .map((assignment: any) =>
+                              filteredGames.find((g) => g.id === assignment.gameId) ?? assignment.game
+                            )
+                            .filter(Boolean)
+                        : filteredGames
+
+                      if (activePage === "my-games" && gameList.length === 0) {
+                        return (
+                          <p className="text-sm text-zinc-500 py-1">
+                            You're not assigned to any game. Please contact your admin.
+                          </p>
+                        )
+                      }
+
+                      return gameList.map((game: any) => {
+                        const active = selectedGameFilter === game.id
+                        return (
+                          <button
+                            key={game.id}
+                            onClick={() => setSelectedGameFilter(active ? "" : game.id)}
+                            title={game.name}
                             className={`
-                              relative
-                              z-10
-                              w-[60px]
-                              h-[60px]
-                              object-contain
-                              ${active ? "border border-[#D6B36A] rounded-lg p-1" : ""}
+                              relative w-[80px] h-[80px] flex items-center justify-center
+                              rounded-2xl transition-all duration-200
+                              ${active ? "scale-110" : "opacity-55 hover:opacity-100 hover:scale-110"}
                             `}
-                          />
-                        </button>
-                      )
-                    })}
+                          >
+                            {active && <div className="absolute inset-0 rounded-2xl" />}
+                            <img
+                              src={game.logo}
+                              alt={game.name}
+                              className={`
+                                relative z-10 w-[60px] h-[60px] object-contain
+                                ${active ? "border border-[#D6B36A] rounded-lg p-1" : ""}
+                              `}
+                            />
+                          </button>
+                        )
+                      })
+                    })()}
 
                   </div>
                 )}
@@ -976,6 +986,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                   setSearch={setSearch}
                   priorityFilter={priorityFilter}
                   setPriorityFilter={setPriorityFilter}
+                  formatFilter={formatFilter}
+                  setFormatFilter={setFormatFilter}
                 />
               )}
             </>

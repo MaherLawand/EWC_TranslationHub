@@ -97,9 +97,8 @@ export function useOrders({
     const params = new URLSearchParams()
 
     if (orderIdFilter) {
-      // Deep-link exact match — skip all other filters
+      // Deep-link exact match — no event filter so ENC orders work on EWC tab
       params.append("orderId", orderIdFilter)
-      if (selectedEvent) params.append("event", selectedEvent)
       return params
     }
 

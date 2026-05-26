@@ -31,6 +31,8 @@ type Props = {
   setSearch: (v: string) => void
   priorityFilter: string
   setPriorityFilter: (v: string) => void
+  formatFilter: string[]
+  setFormatFilter: (v: string[]) => void
 }
 
 export default function MarketingOrdersTable({
@@ -51,6 +53,8 @@ export default function MarketingOrdersTable({
   setSearch,
   priorityFilter,
   setPriorityFilter,
+  formatFilter,
+  setFormatFilter,
 }: Props) {
 
 const canUpdateStatus =
@@ -233,55 +237,64 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
       "
     >
 
-      {/* HEADER */}
-      <div className="px-8 py-5 border-b border-[#242424] bg-[#111111] flex flex-col gap-4">
+      {/* HEADER — filter controls replace the old title/count row */}
+      <div className="px-4 py-3 border-b border-[#242424] bg-[#111111] flex items-center gap-2 flex-wrap">
 
-        {/* ROW 1 — title + count + reset */}
-        <div className="flex items-center justify-between gap-4">
-
-          <h3 className="text-lg font-semibold flex-shrink-0">Marketing</h3>
-
-          <div className="flex items-center gap-3">
-            <div className="bg-[#151515] border border-[#2A2A2A] px-4 py-2 rounded-2xl text-sm text-[#D6B36A] font-medium shadow-[0_0_20px_rgba(214,179,106,0.08)]">
-              {orders.length} Orders
-            </div>
-            <button
-              onClick={onResetFilters}
-              className="h-[36px] px-4 rounded-2xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_18px_rgba(214,179,106,0.25)] transition-all duration-200 hover:bg-[#E4C27C] hover:shadow-[0_0_28px_rgba(214,179,106,0.4)] hover:scale-[1.03] active:scale-[0.98]"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-        </div>
-
-        {/* ROW 2 — search + priority */}
-        <div className="flex items-center gap-3 flex-wrap">
-
-          {/* SEARCH */}
+        {/* SEARCH */}
+        <div className="relative flex-1 min-w-[140px]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+          </svg>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search orders…"
-            className="flex-1 min-w-[180px] h-[42px] bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-[#D6B36A] focus:bg-[#111111]"
+            className="w-full h-[38px] pl-8 pr-3 bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#D6B36A] focus:bg-[#0A0A0A]"
           />
-
-          {/* PRIORITY */}
-          <div className="relative">
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="h-[42px] min-w-[150px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 pr-9 text-sm font-medium text-[#F5F1E8] outline-none transition-all hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
-            >
-              <option>All Priorities</option>
-              <option>HIGH</option>
-              <option>MEDIUM</option>
-              <option>LOW</option>
-            </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">▼</div>
-          </div>
-
         </div>
+
+        {/* PRIORITY */}
+        <div className="relative">
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="h-[38px] min-w-[124px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl px-3 pr-7 text-sm font-medium text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+          >
+            <option>All Priorities</option>
+            <option>HIGH</option>
+            <option>MEDIUM</option>
+            <option>LOW</option>
+          </select>
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
+        </div>
+
+        {/* FORMAT */}
+        <div className="relative">
+          <select
+            value={formatFilter[0] || ""}
+            onChange={(e) => setFormatFilter(e.target.value ? [e.target.value] : [])}
+            className="h-[38px] min-w-[124px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl px-3 pr-7 text-sm font-medium text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+          >
+            <option value="">All Formats</option>
+            <option value="SRT">SRT</option>
+            <option value="BURNED_IN">BURNED IN</option>
+            <option value="TEXT">TEXT</option>
+          </select>
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
+        </div>
+
+        {/* ORDER COUNT */}
+        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-[#D6B36A] font-medium flex-shrink-0">
+          {orders.length} Orders
+        </div>
+
+        {/* RESET */}
+        <button
+          onClick={onResetFilters}
+          className="h-[38px] px-4 rounded-xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] transition hover:bg-[#E4C27C] flex-shrink-0"
+        >
+          Reset
+        </button>
 
       </div>
 
