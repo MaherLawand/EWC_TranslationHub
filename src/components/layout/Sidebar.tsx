@@ -98,40 +98,22 @@ export default function Sidebar({
       {/* LOGO */}
       <div
         className="
-          min-h-[110px]
+          h-[100px]
+          flex-shrink-0
           border-b
           border-[#1F1F1F]
           flex
           items-center
-          px-8
-          py-7
+          justify-center
+          overflow-hidden
         "
       >
-        <div className="space-y-2">
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[0.45em]
-              text-[#D6B36A]
-              font-semibold
-            "
-          >
-            {selectedEvent}
-          </p>
-          <h1
-            className="
-              text-[24px]
-              leading-[1.15]
-              font-bold
-              tracking-[-0.03em]
-              text-[#F5F1E8]
-            "
-          >
-            Translation
-            Hub
-          </h1>
-        </div>
+        <img
+          key={selectedEvent}
+          src={selectedEvent === "ENC" ? "/ENCLOGO.png" : "/EWCLOGO.png"}
+          alt={selectedEvent === "ENC" ? "ENC Logo" : "EWC Logo"}
+          className="w-[120%] h-auto object-contain"
+        />
       </div>
 
       {/* EVENT SWITCHER */}

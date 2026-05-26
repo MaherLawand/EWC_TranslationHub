@@ -212,6 +212,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   // Skip the activePage effect on the very first mount — there is nothing to
   // clean up yet and it would race with the currentUser init effect.
   const isInitialActivePage = React.useRef(true)
+  // Set true before calling setSelectedEvent during deep-link/notification nav
+  // so the selectedEvent effect doesn't clear the order we're about to open.
+  const preserveOrderOnEventChange = React.useRef(false)
+  // Set true before calling setActivePage during deep-link page correction so
+  // the activePage effect doesn't reset filters or clear selectedOrder.
+  const deepLinkPageSwitchRef = React.useRef(false)
 
   // If the URL already contains an orderId the sidebar will appear after data
   // loads. Pre-reserve its 480 px width from the very first render so the
@@ -383,6 +389,13 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       return
     }
 
+    // Deep-link page correction (order.type didn't match URL page param) —
+    // silently switch the tab without resetting filters or clearing the sidebar.
+    if (deepLinkPageSwitchRef.current) {
+      deepLinkPageSwitchRef.current = false
+      return
+    }
+
     if (pendingNavRef.current) {
       const pending = pendingNavRef.current
       pendingNavRef.current = null
@@ -405,6 +418,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }, [activePage])
 
   React.useEffect(() => {
+    // Skip clearing when a deep-link or notification nav explicitly switched
+    // the event — we want the sidebar to stay open in those cases.
+    if (preserveOrderOnEventChange.current) {
+      preserveOrderOnEventChange.current = false
+      return
+    }
     setSelectedOrder(null)
     setSelectedOrderDetail(null)
     setEditedOrder(null)
@@ -456,8 +475,25 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
         setSidebarPrereserved(false)
         return
       }
-      // Switch to the order's event so the table shows the right data
-      if (order.event) setSelectedEvent(order.event)
+      // Validate event — only EWC and ENC are supported
+      if (order.event && !["EWC", "ENC"].includes(order.event)) {
+        setIsNotFound(true)
+        setSidebarPrereserved(false)
+        return
+      }
+      // Switch event tab to match the order — guard against selectedEvent effect
+      // clearing selectedOrder after this render.
+      if (order.event && order.event !== selectedEvent) {
+        preserveOrderOnEventChange.current = true
+        setSelectedEvent(order.event)
+      }
+      // Correct the page if URL page param doesn't match order type (or was absent).
+      // Use deepLinkPageSwitchRef so the activePage effect doesn't reset filters.
+      const correctPage = order.type === "MARKETING" ? "marketing" : "Broadcast"
+      if (activePage !== correctPage) {
+        deepLinkPageSwitchRef.current = true
+        setActivePage(correctPage)
+      }
       setSelectedOrder(order)
     })
   }, [hasInitializedPage, currentUser?.id])
@@ -615,13 +651,23 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       notification.order?.type ??
       (notification.type === "ASSIGNED_TO_ORDER" ? "MARKETING" : null)
 
-    // Switch event tab if the order belongs to a different event
+    // Switch event tab if the order belongs to a different event.
+    // Guard against selectedEvent effect clearing the sidebar we're about to open.
     const orderEvent = notification.order?.event
-    if (orderEvent) setSelectedEvent(orderEvent)
+    if (orderEvent) {
+      preserveOrderOnEventChange.current = true
+      setSelectedEvent(orderEvent)
+    }
+
+    // `order` is looked up from the currently loaded list. For ENC orders when
+    // selectedEvent is EWC (or vice-versa) it won't be in the list yet, so fall
+    // back to the slim embed on the notification itself — enough to open the
+    // sidebar while fetchOrderDetail loads the full data.
+    const orderToOpen = order ?? (notification.order?.id ? notification.order : null)
 
     pendingNavRef.current = {
       search: notification.order?.title ?? "",
-      order,
+      order: orderToOpen,
     }
 
     setActivePage(orderType === "MARKETING" ? "marketing" : "Broadcast")
