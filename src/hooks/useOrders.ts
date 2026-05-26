@@ -339,6 +339,7 @@ export function useOrders({
       }
 
       setSelectedOrderDetail({ ...data })
+      setSelectedOrder((prev: any) => prev ? { ...prev, ...toListOrder(data) } : prev)
       setEditedOrder(JSON.parse(JSON.stringify(data)))
 
       toast.success("Order updated successfully")
@@ -370,15 +371,11 @@ export function useOrders({
 
       if (!response.ok) throw new Error("Failed to update status")
 
-      // Server now returns listOrderSelect (slim) — use directly for list update
       const updated = await response.json()
       await refreshNotifications()
 
-      if (updated.type === "BROADCAST") {
-        setBroadcastOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
-      } else {
-        setMarketingOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
-      }
+      setBroadcastOrders((prev) => prev.map((o) => (o.id === updated.id ? { ...o, status: updated.status } : o)))
+      setMarketingOrders((prev) => prev.map((o) => (o.id === updated.id ? { ...o, status: updated.status } : o)))
 
       // Sidebar: re-fetch full detail (non-blocking — sidebar shows loading shimmer)
       if (selectedOrder?.id === updated.id) {
@@ -412,6 +409,7 @@ export function useOrders({
   }
 
   // ─── Trigger fetches when page/filters change ─────────────────────────────
+  const prevSelectedEventRef = React.useRef(selectedEvent)
   React.useEffect(() => {
     const shouldFetch =
       activePage === "Broadcast" ||
@@ -422,6 +420,13 @@ export function useOrders({
       activePage === "dashboard"
 
     if (!shouldFetch) return
+
+    // When orderIdFilter is active, event is already ignored by buildFilterParams.
+    // Skip the re-fetch if only selectedEvent changed — avoids a redundant round-trip
+    // when the deep-link effect corrects the event tab to match an ENC order.
+    const eventChanged = prevSelectedEventRef.current !== selectedEvent
+    prevSelectedEventRef.current = selectedEvent
+    if (orderIdFilter && eventChanged) return
 
     fetchBroadcastOrders(1)
     fetchMarketingOrders(1)

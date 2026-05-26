@@ -93,15 +93,16 @@ return (
     className="
       px-4
       sm:px-8
-      py-4
-      sm:py-6
       border-b
       border-[#242424]
       bg-[#090909]
       shadow-[0_0_30px_rgba(0,0,0,0.35)]
       flex
       flex-col
+      justify-center
       gap-6
+      h-[100px]
+      flex-shrink-0
     "
   >
 

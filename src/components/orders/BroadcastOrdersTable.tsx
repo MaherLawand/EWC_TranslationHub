@@ -41,6 +41,7 @@ type Props = {
   setPriorityFilter: (v: string) => void
   formatFilter: string[]
   setFormatFilter: (v: string[]) => void
+  selectedEvent: string
 }
 
 export default function BroadcastOrdersTable({
@@ -62,6 +63,7 @@ export default function BroadcastOrdersTable({
   setPriorityFilter,
   formatFilter,
   setFormatFilter,
+  selectedEvent,
 }: Props) {
 
 const canUpdateStatus =
@@ -86,7 +88,7 @@ const [copiedId, setCopiedId] =
 
 function copyOrderLink(e: React.MouseEvent, orderId: string) {
   e.stopPropagation()
-  const url = `${window.location.origin}${window.location.pathname}?page=Broadcast&orderId=${orderId}`
+  const url = `${window.location.origin}${window.location.pathname}?page=Broadcast&orderId=${orderId}&event=${selectedEvent}`
   navigator.clipboard.writeText(url)
   setCopiedId(orderId)
   setTimeout(() => setCopiedId(null), 2000)

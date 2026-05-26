@@ -1,4 +1,5 @@
 import React from "react"
+import ReactDOM from "react-dom"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 
@@ -55,6 +56,7 @@ export default function UsersPage({
   const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
   return (
+    <>
     <div
       className="
         bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_55%)]
@@ -69,102 +71,31 @@ export default function UsersPage({
     >
 
       {/* HEADER */}
-      <div
-        className="
-          px-8
-          py-6
-          border-b
-          border-[#242424]
-          flex
-          items-center
-          justify-between
-          bg-[#111111]/80
-          backdrop-blur-xl
-        "
-      >
+      <div className="px-4 py-3 border-b border-[#242424] bg-[#111111] flex items-center gap-2 flex-wrap">
 
-        <div>
 
-          <h3 className="text-lg font-semibold text-[#F5F1E8]">
-            Users
-          </h3>
-
+        {/* SEARCH */}
+        <div className="relative flex-1 min-w-[140px]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search users…"
+            className="w-full h-[38px] pl-8 pr-3 bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#D6B36A] focus:bg-[#0A0A0A]"
+          />
         </div>
 
-        <div
-          className="
-            bg-[#151515]
-            border
-            border-[#2A2A2A]
-            px-4
-            py-2
-            rounded-2xl
-            text-sm
-            text-[#D6B36A]
-            font-medium
-            shadow-[0_0_20px_rgba(214,179,106,0.08)]
-          "
-        >
+        {/* USER COUNT */}
+        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-[#D6B36A] font-medium flex-shrink-0">
           {users.length} Users
         </div>
 
-      </div>
-
-      {/* TOOLBAR */}
-      <div
-        className="
-          px-8
-          py-6
-          border-b
-          border-[#242424]
-          flex
-          items-center
-          gap-4
-        "
-      >
-
-        {/* SEARCH */}
-        <input
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-          placeholder="Search users..."
-          className="
-            flex-1
-            h-[54px]
-            bg-[#121212]
-            border
-            border-[#2A2A2A]
-            rounded-2xl
-            px-5
-            text-sm
-            text-white
-            outline-none
-            transition-all
-            placeholder:text-zinc-600
-            focus:border-[#D6B36A]
-            focus:bg-[#151515]
-            focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-          "
-        />
-
         {/* ADD USER */}
         <button
-          onClick={
-            openCreateUserModal
-          }
-          className="
-            h-[54px]
-            px-6
-            rounded-2xl
-            bg-[#D6B36A]
-            text-black
-            font-semibold
-            transition-all
-            hover:bg-[#E7C989]
-            hover:shadow-[0_0_25px_rgba(214,179,106,0.18)]
-          "
+          onClick={openCreateUserModal}
+          className="h-[38px] px-4 rounded-xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] transition hover:bg-[#E4C27C] flex-shrink-0"
         >
           + Add User
         </button>
@@ -173,7 +104,7 @@ export default function UsersPage({
 
       {/* TABLE */}
       <div className="table-scroll" ref={scrollRef}>
-      <table className="w-full border-separate border-spacing-0">
+      <table className="w-full border-separate border-spacing-0 text-sm">
 
         <thead
           className="
@@ -198,7 +129,7 @@ export default function UsersPage({
             </th>
 
             <th className="text-left px-6 py-3">
-              Role / Position
+              Role
             </th>
 
             <th className="text-left px-6 py-3">
@@ -331,7 +262,7 @@ export default function UsersPage({
                         text-[#F5F1E8]
                       "
                     >
-                      {user.position?.replace(/_/g, " ") || "User"}
+                      User
                     </span>
                   )}
 
@@ -415,7 +346,6 @@ export default function UsersPage({
                         flex
                         items-center
                         justify-center
-                        text-lg
                       "
                     >
                       ✕
@@ -437,121 +367,124 @@ export default function UsersPage({
       {/* PAGINATION */}
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
-      {/* DELETE MODAL */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    </div>
+
+    {/* DELETE MODAL — rendered via portal to escape overflow-hidden container */}
+    {showDeleteModal && ReactDOM.createPortal(
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+        <div
+          className="
+            w-[460px]
+            rounded-[32px]
+            border
+            border-[#242424]
+            bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
+            p-8
+            shadow-[0_20px_60px_rgba(0,0,0,0.55)]
+          "
+        >
 
           <div
             className="
-              w-[460px]
-              rounded-[32px]
+              w-16
+              h-16
+              rounded-2xl
+              bg-red-500/10
               border
-              border-[#242424]
-              bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
-              p-8
-              shadow-[0_20px_60px_rgba(0,0,0,0.55)]
+              border-red-500/20
+              flex
+              items-center
+              justify-center
+              mx-auto
+              mb-6
             "
           >
 
-            <div
-              className="
-                w-16
-                h-16
-                rounded-2xl
-                bg-red-500/10
-                border
-                border-red-500/20
-                flex
-                items-center
-                justify-center
-                mx-auto
-                mb-6
-              "
-            >
+            <span className="text-3xl">
+              🗑️
+            </span>
 
-              <span className="text-3xl">
-                🗑️
+          </div>
+
+          <div className="text-center">
+
+            <h2 className="text-2xl font-bold text-[#F5F1E8] mb-3">
+              Delete User
+            </h2>
+
+            <p className="text-zinc-400 leading-relaxed">
+              Are you sure you want to delete{" "}
+
+              <span className="text-white font-medium">
+                {`${userToDelete?.firstName} ${userToDelete?.lastName}`}
               </span>
 
-            </div>
+              ?
+            </p>
 
-            <div className="text-center">
+            <p className="text-sm text-red-400 mt-3">
+              This action cannot be undone.
+            </p>
 
-              <h2 className="text-2xl font-bold text-[#F5F1E8] mb-3">
-                Delete User
-              </h2>
+          </div>
 
-              <p className="text-zinc-400 leading-relaxed">
-                Are you sure you want to delete{" "}
+          <div className="flex items-center gap-4 mt-8">
 
-                <span className="text-white font-medium">
-                  {userToDelete?.name}
-                </span>
+            <button
+              onClick={() => {
+                setShowDeleteModal(false)
 
-                ?
-              </p>
+                setUserToDelete(null)
+              }}
+              className="
+                flex-1
+                h-[52px]
+                rounded-2xl
+                border
+                border-[#2A2A2A]
+                bg-[#151515]
+                text-[#F5F1E8]
+                font-medium
+                transition-all
+                hover:bg-[#1B1B1B]
+              "
+            >
+              Cancel
+            </button>
 
-              <p className="text-sm text-red-400 mt-3">
-                This action cannot be undone.
-              </p>
+            <button
+              onClick={() => {
+                deleteUser(
+                  userToDelete.id
+                )
 
-            </div>
+                setShowDeleteModal(false)
 
-            <div className="flex items-center gap-4 mt-8">
-
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false)
-
-                  setUserToDelete(null)
-                }}
-                className="
-                  flex-1
-                  h-[52px]
-                  rounded-2xl
-                  border
-                  border-[#2A2A2A]
-                  bg-[#151515]
-                  text-[#F5F1E8]
-                  font-medium
-                  transition-all
-                  hover:bg-[#1B1B1B]
-                "
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={() => {
-                  deleteUser(
-                    userToDelete.id
-                  )
-
-                  setShowDeleteModal(false)
-
-                  setUserToDelete(null)
-                }}
-                className="
-                  flex-1
-                  h-[52px]
-                  rounded-2xl
-                  bg-red-500
-                  text-white
-                  font-semibold
-                  transition-all
-                  hover:bg-red-400
-                "
-              >
-                Delete
-              </button>
-
-            </div>
+                setUserToDelete(null)
+              }}
+              className="
+                flex-1
+                h-[52px]
+                rounded-2xl
+                bg-red-500
+                text-white
+                font-semibold
+                transition-all
+                hover:bg-red-400
+              "
+            >
+              Delete
+            </button>
 
           </div>
 
         </div>
-      )}
 
-    </div>
+      </div>,
+      document.body
+    )}
+
+    </>
   )
 }

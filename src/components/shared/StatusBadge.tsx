@@ -1,7 +1,7 @@
 export default function StatusBadge({
   status,
 }: {
-  status: string
+  status: string | undefined
 }) {
   const styles = {
     PENDING:
@@ -13,6 +13,8 @@ export default function StatusBadge({
     COMPLETED:
       "bg-green-500/10 text-green-400 border border-green-500/20",
   }
+
+  if (!status) return null
 
   return (
     <span

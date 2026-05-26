@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import {
   LANGUAGES,
   type Language,
@@ -73,6 +73,17 @@ export default function OrderModal({
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [languageSearch, setLanguageSearch] = useState("")
+  const initialOrderRef = useRef(JSON.stringify(newOrder))
+  const wasOpenRef = useRef(showModal)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+
+  // Snapshot newOrder synchronously the moment showModal transitions false→true.
+  // Doing this during render (not in an effect) guarantees the snapshot and the
+  // current newOrder are from the exact same render, so isDirty starts as false.
+  if (showModal && !wasOpenRef.current) {
+    initialOrderRef.current = JSON.stringify(newOrder)
+  }
+  wasOpenRef.current = showModal
 
   // Assign users state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
@@ -126,6 +137,16 @@ export default function OrderModal({
     else createOrder(newOrder.type === "MARKETING" ? selectedUserIds : [])
   }
 
+  const isDirty = JSON.stringify(newOrder) !== initialOrderRef.current
+
+  function tryClose() {
+    if (isDirty) {
+      setShowDiscardConfirm(true)
+    } else {
+      handleClose()
+    }
+  }
+
   if (!showModal) {
     return null
   }
@@ -133,6 +154,7 @@ export default function OrderModal({
   setShowModal(false)
   setIsEditing(false)
   setEditingOrderId("")
+  setShowDiscardConfirm(false)
 
   setSelectedUserIds([])
   setAllUsers([])
@@ -256,7 +278,10 @@ today.setHours(0, 0, 0, 0)
 
 
   return (
-      <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div
+        className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+        onClick={tryClose}
+      >
 <motion.div
   layout
   transition={{
@@ -265,7 +290,8 @@ today.setHours(0, 0, 0, 0)
     ease: [0.22, 1, 0.36, 1],
   },
 }}
-  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] w-full ${
+  onClick={(e) => e.stopPropagation()}
+  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] w-full relative ${
     newOrder.deliveries?.length > 0
       ? "sm:max-w-[1200px]"
       : "sm:max-w-[700px]"
@@ -282,7 +308,7 @@ today.setHours(0, 0, 0, 0)
           </h2>
         </div>
         <button
-          onClick={handleClose}
+          onClick={tryClose}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
         >
           ✕
@@ -1299,6 +1325,30 @@ transition={{
   </button>
 
 </div>
+
+        {/* DISCARD CONFIRM OVERLAY */}
+        {showDiscardConfirm && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
+            <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+              <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
+              <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDiscardConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm hover:bg-red-500/20 transition"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
     </motion.div>
   </div>

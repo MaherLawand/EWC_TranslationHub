@@ -68,6 +68,9 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     const params = new URLSearchParams(window.location.search)
     const urlPage = params.get("page")
     if (urlPage && VALID_DEEP_LINK_PAGES.includes(urlPage)) return urlPage
+    // orderId present but no valid page — defer to deep-link effect so the
+    // role-based default never flashes before the correct page is known
+    if (params.get("orderId")) return ""
     return computeInitialPage(initialUser)
   })
 
@@ -93,10 +96,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     React.useState("")
 
   const [orderIdFilter, setOrderIdFilter] =
-    React.useState("")
+    React.useState<string>(() => new URLSearchParams(window.location.search).get("orderId") ?? "")
 
-  const [selectedEvent, setSelectedEvent] =
-    React.useState("EWC")
+  const [selectedEvent, setSelectedEvent] = React.useState<string>(() => {
+    const e = new URLSearchParams(window.location.search).get("event")
+    return e === "ENC" ? "ENC" : "EWC"
+  })
 
   const [newOrder, setNewOrder] = React.useState({
     title: "",
@@ -215,9 +220,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   // skipResetRef: set true by currentUser-init when a pendingNav needs to
   // suppress filter-reset on the next activePage change.
   const skipResetRef = React.useRef(false)
-  // Skip the activePage effect on the very first mount — there is nothing to
-  // clean up yet and it would race with the currentUser init effect.
-  const isInitialActivePage = React.useRef(true)
+  // Track previous activePage/selectedEvent to skip effect on first mount
+  // (and React Strict Mode double-invocation) without the fragile cleanup trick.
+  const prevActivePageRef = React.useRef(activePage)
+  const prevEventRef = React.useRef(selectedEvent)
   // Set true before calling setSelectedEvent during deep-link/notification nav
   // so the selectedEvent effect doesn't clear the order we're about to open.
   const preserveOrderOnEventChange = React.useRef(false)
@@ -388,12 +394,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }, [activePage, currentUser])
 
   React.useEffect(() => {
-    // Skip on first mount — there is nothing to close/reset yet, and firing here
-    // would race with the currentUser init effect that sets orderIdFilter.
-    if (isInitialActivePage.current) {
-      isInitialActivePage.current = false
-      return
-    }
+    // Skip when activePage hasn't actually changed (first mount + Strict Mode remount).
+    const prevPage = prevActivePageRef.current
+    prevActivePageRef.current = activePage
+    if (prevPage === activePage) return
 
     // Deep-link page correction (order.type didn't match URL page param) —
     // silently switch the tab without resetting filters or clearing the sidebar.
@@ -428,7 +432,38 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
 }
   }, [activePage])
 
+  // When any manual filter changes while a deep-link pin (orderIdFilter) is
+  // active, release the pin and close the sidebar so normal filtering takes over.
+  const prevFiltersRef = React.useRef({
+    search, statusFilter, priorityFilter, formatFilter,
+    contentTitleFilter, selectedGameFilter, deadlineSort,
+  })
+  React.useEffect(() => {
+    if (!orderIdFilter) return
+    const prev = prevFiltersRef.current
+    const next = { search, statusFilter, priorityFilter, formatFilter, contentTitleFilter, selectedGameFilter, deadlineSort }
+    prevFiltersRef.current = next
+    const changed =
+      prev.search !== search ||
+      prev.statusFilter !== statusFilter ||
+      prev.priorityFilter !== priorityFilter ||
+      prev.formatFilter !== formatFilter ||
+      prev.contentTitleFilter !== contentTitleFilter ||
+      prev.selectedGameFilter !== selectedGameFilter ||
+      prev.deadlineSort !== deadlineSort
+    if (!changed) return
+    setOrderIdFilter("")
+    setSelectedOrder(null)
+    setSelectedOrderDetail(null)
+    setSidebarPrereserved(false)
+  }, [search, statusFilter, priorityFilter, formatFilter, contentTitleFilter, selectedGameFilter, deadlineSort])
+
 React.useEffect(() => {
+  // Skip when selectedEvent hasn't actually changed (first mount + Strict Mode remount).
+  const prevEvent = prevEventRef.current
+  prevEventRef.current = selectedEvent
+  if (prevEvent === selectedEvent) return
+
   if (preserveOrderOnEventChange.current) {
     preserveOrderOnEventChange.current = false
     return
@@ -437,6 +472,7 @@ React.useEffect(() => {
   setSelectedOrder(null)
   setSelectedOrderDetail(null)
   setEditedOrder(null)
+  setSidebarPrereserved(false)
 
   resetFilters()
 }, [selectedEvent])
@@ -444,10 +480,14 @@ React.useEffect(() => {
   React.useEffect(() => {
     if (!currentUser || hasInitializedPage) return
 
-    // Deep-link: honour URL page param over role-based default
+    // Deep-link: honour URL page param over role-based default.
+    // Also skip role-based init when orderId is present without a page param —
+    // the deep-link effect will set the correct page after fetchOrderDetail.
     if (urlPageRef.current) {
       setActivePage(urlPageRef.current)
       urlPageRef.current = null
+    } else if (urlOrderIdRef.current) {
+      // deep-link without page — leave activePage="" until deep-link resolves
     } else if (currentUser.role === "ADMIN") {
       setActivePage("Broadcast")
     } else if (currentUser.position === "VIEWER") {
@@ -479,11 +519,12 @@ React.useEffect(() => {
     if (!hasInitializedPage || !currentUser || !urlOrderIdRef.current) return
     const orderId = urlOrderIdRef.current
     urlOrderIdRef.current = null
-    // orderIdFilter already set synchronously in the initialization effect above
-    // (batched with setActivePage so useOrders only fires once)
+    // Open sidebar immediately with a skeleton placeholder while detail loads.
+    setSelectedOrder({ id: orderId } as any)
     fetchOrderDetail(orderId).then((order) => {
       if (!order) {
-        // Invalid / not-found orderId — release the pre-reserved sidebar space
+        // Invalid / not-found orderId — close sidebar and release reserved space
+        setSelectedOrder(null)
         setSidebarPrereserved(false)
         return
       }
@@ -741,7 +782,6 @@ React.useEffect(() => {
   }
 
   function resetFilters() {
-      console.trace("RESET FILTERS CALLED")
     setSearch("")
     setStatusFilter("All Statuses")
     setPriorityFilter("All Priorities")
@@ -1017,6 +1057,7 @@ React.useEffect(() => {
                   setPriorityFilter={setPriorityFilter}
                   formatFilter={formatFilter}
                   setFormatFilter={setFormatFilter}
+                  selectedEvent={selectedEvent}
                 />
               )}
 
@@ -1050,6 +1091,7 @@ React.useEffect(() => {
                   setPriorityFilter={setPriorityFilter}
                   formatFilter={formatFilter}
                   setFormatFilter={setFormatFilter}
+                  selectedEvent={selectedEvent}
                 />
               )}
             </>

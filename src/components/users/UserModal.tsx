@@ -22,8 +22,25 @@ export default function UserModal({
   updateUser,
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [initialForm] = useState(() => JSON.stringify(userForm))
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
   if (!showUserModal) return null
+
+  const isDirty = JSON.stringify(userForm) !== initialForm
+
+  function tryClose() {
+    if (isDirty) {
+      setShowDiscardConfirm(true)
+    } else {
+      setShowUserModal(false)
+    }
+  }
+
+  function forceClose() {
+    setShowDiscardConfirm(false)
+    setShowUserModal(false)
+  }
 
   function clearError(field: string) {
     if (errors[field]) setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
@@ -57,8 +74,14 @@ export default function UserModal({
   const inputError = `${inputBase} border-red-500/60 focus:border-red-500`
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] sm:max-h-[90vh]">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+      onClick={tryClose}
+    >
+      <div
+        className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* HEADER */}
         <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
@@ -71,7 +94,7 @@ export default function UserModal({
             </h2>
           </div>
           <button
-            onClick={() => setShowUserModal(false)}
+            onClick={tryClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
           >
             ✕
@@ -233,6 +256,30 @@ export default function UserModal({
             }
           </button>
         </div>
+
+        {/* DISCARD CONFIRM OVERLAY */}
+        {showDiscardConfirm && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
+            <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+              <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
+              <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDiscardConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  onClick={forceClose}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm hover:bg-red-500/20 transition"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

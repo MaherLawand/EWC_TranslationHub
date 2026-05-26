@@ -33,6 +33,7 @@ type Props = {
   setPriorityFilter: (v: string) => void
   formatFilter: string[]
   setFormatFilter: (v: string[]) => void
+  selectedEvent: string
 }
 
 export default function MarketingOrdersTable({
@@ -55,6 +56,7 @@ export default function MarketingOrdersTable({
   setPriorityFilter,
   formatFilter,
   setFormatFilter,
+  selectedEvent,
 }: Props) {
 
 const canUpdateStatus =
@@ -78,7 +80,7 @@ const [copiedId, setCopiedId] =
 
 function copyOrderLink(e: React.MouseEvent, orderId: string) {
   e.stopPropagation()
-  const url = `${window.location.origin}${window.location.pathname}?page=marketing&orderId=${orderId}`
+  const url = `${window.location.origin}${window.location.pathname}?page=marketing&orderId=${orderId}&event=${selectedEvent}`
   navigator.clipboard.writeText(url)
   setCopiedId(orderId)
   setTimeout(() => setCopiedId(null), 2000)
@@ -132,6 +134,8 @@ const [assignSelectedIds, setAssignSelectedIds] = React.useState<string[]>([])
 const [isSavingAssign, setIsSavingAssign] = React.useState(false)
 const [searchResults, setSearchResults] = React.useState<any[]>([])
 const [isSearching, setIsSearching] = React.useState(false)
+const [showAssignDiscardConfirm, setShowAssignDiscardConfirm] = React.useState(false)
+const initialAssignIdsRef = React.useRef<string[]>([])
 const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
 // Debounced search — only fires after 300 ms of no typing, min 1 char
@@ -157,11 +161,14 @@ function openAssignModal(e: React.MouseEvent, order: any) {
   e.stopPropagation()
   if (!canAssignUsers) return
   const alreadyAssigned: any[] = order.marketing?.assignments?.map((a: any) => a.user).filter(Boolean) || []
+  const initialIds = alreadyAssigned.map((u) => u.id)
+  initialAssignIdsRef.current = initialIds
   setAssignOrderId(order.id)
   setAssignSearch("")
   setSearchResults([])
-  setAssignSelectedIds(alreadyAssigned.map((u) => u.id))
+  setAssignSelectedIds(initialIds)
   setAssignedUserObjects(alreadyAssigned)
+  setShowAssignDiscardConfirm(false)
 }
 
 // keep a snapshot of the assigned users' full objects so chips render correctly
@@ -184,6 +191,18 @@ function closeAssignModal() {
   setSearchResults([])
   setAssignedUserObjects([])
   setAssignSelectedIds([])
+  setShowAssignDiscardConfirm(false)
+}
+
+function tryCloseAssignModal() {
+  const isDirty =
+    JSON.stringify([...assignSelectedIds].sort()) !==
+    JSON.stringify([...initialAssignIdsRef.current].sort())
+  if (isDirty) {
+    setShowAssignDiscardConfirm(true)
+  } else {
+    closeAssignModal()
+  }
 }
 
 function toggleUser(user: any) {
@@ -720,9 +739,9 @@ const isUpdating =
 
     {/* ASSIGN MODAL */}
     {assignOrderId && (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={closeAssignModal}>
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={tryCloseAssignModal}>
         <div
-          className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl w-[480px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]"
+          className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl w-[480px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh] relative"
           onClick={(e) => e.stopPropagation()}
         >
 
@@ -733,7 +752,7 @@ const isUpdating =
               <h2 className="text-lg font-bold text-[#F5F1E8]">Assign Users</h2>
             </div>
             <button
-              onClick={closeAssignModal}
+              onClick={tryCloseAssignModal}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
             >
               ✕
@@ -847,6 +866,30 @@ const isUpdating =
               {isSavingAssign ? "Saving..." : `Save Assignments${assignSelectedIds.length ? ` (${assignSelectedIds.length})` : ""}`}
             </button>
           </div>
+
+          {/* DISCARD CONFIRM OVERLAY */}
+          {showAssignDiscardConfirm && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-3xl z-10 px-6">
+              <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+                <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
+                <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAssignDiscardConfirm(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                  >
+                    Keep Editing
+                  </button>
+                  <button
+                    onClick={closeAssignModal}
+                    className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm hover:bg-red-500/20 transition"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
