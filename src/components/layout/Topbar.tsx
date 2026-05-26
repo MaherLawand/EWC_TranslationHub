@@ -1,8 +1,15 @@
 import React from "react"
 
+type OrderCounts = {
+  PENDING: number
+  IN_PROGRESS: number
+  COMPLETED: number
+  total: number
+}
+
 type Props = {
   activePage: string
-  statsOrders: any
+  orderCounts: OrderCounts
   currentUser: any
   setShowModal: (value: boolean) => void
   canManageOrders: boolean
@@ -15,7 +22,7 @@ function Topbar({
   activePage,
   setShowModal,
   canManageOrders,
-  statsOrders,
+  orderCounts,
   currentUser,
   statusFilter,
   setStatusFilter,
@@ -77,10 +84,9 @@ function Topbar({
     activePage === "my-games" ||
     activePage === "Broadcast"
 
-  // Memoized counts — avoid re-filtering on every render
-  const pendingCount    = React.useMemo(() => statsOrders.filter((o: any) => o.status === "PENDING").length,     [statsOrders])
-  const inProgressCount = React.useMemo(() => statsOrders.filter((o: any) => o.status === "IN_PROGRESS").length, [statsOrders])
-  const completedCount  = React.useMemo(() => statsOrders.filter((o: any) => o.status === "COMPLETED").length,   [statsOrders])
+  const pendingCount    = orderCounts.PENDING
+  const inProgressCount = orderCounts.IN_PROGRESS
+  const completedCount  = orderCounts.COMPLETED
 
 return (
   <header
@@ -195,7 +201,7 @@ return (
         `}
       >
         <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">Total</p>
-        <h3 className="text-2xl font-bold text-white mt-1">{statsOrders.length}</h3>
+        <h3 className="text-2xl font-bold text-white mt-1">{orderCounts.total}</h3>
       </button>
 
       {/* PENDING */}

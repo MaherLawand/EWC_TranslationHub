@@ -52,13 +52,11 @@ export function useOrders({
   const isSavingRef = React.useRef(false)
   const [deletingOrderId, setDeletingOrderId] = React.useState("")
 
-  // ─── statsOrders (for any summary / stat cards) ───────────────────────────
-  const statsOrders =
-    activePage === "marketing" || activePage === "my-orders"
-      ? marketingOrders
-      : activePage === "Broadcast" || activePage === "my-games"
-      ? broadcastOrders
-      : [...broadcastOrders, ...marketingOrders]
+
+
+  // ─── Order counts (for Topbar stat cards — counts ALL orders, not just page) ─
+  const [orderCounts, setOrderCounts] = React.useState({ PENDING: 0, IN_PROGRESS: 0, COMPLETED: 0, total: 0 })
+  const countsAbortRef = React.useRef<AbortController | null>(null)
 
   // ─── toListOrder helper ───────────────────────────────────────────────────
   function toListOrder(full: any): any {
@@ -117,6 +115,37 @@ export function useOrders({
     if (selectedEvent) params.append("event", selectedEvent)
 
     return params
+  }
+
+  // ─── Fetch counts for Topbar stat cards (no statusFilter, no deadlineSort) ─
+  async function fetchOrderCounts(type?: string, assignedOnly = false) {
+    countsAbortRef.current?.abort()
+    const controller = new AbortController()
+    countsAbortRef.current = controller
+    try {
+      const params = new URLSearchParams()
+      if (orderIdFilter) {
+        params.append("orderId", orderIdFilter)
+      } else {
+        if (search.trim()) params.append("search", search)
+        if (priorityFilter !== "All Priorities") params.append("priority", priorityFilter)
+        if (formatFilter.length > 0) formatFilter.forEach((f: string) => params.append("format", f))
+        if (contentTitleFilter) params.append("contentTitle", contentTitleFilter)
+        if (selectedGameFilter) params.append("gameId", selectedGameFilter)
+        if (selectedEvent) params.append("event", selectedEvent)
+      }
+      if (type) params.append("type", type)
+      if (assignedOnly) params.append("assignedOnly", "true")
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/counts?${params.toString()}`,
+        { credentials: "include", signal: controller.signal }
+      )
+      if (!res.ok) return
+      const data = await res.json()
+      if (countsAbortRef.current === controller) setOrderCounts(data)
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.error("Counts fetch error:", e)
+    }
   }
 
   // ─── Fetch broadcast orders (server-paginated) ────────────────────────────
@@ -340,26 +369,25 @@ export function useOrders({
         }
       )
 
+      if (!response.ok) throw new Error("Failed to update status")
+
+      // Server now returns listOrderSelect (slim) — use directly for list update
       const updated = await response.json()
       await refreshNotifications()
 
-      // Update slim entry in correct array
       if (updated.type === "BROADCAST") {
-        setBroadcastOrders((prev) =>
-          prev.map((o) => (o.id === updated.id ? toListOrder(updated) : o))
-        )
+        setBroadcastOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
       } else {
-        setMarketingOrders((prev) =>
-          prev.map((o) => (o.id === updated.id ? toListOrder(updated) : o))
-        )
+        setMarketingOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
       }
 
+      // Sidebar: re-fetch full detail (non-blocking — sidebar shows loading shimmer)
       if (selectedOrder?.id === updated.id) {
-        setSelectedOrderDetail(updated)
-        setEditedOrder(updated)
+        fetchOrderDetail(updated.id)
       }
     } catch (error) {
       console.error(error)
+      toast.error("Failed to update order status")
     }
   }
 
@@ -411,6 +439,25 @@ export function useOrders({
     orderIdFilter,
   ])
 
+  // ─── Counts effect — excludes statusFilter & deadlineSort so stat cards ───
+  // always show totals across all statuses regardless of the active filter.
+  React.useEffect(() => {
+    if (activePage === "Broadcast") fetchOrderCounts("BROADCAST")
+    else if (activePage === "my-games") fetchOrderCounts("BROADCAST", true)
+    else if (activePage === "marketing") fetchOrderCounts("MARKETING")
+    else if (activePage === "my-orders") fetchOrderCounts("MARKETING", true)
+    else fetchOrderCounts()
+  }, [
+    activePage,
+    search,
+    priorityFilter,
+    formatFilter,
+    contentTitleFilter,
+    selectedGameFilter,
+    selectedEvent,
+    orderIdFilter,
+  ])
+
   return {
     // Broadcast
     broadcastOrders,
@@ -445,7 +492,8 @@ export function useOrders({
     updateOrder,
     updateOrderStatus,
     deleteOrder,
-    statsOrders,
     toListOrder,
+    orderCounts,
+    fetchOrderCounts,
   }
 }

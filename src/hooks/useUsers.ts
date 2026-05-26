@@ -1,4 +1,5 @@
 import React from "react"
+import { toast } from "react-toastify"
 
 export function useUsers() {
   const [users, setUsers] =
@@ -127,7 +128,7 @@ export function useUsers() {
       )
       const data = await response.json()
       if (!response.ok) {
-        alert(data.message)
+        toast.error(data.message || "Failed to create user")
         return
       }
       // Re-fetch page 1 so new user appears at top
@@ -175,7 +176,7 @@ export function useUsers() {
       )
       const data = await response.json()
       if (!response.ok) {
-        alert(data.message)
+        toast.error(data.message || "Failed to delete user")
         return
       }
       // Re-fetch current page so counts stay accurate

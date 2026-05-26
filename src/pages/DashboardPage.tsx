@@ -276,7 +276,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     updateOrder,
     updateOrderStatus,
     deleteOrder,
-    statsOrders,
+    orderCounts,
     selectedOrderDetail,
     setSelectedOrderDetail,
     isLoadingDetail,
@@ -725,7 +725,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
           activePage={activePage}
           setShowModal={setShowModal}
           canManageOrders={canManageOrders}
-          statsOrders={statsOrders}
+          orderCounts={orderCounts}
           currentUser={currentUser}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}

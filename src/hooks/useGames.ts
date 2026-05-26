@@ -116,7 +116,7 @@ export function useGames({
   async function saveAssignments() {
     try {
       setIsSavingAssignments(true)
-      await fetch(
+      const res = await fetch(
         `${import.meta.env.VITE_API_URL}/auth/users/${selectedUserForGames.id}/games`,
         {
           method: "POST",
@@ -125,6 +125,10 @@ export function useGames({
           body: JSON.stringify({ gameIds: selectedGames }),
         }
       )
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.message || "Failed to save game assignments")
+      }
       await fetchUsers()
       setShowAssignGamesModal(false)
     } catch (error) {
