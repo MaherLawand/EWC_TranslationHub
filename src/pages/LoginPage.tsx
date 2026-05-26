@@ -1,9 +1,11 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { api } from "../lib/api"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
 export default function LoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -268,6 +270,17 @@ export default function LoginPage() {
         >
           {isLoading ? "Logging in..." : "Login"}
         </button>
+
+        {/* FORGOT PASSWORD */}
+        <p className="text-center text-sm text-zinc-600 mt-5">
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="text-zinc-500 hover:text-[#D6B36A] transition font-medium"
+          >
+            Forgot password?
+          </button>
+        </p>
 
       </form>
     </div>

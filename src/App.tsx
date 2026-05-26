@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import LoginPage from "./pages/LoginPage"
 import DashboardPage from "./pages/DashboardPage"
 import SetupPasswordPage from "./components/pages/setPasswordPage"
+import ForgotPasswordPage from "./pages/ForgotPasswordPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 
 import { api } from "./lib/api"
 
@@ -40,6 +42,18 @@ export default function App() {
       <Route
         path="/setup-password"
         element={user ? <Navigate to="/" replace /> : <SetupPasswordPage />}
+      />
+
+      {/* FORGOT PASSWORD */}
+      <Route
+        path="/forgot-password"
+        element={user ? <Navigate to="/" replace /> : <ForgotPasswordPage />}
+      />
+
+      {/* RESET PASSWORD */}
+      <Route
+        path="/reset-password"
+        element={user ? <Navigate to="/" replace /> : <ResetPasswordPage />}
       />
 
       {/* LOGIN — redirect to dashboard if already authenticated */}

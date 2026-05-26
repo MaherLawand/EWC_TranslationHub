@@ -35,6 +35,12 @@ function computeInitialPage(user: any): string {
 
 export default function App({ initialUser }: { initialUser?: any } = {}) {
 
+      const isDeepLinkingRef = React.useRef(
+  !!new URLSearchParams(window.location.search).get("orderId")
+)
+
+
+
   const [hasInitializedPage, setHasInitializedPage] =
     React.useState(false)
 
@@ -396,6 +402,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       return
     }
 
+
+
     if (pendingNavRef.current) {
       const pending = pendingNavRef.current
       pendingNavRef.current = null
@@ -409,25 +417,29 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       setSelectedOrder(null)
       setSelectedOrderDetail(null)
       setSidebarPrereserved(false)
-    } else {
-      setSelectedOrder(null)
-      setSelectedOrderDetail(null)
-      setSidebarPrereserved(false)
-      resetFilters()
-    }
+    }else {
+  setSelectedOrder(null)
+  setSelectedOrderDetail(null)
+  setSidebarPrereserved(false)
+
+  if (!isDeepLinkingRef.current) {
+    resetFilters()
+  }
+}
   }, [activePage])
 
-  React.useEffect(() => {
-    // Skip clearing when a deep-link or notification nav explicitly switched
-    // the event — we want the sidebar to stay open in those cases.
-    if (preserveOrderOnEventChange.current) {
-      preserveOrderOnEventChange.current = false
-      return
-    }
-    setSelectedOrder(null)
-    setSelectedOrderDetail(null)
-    setEditedOrder(null)
-  }, [selectedEvent])
+React.useEffect(() => {
+  if (preserveOrderOnEventChange.current) {
+    preserveOrderOnEventChange.current = false
+    return
+  }
+
+  setSelectedOrder(null)
+  setSelectedOrderDetail(null)
+  setEditedOrder(null)
+
+  resetFilters()
+}, [selectedEvent])
 
   React.useEffect(() => {
     if (!currentUser || hasInitializedPage) return
@@ -455,9 +467,9 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     // Set orderIdFilter so useOrders fetches the specific deep-linked order.
     // No need to set skipResetRef here — the activePage effect skips its first
     // fire entirely (isInitialActivePage guard), so there is no race.
-    if (urlOrderIdRef.current) {
-      setOrderIdFilter(urlOrderIdRef.current)
-    }
+    // if (urlOrderIdRef.current) {
+    //   setOrderIdFilter(urlOrderIdRef.current)
+    // }
 
     setHasInitializedPage(true)
   }, [currentUser, hasInitializedPage])
@@ -494,7 +506,9 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
         deepLinkPageSwitchRef.current = true
         setActivePage(correctPage)
       }
+        setOrderIdFilter(order.id)
       setSelectedOrder(order)
+        isDeepLinkingRef.current = false
     })
   }, [hasInitializedPage, currentUser?.id])
 
@@ -575,6 +589,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       socket.disconnect()
     }
   }, [currentUser?.id])
+
 
   /*
   ========================================
@@ -726,6 +741,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }
 
   function resetFilters() {
+      console.trace("RESET FILTERS CALLED")
     setSearch("")
     setStatusFilter("All Statuses")
     setPriorityFilter("All Priorities")
@@ -914,7 +930,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                       if (activePage === "my-games" && gameList.length === 0) {
                         return (
                           <p className="text-sm text-zinc-500 py-1">
-                            You're not assigned to any game. Please contact your admin.
+                            You're not assigned to any game. Please contact your lead.
                           </p>
                         )
                       }
@@ -985,7 +1001,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                 <BroadcastOrdersTable
                   isLoading={isLoadingBroadcast}
                   currentUser={currentUser}
-                  orders={broadcastOrders}
+                  orders={orderIdFilter ? broadcastOrders.filter(o => o.id === orderIdFilter) : broadcastOrders}
                   page={broadcastPage}
                   totalPages={broadcastTotalPages}
                   onPageChange={(p) => fetchBroadcastOrders(p)}
@@ -1016,7 +1032,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
               {(activePage === "dashboard" || activePage === "marketing" || activePage === "my-orders") && (
                 <MarketingOrdersTable
                   isLoading={isLoadingMarketing}
-                  orders={marketingOrders}
+                  orders={orderIdFilter ? marketingOrders.filter(o => o.id === orderIdFilter) : marketingOrders}
                   currentUser={currentUser}
                   page={marketingPage}
                   totalPages={marketingTotalPages}
