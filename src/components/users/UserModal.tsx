@@ -39,6 +39,9 @@ export default function UserModal({
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = "Enter a valid email address"
     }
+    if (!userForm.role) e.role = "Please select a role"
+    if (!userForm.department) e.department = "Please select a department"
+    if (!userForm.position) e.position = "Please select a position"
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -145,51 +148,52 @@ export default function UserModal({
           <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
             <h3 className="text-sm font-semibold text-[#F5F1E8] mb-4">
               Role & Access
-              <span className="text-zinc-600 text-xs font-normal ml-2">(optional)</span>
             </h3>
             <div className="space-y-4">
 
               {/* ROLE */}
               <div>
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
-                  Role
+                  Role <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={userForm.role}
-                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                  className={inputNormal}
+                  onChange={(e) => { setUserForm({ ...userForm, role: e.target.value }); clearError("role") }}
+                  className={errors.role ? inputError : inputNormal}
                 >
                   <option value="">Select Role</option>
                   <option value="ADMIN">Admin</option>
                   <option value="USER">User</option>
                 </select>
+                {errors.role && <p className="text-red-400 text-xs mt-1.5">{errors.role}</p>}
               </div>
 
               {/* DEPARTMENT */}
               <div>
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
-                  Department
+                  Department <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={userForm.department}
-                  onChange={(e) => setUserForm({ ...userForm, department: e.target.value })}
-                  className={inputNormal}
+                  onChange={(e) => { setUserForm({ ...userForm, department: e.target.value }); clearError("department") }}
+                  className={errors.department ? inputError : inputNormal}
                 >
                   <option value="">Select Department</option>
                   <option value="BROADCAST">Broadcast</option>
                   <option value="MARKETING">Marketing</option>
                 </select>
+                {errors.department && <p className="text-red-400 text-xs mt-1.5">{errors.department}</p>}
               </div>
 
               {/* POSITION */}
               <div>
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
-                  Position
+                  Position <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={userForm.position}
-                  onChange={(e) => setUserForm({ ...userForm, position: e.target.value })}
-                  className={inputNormal}
+                  onChange={(e) => { setUserForm({ ...userForm, position: e.target.value }); clearError("position") }}
+                  className={errors.position ? inputError : inputNormal}
                 >
                   <option value="">Select Position</option>
                   <option value="PRODUCER">Producer</option>
@@ -198,6 +202,7 @@ export default function UserModal({
                   <option value="EDITOR">Editor</option>
                   <option value="VIEWER">Viewer</option>
                 </select>
+                {errors.position && <p className="text-red-400 text-xs mt-1.5">{errors.position}</p>}
               </div>
 
             </div>

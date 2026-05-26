@@ -194,8 +194,15 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }
 
   // Deep-link: ?page=Broadcast&orderId=xxx
-  const urlPageRef = React.useRef<string | null>(null)
-  const urlOrderIdRef = React.useRef<string | null>(null)
+  // Initialised synchronously so the currentUser init effect (which runs in
+  // the same render cycle as the URL-parsing effect) always sees the correct
+  // values, even when currentUser is already available from initialUser.
+  const urlPageRef = React.useRef<string | null>(
+    new URLSearchParams(window.location.search).get("page")
+  )
+  const urlOrderIdRef = React.useRef<string | null>(
+    new URLSearchParams(window.location.search).get("orderId")
+  )
   // Prevents the activePage effect from calling resetFilters() during deep-link init
   const skipResetRef = React.useRef(false)
 
@@ -203,7 +210,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   // loads. Pre-reserve its 480 px width from the very first render so the
   // table never shifts when the sidebar mounts (would be CLS because it happens
   // without user interaction).
-  const [sidebarPrereserved] = React.useState<boolean>(() => {
+  const [sidebarPrereserved, setSidebarPrereserved] = React.useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search)
     return !!params.get("orderId")
   })
@@ -333,14 +340,15 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     const params = new URLSearchParams(window.location.search)
     const page = params.get("page")
     const orderId = params.get("orderId")
-    // Invalid page param → 404
+    // Invalid page param → 404; clear refs so no effect tries to use them
     if (page && !VALID_PAGES.includes(page)) {
+      urlPageRef.current = null
+      urlOrderIdRef.current = null
       setIsNotFound(true)
       window.history.replaceState({}, "", window.location.pathname)
       return
     }
-    if (page) urlPageRef.current = page
-    if (orderId) urlOrderIdRef.current = orderId
+    // Refs are already initialised synchronously above — just clean the URL
     if (page || orderId)
       window.history.replaceState({}, "", window.location.pathname)
   }, [])
@@ -430,7 +438,11 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     // orderIdFilter already set synchronously in the initialization effect above
     // (batched with setActivePage so useOrders only fires once)
     fetchOrderDetail(orderId).then((order) => {
-      if (!order) return
+      if (!order) {
+        // Invalid / not-found orderId — release the pre-reserved sidebar space
+        setSidebarPrereserved(false)
+        return
+      }
       setSelectedOrder(order)
     })
   }, [hasInitializedPage, currentUser?.id])
@@ -788,42 +800,6 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                 "
               >
 
-                    {/* ACTIVE */}
-                    {/* <div
-                      className="
-                        h-[54px]
-                        px-5
-                        rounded-2xl
-                        border
-                        border-[#2A2A2A]
-                        bg-[#151515]
-                        flex
-                        items-center
-                        text-sm
-                        font-medium
-                        text-[#D6B36A]
-                        shadow-[0_0_20px_rgba(214,179,106,0.08)]
-                      "
-                    >
-                      {
-                        [
-                          search,
-                          statusFilter !== "All Statuses",
-                          priorityFilter !== "All Priorities",
-                          formatFilter.length > 0,
-                          deadlineSort,
-                          selectedGameFilter,
-                          contentTitleFilter,
-                          selectedEvent,
-                        ].filter(Boolean).length
-                      }{" "}
-                      Active
-                    </div> */}
-
-                  </div>
-
-                </div>
-
                 {/* CONTENT TITLE PILLS */}
                 {(activePage === "marketing" || activePage === "my-orders") && (
                   <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -1028,7 +1004,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
                 currentUser={currentUser}
                 setSelectedOrder={(v) => {
                   setSelectedOrder(v)
-                  if (!v) setSelectedOrderDetail(null)
+                  if (!v) {
+                    setSelectedOrderDetail(null)
+                    setSidebarPrereserved(false)
+                  }
                 }}
                 setIsEditingOrder={setIsEditingOrder}
                 setIsEditing={setIsEditing}

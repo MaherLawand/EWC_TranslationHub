@@ -113,6 +113,9 @@ export default function OrderModal({
       if (!newOrder.deliveryDate) e.deliveryDate = "Delivery date is required"
       if (!newOrder.deadline) e.deadline = "Deadline is required"
     }
+    if (newOrder.type === "MARKETING") {
+      if (!newOrder.deadline) e.deadline = "Deadline is required"
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
