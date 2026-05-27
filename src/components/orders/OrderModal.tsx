@@ -314,7 +314,7 @@ today.setHours(0, 0, 0, 0)
           ✕
         </button>
       </div>
-<div className="flex-1 overflow-auto p-8 dark-scroll">
+<div className="flex-1 overflow-auto p-4 sm:p-8 dark-scroll">
       {/* FORM */}
   {/* FORM */}
 <div
@@ -338,7 +338,7 @@ today.setHours(0, 0, 0, 0)
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* TITLE */}
-        <div className="col-span-2">
+        <div className="col-span-full">
           <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
             Order Title <span className="text-red-400">*</span>
           </label>
@@ -352,7 +352,7 @@ today.setHours(0, 0, 0, 0)
         </div>
 
         {/* NOTES */}
-<div className="col-span-2">
+<div className="col-span-full">
   <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Notes
   </label>
@@ -530,7 +530,7 @@ today.setHours(0, 0, 0, 0)
           </div>
 
           {/* SOURCE LANGUAGES */}
-          <div className="col-span-2">
+          <div className="col-span-full">
             <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Source Languages
             </label>
@@ -584,7 +584,7 @@ today.setHours(0, 0, 0, 0)
           </div>
 
           {/* TARGET LANGUAGES */}
-          <div className="col-span-2">
+          <div className="col-span-full">
             <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
               Translate To
             </label>
@@ -769,6 +769,7 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select delivery date"
+              wrapperClassName="w-full"
               className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deliveryDate ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deliveryDate && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryDate}</p>}
@@ -785,6 +786,7 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
+              wrapperClassName="w-full"
               className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
@@ -807,7 +809,7 @@ today.setHours(0, 0, 0, 0)
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
       {/* CONTENT TITLE */}
-<div className="col-span-2">
+<div className="col-span-full">
 
   <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Content Title
@@ -920,7 +922,7 @@ today.setHours(0, 0, 0, 0)
 />
       </div>
       {/* SOURCE LANGUAGES */}
-<div className="col-span-2">
+<div className="col-span-full">
 
   <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Source Languages
@@ -966,7 +968,7 @@ today.setHours(0, 0, 0, 0)
 </div>
 
 {/* TARGET LANGUAGES */}
-<div className="col-span-2">
+<div className="col-span-full">
 
   <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
     Translate To
@@ -1096,13 +1098,14 @@ today.setHours(0, 0, 0, 0)
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
+              wrapperClassName="w-full"
               className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
 
       {/* DELIVERED LINK
-      <div className="col-span-2">
+      <div className="col-span-full">
         <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
           Delivered Link
         </label>

@@ -91,14 +91,14 @@ const [statusPortal, setStatusPortal] = React.useState<{
   orderId: string
   status: string
   top: number
-  left: number
+  right: number
 } | null>(null)
 const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
 function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  setStatusPortal({ orderId, status, top: rect.bottom + 6, left: rect.left })
+  setStatusPortal({ orderId, status, top: rect.bottom + 6, right: window.innerWidth - rect.right })
 }
 function closeStatusPortal() {
   statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
@@ -111,14 +111,14 @@ function keepStatusPortal() {
 const [assignPortal, setAssignPortal] = React.useState<{
   assignments: any[]
   top: number
-  left: number
+  right: number
 } | null>(null)
 const assignPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
 function openAssignPortal(e: React.MouseEvent, assignments: any[]) {
   if (assignPortalTimer.current) clearTimeout(assignPortalTimer.current)
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  setAssignPortal({ assignments, top: rect.bottom + 6, left: rect.left })
+  setAssignPortal({ assignments, top: rect.bottom + 6, right: window.innerWidth - rect.right })
 }
 function closeAssignPortal() {
   assignPortalTimer.current = setTimeout(() => setAssignPortal(null), 120)
@@ -637,19 +637,26 @@ const isUpdating =
           {canAssignUsers ? (
             <button
               onClick={(e) => openAssignModal(e, order)}
-              className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-300 hover:border-[#D6B36A] hover:text-[#D6B36A] transition whitespace-nowrap"
+              title={validAssignments.length ? `${validAssignments.length} assigned` : "Assign users"}
+              className={`group cursor-pointer relative overflow-hidden inline-flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${
+                validAssignments.length
+                  ? "bg-[#1A1A1A] border-[#D6B36A] text-[#D6B36A]"
+                  : "bg-[#1A1A1A] border-[#2A2A2A] text-zinc-400 hover:border-[#D6B36A] hover:text-[#D6B36A]"
+              }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <span className="absolute inset-0 rounded-full bg-[#D6B36A]/10 scale-0 origin-top-right group-hover:scale-100 transition-transform duration-300 ease-out" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="relative w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              {validAssignments.length ? `${validAssignments.length} assigned` : "Assign"}
             </button>
           ) : validAssignments.length > 0 ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2A2A2A] text-xs font-semibold text-zinc-500 whitespace-nowrap cursor-default select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div
+              title={`${validAssignments.length} assigned`}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#1A1A1A] border border-[#D6B36A] text-[#D6B36A] cursor-default select-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              {validAssignments.length} assigned
             </div>
           ) : (
             <span className="text-zinc-600 text-xs">—</span>
@@ -677,10 +684,10 @@ const isUpdating =
     {/* STATUS PORTAL */}
     {statusPortal && ReactDOM.createPortal(
       <div
-        style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999 }}
+        style={{ position: "fixed", top: statusPortal.top, right: statusPortal.right, zIndex: 9999, transformOrigin: "top right" }}
         onMouseEnter={keepStatusPortal}
         onMouseLeave={closeStatusPortal}
-        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-[scaleIn_0.15s_ease-out_forwards]"
       >
         {canUpdateStatus && statusPortal.status === "PENDING" && (
           <>
@@ -719,10 +726,10 @@ const isUpdating =
     {/* ASSIGN TOOLTIP PORTAL */}
     {assignPortal && ReactDOM.createPortal(
       <div
-        style={{ position: "fixed", top: assignPortal.top, left: assignPortal.left, zIndex: 9999 }}
+        style={{ position: "fixed", top: assignPortal.top, right: assignPortal.right, zIndex: 9999, transformOrigin: "top right" }}
         onMouseEnter={keepAssignPortal}
         onMouseLeave={closeAssignPortal}
-        className="w-52 max-h-48 overflow-y-auto bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-3 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+        className="w-52 max-h-48 overflow-y-auto bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-3 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-[scaleIn_0.15s_ease-out_forwards]"
       >
         <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-zinc-500 mb-2">Assigned To</p>
         <div className="space-y-1.5">

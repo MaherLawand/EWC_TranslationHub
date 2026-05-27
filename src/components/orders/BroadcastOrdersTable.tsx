@@ -99,14 +99,14 @@ const [statusPortal, setStatusPortal] = React.useState<{
   orderId: string
   status: string
   top: number
-  left: number
+  right: number
 } | null>(null)
 const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
 function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  setStatusPortal({ orderId, status, top: rect.bottom + 6, left: rect.left })
+  setStatusPortal({ orderId, status, top: rect.bottom + 6, right: window.innerWidth - rect.right })
 }
 function closeStatusPortal() {
   statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
@@ -530,10 +530,10 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
     {/* STATUS PORTAL — rendered in document.body to escape overflow clipping */}
     {statusPortal && ReactDOM.createPortal(
       <div
-        style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999 }}
+        style={{ position: "fixed", top: statusPortal.top, right: statusPortal.right, zIndex: 9999, transformOrigin: "top right" }}
         onMouseEnter={keepStatusPortal}
         onMouseLeave={closeStatusPortal}
-        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)]"
+        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-[scaleIn_0.15s_ease-out_forwards]"
       >
         {canUpdateStatus && statusPortal.status === "PENDING" && (
           <>

@@ -378,9 +378,18 @@ export default function UsersPage({
                         title="Assign games"
                         className="h-9 w-9 rounded-xl bg-[#D6B36A]/10 border border-[#D6B36A]/20 text-[#D6B36A] hover:bg-[#D6B36A]/20 hover:border-[#D6B36A]/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="2" y="6" width="20" height="12" rx="2"/>
-                          <path d="M12 12h.01M8 12h.01M16 12h.01M6 9v6M10 9v6"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          {/* Controller body */}
+                          <path d="M6 9H3.5A1.5 1.5 0 002 10.5v1.8A4.7 4.7 0 006.7 17h10.6A4.7 4.7 0 0022 12.3v-1.8A1.5 1.5 0 0020.5 9H18" />
+                          {/* Grips / top bar */}
+                          <path d="M6 9V7a2 2 0 012-2h8a2 2 0 012 2v2" />
+                          {/* D-pad left */}
+                          <path d="M8.5 11.5h-2M7.5 10.5v2" />
+                          {/* Face buttons right (ABXY style) */}
+                          <circle cx="15" cy="11" r="0.6" fill="currentColor" stroke="none" />
+                          <circle cx="16.5" cy="12.5" r="0.6" fill="currentColor" stroke="none" />
+                          <circle cx="15" cy="14" r="0.6" fill="currentColor" stroke="none" />
+                          <circle cx="13.5" cy="12.5" r="0.6" fill="currentColor" stroke="none" />
                         </svg>
                       </button>
                     )}
