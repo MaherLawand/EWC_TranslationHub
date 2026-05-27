@@ -274,6 +274,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     fetchLockedUsers,
     clearLockout,
     isClearingLockout,
+    resendInvite,
   } = useUsers()
 
   const {
@@ -1030,6 +1031,7 @@ React.useEffect(() => {
                 lockedUsers={currentUser?.role === "ADMIN" ? lockedUsers : []}
                 clearLockout={clearLockout}
                 isClearingLockout={isClearingLockout}
+                resendInvite={currentUser?.role === "ADMIN" ? resendInvite : undefined}
               />
             )}
 

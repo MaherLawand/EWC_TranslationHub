@@ -174,6 +174,26 @@ export function useUsers() {
     }
   }
 
+  async function resendInvite(email: string) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/resend-invite`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      )
+      if (!response.ok) {
+        toast.error("Failed to resend invitation")
+        return
+      }
+      toast.success(`Invitation resent to ${email}`)
+    } catch {
+      toast.error("Failed to resend invitation")
+    }
+  }
+
   async function fetchLockedUsers() {
     try {
       const response = await fetch(
@@ -258,5 +278,6 @@ export function useUsers() {
     fetchLockedUsers,
     clearLockout,
     isClearingLockout,
+    resendInvite,
   }
 }

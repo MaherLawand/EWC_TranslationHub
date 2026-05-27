@@ -33,6 +33,7 @@ type Props = {
   lockedUsers?: { email: string; remainingSeconds: number }[]
   clearLockout?: (email: string) => void
   isClearingLockout?: string | null
+  resendInvite?: (email: string) => void
 }
 
 export default function UsersPage({
@@ -50,6 +51,7 @@ export default function UsersPage({
   lockedUsers = [],
   clearLockout,
   isClearingLockout,
+  resendInvite,
 }: Props) {
 
   function formatCountdown(seconds: number) {
@@ -350,79 +352,54 @@ export default function UsersPage({
 
                 {/* ACTIONS */}
                 <td className="px-6 py-2.5">
+                  <div className="flex items-center gap-2">
 
-                  <div className="flex items-center gap-3">
+                    {/* RESEND INVITE — admin only, inactive users only */}
+                    {resendInvite && !user.isActive && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); resendInvite(user.email) }}
+                        title="Resend invitation email"
+                        className="h-9 w-9 rounded-xl bg-[#D6B36A]/10 border border-[#D6B36A]/20 text-[#D6B36A] hover:bg-[#D6B36A]/20 hover:border-[#D6B36A]/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                          <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                      </button>
+                    )}
 
-                    {user.department ===
-  "BROADCAST" &&
+                    {/* ASSIGN GAMES — broadcast producers/ppms only */}
+                    {user.department === "BROADCAST" && (
+                      user.position === "PRODUCER" ||
+                      user.position === "POST_PRODUCTION_MANAGER"
+                    ) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openAssignGamesModal(user) }}
+                        title="Assign games"
+                        className="h-9 w-9 rounded-xl bg-[#D6B36A]/10 border border-[#D6B36A]/20 text-[#D6B36A] hover:bg-[#D6B36A]/20 hover:border-[#D6B36A]/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="6" width="20" height="12" rx="2"/>
+                          <path d="M12 12h.01M8 12h.01M16 12h.01M6 9v6M10 9v6"/>
+                        </svg>
+                      </button>
+                    )}
 
-(
-  user.position ===
-    "PRODUCER" ||
-
-  user.position ===
-    "POST_PRODUCTION_MANAGER"
-) && (
-
-  <button
-    onClick={(e) => {
-      e.stopPropagation()
-
-      openAssignGamesModal(
-        user
-      )
-    }}
-    className="
-      h-10
-      px-4
-      rounded-xl
-      bg-[#D6B36A]/10
-      border
-      border-[#D6B36A]/20
-      text-[#D6B36A]
-      hover:bg-[#D6B36A]/15
-      hover:border-[#D6B36A]/40
-      transition-all
-      duration-200
-      text-sm
-      font-medium
-    "
-  >
-    Assign Games
-  </button>
-
-)}
-
+                    {/* DELETE */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-
-                        setUserToDelete(user)
-
-                        setShowDeleteModal(true)
-                      }}
-                      className="
-                        h-10
-                        w-10
-                        rounded-xl
-                        bg-red-500/10
-                        border
-                        border-red-500/20
-                        text-red-400
-                        hover:bg-red-500/20
-                        hover:border-red-500/40
-                        transition-all
-                        duration-200
-                        flex
-                        items-center
-                        justify-center
-                      "
+                      onClick={(e) => { e.stopPropagation(); setUserToDelete(user); setShowDeleteModal(true) }}
+                      title="Delete user"
+                      className="h-9 w-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
                     >
-                      ✕
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4h6v2"/>
+                      </svg>
                     </button>
 
                   </div>
-
                 </td>
 
               </tr>
