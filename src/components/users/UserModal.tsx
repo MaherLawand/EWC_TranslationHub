@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type Props = {
   showUserModal: boolean
@@ -22,8 +22,18 @@ export default function UserModal({
   updateUser,
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [initialForm] = useState(() => JSON.stringify(userForm))
+  const [initialForm, setInitialForm] = useState(() => JSON.stringify(userForm))
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+
+  // Re-snapshot the form every time the modal opens so isDirty starts false
+  useEffect(() => {
+    if (showUserModal) {
+      setInitialForm(JSON.stringify(userForm))
+      setErrors({})
+      setShowDiscardConfirm(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showUserModal])
 
   if (!showUserModal) return null
 
@@ -236,12 +246,12 @@ export default function UserModal({
         {/* FOOTER */}
         <div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
           <button
-            disabled={isSavingUser}
+            disabled={isSavingUser || (isEditingUser && !isDirty)}
             onClick={handleSubmit}
             className={`
               w-full py-3.5 rounded-2xl font-semibold transition
               flex items-center justify-center gap-3
-              ${isSavingUser
+              ${isSavingUser || (isEditingUser && !isDirty)
                 ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
                 : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
               }

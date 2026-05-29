@@ -323,6 +323,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     setSelectedOrderDetail,
     isLoadingDetail,
     fetchOrderDetail,
+    fetchOrderCounts,
     toListOrder,
   } = useOrders({
     activePage,
@@ -590,6 +591,28 @@ React.useEffect(() => {
     document.title = `${badge}${pageLabel}`
   }, [activePage, selectedEvent, selectedOrderDetail?.title, currentUser?.notifications])
 
+  // Keep live refs so the socket closure (registered once on mount) always
+  // calls the latest function / reads the latest state without going stale.
+  // Updated INLINE during render (not in useEffect) so they are always current
+  // before any event handler — useEffect runs after paint and can miss events.
+  const selectedOrderDetailRef = React.useRef(selectedOrderDetail)
+  selectedOrderDetailRef.current = selectedOrderDetail
+
+  const fetchOrderDetailRef = React.useRef(fetchOrderDetail)
+  fetchOrderDetailRef.current = fetchOrderDetail
+
+  const fetchBroadcastOrdersRef = React.useRef(fetchBroadcastOrders)
+  fetchBroadcastOrdersRef.current = fetchBroadcastOrders
+
+  const fetchMarketingOrdersRef = React.useRef(fetchMarketingOrders)
+  fetchMarketingOrdersRef.current = fetchMarketingOrders
+
+  const broadcastPageRef = React.useRef(broadcastPage)
+  broadcastPageRef.current = broadcastPage
+
+  const marketingPageRef = React.useRef(marketingPage)
+  marketingPageRef.current = marketingPage
+
   React.useEffect(() => {
     if (!currentUser) return
 
@@ -597,6 +620,57 @@ React.useEffect(() => {
     // auth handshake needed. withCredentials sends the cookie on the upgrade.
     const socket = socketIo(import.meta.env.VITE_API_URL, {
       withCredentials: true,
+    })
+
+    // ── Real-time order list sync ─────────────────────────────────────────
+    // order-created: debounce refetch so burst creates (multiple users at once)
+    // collapse into a single request per client instead of one per mutation.
+    // order-created: debounce re-fetch (collapses bursts); always page 1 so
+    // the new order appears at the top. Respects active filters via the ref.
+    let createdTimer: ReturnType<typeof setTimeout> | null = null
+    socket.on("order-created", ({ type }: { type: string }) => {
+      if (createdTimer) clearTimeout(createdTimer)
+      createdTimer = setTimeout(() => {
+        if (type === "BROADCAST") { fetchBroadcastOrdersRef.current(1); fetchOrderCounts() }
+        else if (type === "MARKETING") { fetchMarketingOrdersRef.current(1); fetchOrderCounts() }
+      }, 2000)
+    })
+
+    // order-patched:
+    //   • with status  → patch row in-place (zero DB queries)
+    //   • without status → full edit: debounce re-fetch staying on current page
+    //                      + immediately refresh sidebar if that order is open
+    let patchedTimer: ReturnType<typeof setTimeout> | null = null
+    socket.on("order-patched", ({ id, type, status }: { id: string; type: string; status?: string }) => {
+      if (status) {
+        // Status-only — patch in-place, no re-fetch
+        if (type === "BROADCAST") {
+          setBroadcastOrders((prev: any[]) => prev.map((o) => o.id === id ? { ...o, status } : o))
+        } else if (type === "MARKETING") {
+          setMarketingOrders((prev: any[]) => prev.map((o) => o.id === id ? { ...o, status } : o))
+        }
+      } else {
+        // Full edit — stay on the user's current page, preserve filters
+        if (patchedTimer) clearTimeout(patchedTimer)
+        patchedTimer = setTimeout(() => {
+          if (type === "BROADCAST") fetchBroadcastOrdersRef.current(broadcastPageRef.current)
+          else if (type === "MARKETING") fetchMarketingOrdersRef.current(marketingPageRef.current)
+        }, 1000)
+        // Sidebar refresh — immediate, no debounce needed
+        if (selectedOrderDetailRef.current?.id === id) {
+          fetchOrderDetailRef.current(id)
+        }
+      }
+    })
+
+    // order-deleted: remove from list in-place, no re-fetch needed
+    socket.on("order-deleted", ({ id, type }: { id: string; type: string }) => {
+      if (type === "BROADCAST") {
+        setBroadcastOrders((prev: any[]) => prev.filter((o) => o.id !== id))
+      } else if (type === "MARKETING") {
+        setMarketingOrders((prev: any[]) => prev.filter((o) => o.id !== id))
+      }
+      fetchOrderCounts()
     })
 
     socket.on("new-notification", (notification: any) => {
@@ -633,6 +707,8 @@ React.useEffect(() => {
     })
 
     return () => {
+      if (createdTimer) clearTimeout(createdTimer)
+      if (patchedTimer) clearTimeout(patchedTimer)
       socket.disconnect()
     }
   }, [currentUser?.id])

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Select from "react-select"
 
 type Props = {
@@ -22,21 +22,23 @@ export default function AssignGamesModal({
   isSavingAssignments,
   user,
 }: Props) {
-  const initialGamesRef = useRef<string[]>([])
+  const [initialGames, setInitialGames] = useState<string[]>([])
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
+  // Re-snapshot every time the modal opens so isDirty starts false
   useEffect(() => {
     if (show) {
-      initialGamesRef.current = [...selectedGames]
+      setInitialGames([...selectedGames])
       setShowDiscardConfirm(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show])
 
   if (!show) return null
 
   const isDirty =
     JSON.stringify([...selectedGames].sort()) !==
-    JSON.stringify([...initialGamesRef.current].sort())
+    JSON.stringify([...initialGames].sort())
 
   function tryClose() {
     if (isDirty) {
@@ -164,10 +166,10 @@ export default function AssignGamesModal({
         {/* FOOTER */}
         <div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
           <button
-            disabled={isSavingAssignments}
+            disabled={isSavingAssignments || !isDirty}
             onClick={saveAssignments}
             className={`w-full py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-3 ${
-              isSavingAssignments
+              isSavingAssignments || !isDirty
                 ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
                 : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
             }`}

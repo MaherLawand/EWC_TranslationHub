@@ -194,11 +194,12 @@ function closeAssignModal() {
   setShowAssignDiscardConfirm(false)
 }
 
+const isAssignDirty =
+  JSON.stringify([...assignSelectedIds].sort()) !==
+  JSON.stringify([...initialAssignIdsRef.current].sort())
+
 function tryCloseAssignModal() {
-  const isDirty =
-    JSON.stringify([...assignSelectedIds].sort()) !==
-    JSON.stringify([...initialAssignIdsRef.current].sort())
-  if (isDirty) {
+  if (isAssignDirty) {
     setShowAssignDiscardConfirm(true)
   } else {
     closeAssignModal()
@@ -862,9 +863,9 @@ const isUpdating =
           <div className="border-t border-[#1E1E1E] p-5 rounded-b-3xl flex-shrink-0">
             <button
               onClick={saveAssign}
-              disabled={isSavingAssign}
+              disabled={isSavingAssign || !isAssignDirty}
               className={`w-full py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
-                isSavingAssign
+                isSavingAssign || !isAssignDirty
                   ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
                   : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
               }`}

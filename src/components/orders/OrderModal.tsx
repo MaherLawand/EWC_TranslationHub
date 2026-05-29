@@ -1310,10 +1310,10 @@ transition={{
 <div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
 
   <button
-    disabled={isSavingOrder}
+    disabled={isSavingOrder || (isEditing && !isDirty)}
     onClick={handleSubmit}
     className={`w-full py-3.5 rounded-2xl font-semibold transition ${
-      isSavingOrder
+      isSavingOrder || (isEditing && !isDirty)
         ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
         : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
     }`}
