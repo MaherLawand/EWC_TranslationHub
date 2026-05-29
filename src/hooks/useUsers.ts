@@ -180,6 +180,7 @@ export function useUsers() {
         `${import.meta.env.VITE_API_URL}/auth/resend-invite`,
         {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         }

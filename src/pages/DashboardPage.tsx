@@ -757,10 +757,11 @@ React.useEffect(() => {
 
   async function markNotificationsAsRead() {
     try {
-      await fetch(
+      const res = await fetch(
         `${import.meta.env.VITE_API_URL}/orders/notifications/read`,
         { method: "PATCH", credentials: "include" }
       )
+      if (!res.ok) return
       setCurrentUser((prev: any) => ({
         ...prev,
         notifications: prev.notifications.map((n: any) => ({
