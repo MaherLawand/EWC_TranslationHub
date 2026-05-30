@@ -1,5 +1,6 @@
 import React from "react"
 import SidebarItem from "../shared/SidebarItem"
+import { gearWarp } from "../../lib/gearHover"
 
 type Props = {
   activePage: string
@@ -134,12 +135,12 @@ export default function Sidebar({
           {/* ACTIVE BACKGROUND */}
           <div
             className={`
+              gear-fill
               absolute
               top-1
               bottom-1
               w-[calc(50%-4px)]
               rounded-xl
-              bg-[#D6B36A]
               transition-all
               duration-300
               ease-out
@@ -327,16 +328,17 @@ export default function Sidebar({
               flex
               items-center
               justify-center
-              text-[#D6B36A]
               font-bold
               text-sm
               shadow-[0_0_20px_rgba(214,179,106,0.08)]
               flex-shrink-0
             "
           >
-            {`${currentUser?.firstName?.[0] || ""}${
-              currentUser?.lastName?.[0] || ""
-            }`.toUpperCase()}
+            <span className="text-gear-gradient">
+              {`${currentUser?.firstName?.[0] || ""}${
+                currentUser?.lastName?.[0] || ""
+              }`.toUpperCase()}
+            </span>
           </div>
 
           {/* USER INFO */}
@@ -354,20 +356,15 @@ export default function Sidebar({
         {/* LOGOUT */}
         <button
           onClick={logout}
+          onMouseMove={gearWarp}
           className="
+            btn-gear
             w-full
             mt-5
             h-[48px]
             rounded-2xl
-            border
-            border-[#D6B36A]/20
-            bg-[#D6B36A]
-            text-black
             text-sm
             font-semibold
-            transition-all
-            hover:bg-[#E7C989]
-            hover:shadow-[0_0_25px_rgba(214,179,106,0.18)]
           "
         >
           Logout
@@ -415,7 +412,7 @@ function ParentNavItem({
         duration-300
         ${
           active
-            ? "bg-[#D6B36A] text-black font-semibold shadow-[0_0_25px_rgba(214,179,106,0.18)]"
+            ? "gear-fill text-black font-semibold shadow-[0_0_25px_rgba(214,179,106,0.18)]"
             : "text-zinc-400 bg-transparent hover:bg-[#151515] hover:text-[#F5F1E8]"
         }
       `}

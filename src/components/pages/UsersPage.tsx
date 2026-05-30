@@ -2,6 +2,7 @@ import React from "react"
 import ReactDOM from "react-dom"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
+import { gearWarp } from "../../lib/gearHover"
 
 type Props = {
   users: any[]
@@ -167,7 +168,8 @@ export default function UsersPage({
         {/* ADD USER */}
         <button
           onClick={openCreateUserModal}
-          className="h-[38px] px-4 rounded-xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] transition hover:bg-[#E4C27C] flex-shrink-0"
+          onMouseMove={gearWarp}
+          className="btn-gear h-[38px] px-4 rounded-xl text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] flex-shrink-0"
         >
           + Add User
         </button>
@@ -314,7 +316,7 @@ export default function UsersPage({
                         text-xs
                         font-semibold
                         tracking-wide
-                        text-[#D6B36A]
+                        text-gear-gradient
                       "
                     >
                       Admin
@@ -358,8 +360,9 @@ export default function UsersPage({
                     {resendInvite && !user.isActive && (
                       <button
                         onClick={(e) => { e.stopPropagation(); resendInvite(user.email) }}
+                        onMouseMove={gearWarp}
                         title="Resend invitation email"
-                        className="h-9 w-9 rounded-xl bg-[#D6B36A]/10 border border-[#D6B36A]/20 text-[#D6B36A] hover:bg-[#D6B36A]/20 hover:border-[#D6B36A]/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
+                        className="btn-gear h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -375,8 +378,9 @@ export default function UsersPage({
                     ) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); openAssignGamesModal(user) }}
+                        onMouseMove={gearWarp}
                         title="Assign games"
-                        className="h-9 w-9 rounded-xl bg-[#D6B36A]/10 border border-[#D6B36A]/20 text-[#D6B36A] hover:bg-[#D6B36A]/20 hover:border-[#D6B36A]/40 transition-all duration-200 flex items-center justify-center flex-shrink-0"
+                        className="btn-gear h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                           {/* Controller body */}
@@ -427,17 +431,18 @@ export default function UsersPage({
 
     {/* DELETE MODAL — rendered via portal to escape overflow-hidden container */}
     {showDeleteModal && ReactDOM.createPortal(
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
 
         <div
           className="
             w-[460px]
             rounded-[32px]
             border
-            border-[#242424]
-            bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
+            border-white/10
+            bg-white/5
+            backdrop-blur-2xl
             p-8
-            shadow-[0_20px_60px_rgba(0,0,0,0.55)]
+            shadow-[0_20px_80px_rgba(0,0,0,0.6)]
           "
         >
 
@@ -465,7 +470,7 @@ export default function UsersPage({
 
           <div className="text-center">
 
-            <h2 className="text-2xl font-bold text-[#F5F1E8] mb-3">
+            <h2 className="text-2xl font-bold text-gear-gradient w-fit mb-3">
               Delete User
             </h2>
 
@@ -498,12 +503,13 @@ export default function UsersPage({
                 h-[52px]
                 rounded-2xl
                 border
-                border-[#2A2A2A]
-                bg-[#151515]
-                text-[#F5F1E8]
+                border-white/15
+                bg-white/5
+                text-zinc-300
                 font-medium
                 transition-all
-                hover:bg-[#1B1B1B]
+                hover:text-white
+                hover:bg-white/10
               "
             >
               Cancel

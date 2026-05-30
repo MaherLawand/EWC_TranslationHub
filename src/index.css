@@ -2,39 +2,50 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Geist Variable — font-display: optional prevents CLS from font-swap.
-   With optional: if the font arrives before first paint it's used; if not,
-   the fallback is kept for that page view with NO subsequent swap/reflow. */
+/* Gear — EWC brand font, self-hosted from /src/assets/fonts/ */
 @font-face {
-  font-family: 'Geist Variable';
+  font-family: 'Gear';
   font-style: normal;
-  font-display: optional;
-  font-weight: 100 900;
-  src: url('@fontsource-variable/geist/files/geist-cyrillic-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  font-display: swap;
+  font-weight: 300;
+  src: url('./assets/fonts/Gear_Light.otf') format('opentype');
 }
 @font-face {
-  font-family: 'Geist Variable';
+  font-family: 'Gear';
   font-style: normal;
-  font-display: optional;
-  font-weight: 100 900;
-  src: url('@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+  font-display: swap;
+  font-weight: 400;
+  src: url('./assets/fonts/Gear_Regular.otf') format('opentype');
 }
 @font-face {
-  font-family: 'Geist Variable';
+  font-family: 'Gear';
   font-style: normal;
-  font-display: optional;
-  font-weight: 100 900;
-  src: url('@fontsource-variable/geist/files/geist-latin-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  font-display: swap;
+  font-weight: 500;
+  src: url('./assets/fonts/Gear_Medium.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Gear';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  tracking: -0.01em;
+  src: url('./assets/fonts/Gear_Bold.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Gear';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 900;
+  tracking: -0.01em;
+  src: url('./assets/fonts/Gear_Black.otf') format('opentype');
 }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Gear', Arial, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -154,6 +165,14 @@
   html {
     @apply font-sans;
     }
+  /* Premium: every enabled button shows a pointer on hover */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+    }
+  button:disabled {
+    cursor: not-allowed;
+    }
 }
 
 /* ── Dark vertical scrollbar (modals, panels) ──────────────────────────── */
@@ -184,4 +203,80 @@
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.85); }
   to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── EWC 26 gradient button — blobs warp/blend toward the cursor ──────── */
+.btn-gear {
+  background-color: #D9692A;
+  /* Three color blobs whose centers follow the cursor (--mx/--my),
+     so the colors slide together and blend where you hover.
+     Wide, soft falloff (color → mid → transparent) for a smooth blend */
+  background-image:
+    radial-gradient(circle at calc(var(--mx, 50%) - 22%) calc(var(--my, 50%) - 18%), #F0C75E 0%, rgba(240,199,94,0.5) 40%, transparent 80%),
+    radial-gradient(circle at calc(var(--mx, 50%) + 26%) calc(var(--my, 50%) - 10%), #E89B3A 0%, rgba(232,155,58,0.5) 42%, transparent 82%),
+    radial-gradient(circle at var(--mx, 50%) calc(var(--my, 50%) + 24%), #BE3F1E 0%, rgba(190,63,30,0.5) 42%, transparent 82%);
+  color: #1a0f06;
+  cursor: pointer;
+  transition: --mx 0.3s ease-out, --my 0.3s ease-out, box-shadow 0.35s ease;
+}
+.btn-gear:hover:not(:disabled) {
+  box-shadow:
+    0 14px 40px rgba(217, 105, 42, 0.35),
+    0 0 50px rgba(240, 199, 94, 0.25);
+}
+.btn-gear:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Register the position vars as animatable percentages for smooth warp */
+@property --mx {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+@property --my {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+/* ── EWC 26 static gradient fill — for active nav / toggles (no warp) ── */
+.gear-fill {
+  background-color: #D9692A;
+  background-image:
+    radial-gradient(circle at 26% 30%, #F0C75E 0%, rgba(240,199,94,0.5) 42%, transparent 82%),
+    radial-gradient(circle at 78% 28%, #E89B3A 0%, rgba(232,155,58,0.5) 44%, transparent 84%),
+    radial-gradient(circle at 52% 80%, #BE3F1E 0%, rgba(190,63,30,0.5) 44%, transparent 84%);
+  color: #1a0f06;
+}
+
+/* ── EWC 26 gradient text — for input labels / links ─────────────────── */
+.text-gear-gradient {
+  background-image: linear-gradient(95deg, #F0C75E 0%, #E89B3A 35%, #D9692A 65%, #BE3F1E 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ── Hover-only gradient text (e.g. language chips) ──────────────────── */
+.gear-hover-text:hover {
+  background-image: linear-gradient(95deg, #F0C75E 0%, #E89B3A 35%, #D9692A 65%, #BE3F1E 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  border-color: #D6B36A;
+}
+
+/* ── Hover-only gradient fill (e.g. filled language chips) ───────────── */
+.gear-hover-fill:hover {
+  background-color: #D9692A;
+  background-image:
+    radial-gradient(circle at 26% 30%, #F0C75E 0%, rgba(240,199,94,0.5) 42%, transparent 82%),
+    radial-gradient(circle at 78% 28%, #E89B3A 0%, rgba(232,155,58,0.5) 44%, transparent 84%),
+    radial-gradient(circle at 52% 80%, #BE3F1E 0%, rgba(190,63,30,0.5) 44%, transparent 84%);
+  color: #1a0f06;
+  border-color: transparent;
 }

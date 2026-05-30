@@ -5,6 +5,7 @@ import {
 } from "../../constants/languages"
 import Select from "react-select"
 import { motion, AnimatePresence } from "framer-motion"
+import { gearWarp } from "../../lib/gearHover"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import "../../../src/styling/datepicker-dark.css"
@@ -196,13 +197,13 @@ setNewOrder({
   const darkSelectStyles = {
   control: (base: any) => ({
     ...base,
-    backgroundColor: "#0A0A0A",
-    borderColor: "#2A2A2A",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.20)",
     minHeight: 48,
     borderRadius: 16,
     boxShadow: "none",
     ":hover": {
-      borderColor: "#3A3A3A",
+      borderColor: "#D6B36A",
     },
   }),
 
@@ -234,8 +235,8 @@ setNewOrder({
 
   multiValue: (base: any) => ({
     ...base,
-    backgroundColor: "#1A1A1A",
-    border: "1px solid #2A2A2A",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.18)",
     borderRadius: 8,
     paddingLeft: 4,
   }),
@@ -279,7 +280,7 @@ today.setHours(0, 0, 0, 0)
 
   return (
       <div
-        className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
         onClick={tryClose}
       >
 <motion.div
@@ -291,25 +292,25 @@ today.setHours(0, 0, 0, 0)
   },
 }}
   onClick={(e) => e.stopPropagation()}
-  className={`bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_0_80px_rgba(0,0,0,0.8)] w-full relative ${
+  className={`bg-white/5 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_20px_80px_rgba(0,0,0,0.6)] w-full relative ${
     newOrder.deliveries?.length > 0
       ? "sm:max-w-[1200px]"
       : "sm:max-w-[700px]"
   }`}
 >
       {/* HEADER */}
-      <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
+      <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">
             {isEditing ? "Editing" : "New Order"}
           </p>
-          <h2 className="text-xl font-bold text-[#F5F1E8]">
+          <h2 className="text-xl font-bold text-gear-gradient w-fit">
             {isEditing ? "Edit Order" : "Create Order"}
           </h2>
         </div>
         <button
           onClick={tryClose}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/20 transition text-sm"
         >
           ✕
         </button>
@@ -329,9 +330,9 @@ today.setHours(0, 0, 0, 0)
   <div className="space-y-6">
 
     {/* GENERAL */}
-    <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+    <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
 
-      <h3 className="text-lg font-semibold mb-5">
+      <h3 className="text-lg font-semibold mb-5 text-gear-gradient w-fit">
         General Information
       </h3>
 
@@ -339,21 +340,21 @@ today.setHours(0, 0, 0, 0)
 
         {/* TITLE */}
         <div className="col-span-full">
-          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+          <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
             Order Title <span className="text-red-400">*</span>
           </label>
           <input
             value={newOrder.title}
             onChange={(e) => { setNewOrder({ ...newOrder, title: e.target.value }); clearError("title") }}
             placeholder="Enter title"
-            className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none transition ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-[#2A2A2A] focus:border-[#D6B36A]"}`}
+            className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:bg-white/15 ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
           />
           {errors.title && <p className="text-red-400 text-xs mt-1.5">{errors.title}</p>}
         </div>
 
         {/* NOTES */}
 <div className="col-span-full">
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Notes
   </label>
 
@@ -369,16 +370,18 @@ today.setHours(0, 0, 0, 0)
     rows={5}
     className="
       w-full
-      bg-[#0A0A0A]
+      bg-white/10
       border
-      border-[#2A2A2A]
+      border-white/20
       rounded-2xl
       px-4
       py-3
-      text-[#F5F1E8]
+      text-white
+      placeholder:text-white/30
       resize-y
       outline-none
       focus:border-[#D6B36A]
+      focus:bg-white/15
       transition
     "
   />
@@ -386,7 +389,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* TYPE */}
         <div>
-          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+          <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
             Order Type
           </label>
 
@@ -408,7 +411,7 @@ today.setHours(0, 0, 0, 0)
               setAllUsers([])
               setErrors({})
             }}
-            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
           >
             <option value="BROADCAST">Broadcast</option>
             <option value="MARKETING">Marketing</option>
@@ -417,7 +420,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* STATUS */}
         <div>
-          <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+          <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
             Status
           </label>
 
@@ -433,7 +436,7 @@ today.setHours(0, 0, 0, 0)
                   e.target.value,
               })
             }
-            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
           >
             <option value="PENDING">
               Pending
@@ -450,7 +453,7 @@ today.setHours(0, 0, 0, 0)
         </div>
 
         <div>
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Priority
   </label>
 
@@ -462,7 +465,7 @@ today.setHours(0, 0, 0, 0)
         priority: e.target.value,
       })
     }
-    className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
   >
     <option value="LOW">
       Low
@@ -485,9 +488,9 @@ today.setHours(0, 0, 0, 0)
     {/* BROADCAST */}
     {newOrder.type ===
       "BROADCAST" && (
-      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+      <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
 
-        <h3 className="text-lg font-semibold mb-5">
+        <h3 className="text-lg font-semibold mb-5 text-gear-gradient w-fit">
           Broadcast Details
         </h3>
 
@@ -495,7 +498,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* GAME */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Game <span className="text-red-400">*</span>
             </label>
             <Select
@@ -517,21 +520,21 @@ today.setHours(0, 0, 0, 0)
 
           {/* MINUTES */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Estimated Minutes <span className="text-red-400">*</span>
             </label>
             <input
               type="number"
               value={newOrder.estimatedMinutes}
               onChange={(e) => { setNewOrder({ ...newOrder, estimatedMinutes: e.target.value }); clearError("estimatedMinutes") }}
-              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none transition ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-[#2A2A2A] focus:border-[#D6B36A]"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:bg-white/15 ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
             />
             {errors.estimatedMinutes && <p className="text-red-400 text-xs mt-1.5">{errors.estimatedMinutes}</p>}
           </div>
 
           {/* SOURCE LANGUAGES */}
           <div className="col-span-full">
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Source Languages
             </label>
 
@@ -585,7 +588,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* TARGET LANGUAGES */}
           <div className="col-span-full">
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Translate To
             </label>
 
@@ -661,7 +664,7 @@ today.setHours(0, 0, 0, 0)
 
         {/* FORMAT */}
 <div>
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Delivery Format
   </label>
 
@@ -718,7 +721,7 @@ today.setHours(0, 0, 0, 0)
 
           {/* SOURCE FILE */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Source File
             </label>
 
@@ -734,13 +737,13 @@ today.setHours(0, 0, 0, 0)
                     e.target.value,
                 })
               }
-              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
             />
           </div>
 
           {/* SRT AVAILABLE LINK */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               SRT Available Link
               <span className="text-zinc-600 text-xs ml-1">(optional)</span>
             </label>
@@ -754,13 +757,13 @@ today.setHours(0, 0, 0, 0)
                 })
               }
               placeholder="Paste SRT link..."
-              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
             />
           </div>
 
           {/* DELIVERY DATE */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Delivery Date <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -770,14 +773,14 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select delivery date"
               wrapperClassName="w-full"
-              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deliveryDate ? "border-red-500/60" : "border-[#2A2A2A]"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deliveryDate ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deliveryDate && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryDate}</p>}
           </div>
 
           {/* DEADLINE */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -787,7 +790,7 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
               wrapperClassName="w-full"
-              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
@@ -800,9 +803,9 @@ today.setHours(0, 0, 0, 0)
 {/* MARKETING */}
 {newOrder.type ===
   "MARKETING" && (
-  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
 
-    <h3 className="text-lg font-semibold mb-5">
+    <h3 className="text-lg font-semibold mb-5 text-gear-gradient w-fit">
       Marketing Details
     </h3>
 
@@ -811,7 +814,7 @@ today.setHours(0, 0, 0, 0)
       {/* CONTENT TITLE */}
 <div className="col-span-full">
 
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Content Title
   </label>
 
@@ -831,13 +834,17 @@ today.setHours(0, 0, 0, 0)
 
     className="
       w-full
-      bg-[#0A0A0A]
+      bg-white/10
       border
-      border-[#2A2A2A]
+      border-white/20
       rounded-2xl
       px-4
       py-3
-      text-[#F5F1E8]
+      text-white
+      outline-none
+      focus:border-[#D6B36A]
+      focus:bg-white/15
+      transition
     "
   >
 
@@ -867,7 +874,7 @@ today.setHours(0, 0, 0, 0)
 
       {/* FORMAT */}
       <div>
-        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
           Delivery Format
         </label>
 
@@ -924,7 +931,7 @@ today.setHours(0, 0, 0, 0)
       {/* SOURCE LANGUAGES */}
 <div className="col-span-full">
 
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Source Languages
   </label>
 
@@ -970,7 +977,7 @@ today.setHours(0, 0, 0, 0)
 {/* TARGET LANGUAGES */}
 <div className="col-span-full">
 
-  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Translate To
   </label>
 
@@ -1046,7 +1053,7 @@ today.setHours(0, 0, 0, 0)
 
       {/* SOURCE FILE */}
       <div>
-        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
           Source File
         </label>
 
@@ -1063,13 +1070,13 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste source link..."
-          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
         />
       </div>
 
       {/* SRT AVAILABLE LINK */}
       <div>
-        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
           SRT Available Link
           <span className="text-zinc-600 text-xs ml-1">(optional)</span>
         </label>
@@ -1083,13 +1090,13 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste SRT link..."
-          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
         />
       </div>
 
        {/* DEADLINE */}
           <div>
-            <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
@@ -1099,14 +1106,14 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
               wrapperClassName="w-full"
-              className={`w-full bg-[#0A0A0A] border rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition ${errors.deadline ? "border-red-500/60" : "border-[#2A2A2A]"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
 
       {/* DELIVERED LINK
       <div className="col-span-full">
-        <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
           Delivered Link
         </label>
 
@@ -1123,7 +1130,7 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste delivered file link..."
-          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-2xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
         />
       </div> */}
 
@@ -1134,10 +1141,10 @@ today.setHours(0, 0, 0, 0)
 
 {/* ASSIGN USERS — marketing only */}
 {newOrder.type === "MARKETING" && canAssignUsers && (
-  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+  <div className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
 
     <div className="mb-5">
-      <h3 className="text-lg font-semibold">Assign Users</h3>
+      <h3 className="text-lg font-semibold text-gear-gradient w-fit">Assign Users</h3>
       <p className="text-sm text-zinc-500 mt-0.5">
         {selectedUserIds.length > 0
           ? `${selectedUserIds.length} user${selectedUserIds.length > 1 ? "s" : ""} selected`
@@ -1201,11 +1208,11 @@ transition={{
   ease: [0.22, 1, 0.36, 1],
 }}
 
-  className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.05),transparent_60%)] bg-[#111111] border border-[#242424] rounded-[28px] p-6 flex flex-col h-fit sticky top-0 shadow-[0_0_40px_rgba(0,0,0,0.4)]"
+  className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 flex flex-col h-fit sticky top-0 shadow-[0_8px_40px_rgba(0,0,0,0.35)]"
 >
 
     <div className="mb-5">
-      <h3 className="text-lg font-semibold">
+      <h3 className="text-lg font-semibold text-gear-gradient w-fit">
         Delivery Assets
       </h3>
 
@@ -1225,7 +1232,7 @@ transition={{
             key={
               delivery.language
             }
-            className="bg-[#0D0D0D] border border-[#1E1E1E] rounded-2xl p-4"
+            className="bg-white/[0.03] border border-white/10 rounded-2xl p-4"
           >
 
             <p className="text-sm font-medium mb-3">
@@ -1262,7 +1269,7 @@ transition={{
 
               placeholder="Paste delivery link..."
 
-              className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
             />
 
           </div>
@@ -1279,7 +1286,7 @@ transition={{
     </div>
     <div className="space-y-4">
       {newOrder.deliveryFormats.map((formatItem: any, index: number) => (
-        <div key={formatItem.format} className="bg-[#0D0D0D] border border-[#1E1E1E] rounded-2xl p-4">
+        <div key={formatItem.format} className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
           <p className="text-sm font-medium mb-3">{formatItem.format}</p>
           <input
             type="url"
@@ -1290,7 +1297,7 @@ transition={{
               setNewOrder({ ...newOrder, deliveryFormats: updated })
             }}
             placeholder={`Paste ${formatItem.format} link...`}
-            className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#F5F1E8] outline-none focus:border-[#D6B36A] transition"
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
           />
         </div>
       ))}
@@ -1307,15 +1314,16 @@ transition={{
 </div>
 </div>
 {/* BUTTONS */}
-<div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
+<div className="border-t border-white/10 bg-white/[0.02] p-6 rounded-b-3xl flex-shrink-0">
 
   <button
     disabled={isSavingOrder || (isEditing && !isDirty)}
     onClick={handleSubmit}
+    onMouseMove={gearWarp}
     className={`w-full py-3.5 rounded-2xl font-semibold transition ${
       isSavingOrder || (isEditing && !isDirty)
         ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
-        : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
+        : "btn-gear"
     }`}
   >
     {isSavingOrder
@@ -1331,14 +1339,14 @@ transition={{
 
         {/* DISCARD CONFIRM OVERLAY */}
         {showDiscardConfirm && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
-            <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
+            <div className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-2xl p-6 w-full max-w-xs shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
               <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
               <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDiscardConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                  className="flex-1 py-2.5 rounded-xl border border-white/15 bg-white/5 text-zinc-300 text-sm hover:text-white hover:bg-white/10 transition"
                 >
                   Keep Editing
                 </button>

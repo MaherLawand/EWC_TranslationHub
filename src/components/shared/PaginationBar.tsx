@@ -139,7 +139,7 @@ export default function PaginationBar({ page, totalPages, onPageChange }: Props)
             className={`
               w-[38px] h-[38px] rounded-xl text-sm font-semibold transition-all
               ${active
-                ? "bg-[#D6B36A] text-black shadow-[0_0_20px_rgba(214,179,106,0.25)]"
+                ? "gear-fill shadow-[0_0_20px_rgba(214,179,106,0.25)]"
                 : "border border-[#2A2A2A] bg-[#151515] text-zinc-400 hover:border-[#D6B36A] hover:text-white"
               }
             `}

@@ -99,15 +99,20 @@ export default function LoginPage() {
     >
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
-      {/* BACKGROUND GLOW */}
-      <div
-        className="
-          absolute
-          inset-0
-          bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.10),transparent_40%)]
-          pointer-events-none
-        "
+      {/* BACKGROUND VIDEO */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-cover"
+        src="/bg-video.mp4"
       />
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+      {/* GOLD GLOW */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_40%)] pointer-events-none" />
 
       {/* CARD */}
       <form
@@ -119,40 +124,21 @@ export default function LoginPage() {
           w-[420px]
           rounded-[36px]
           border
-          border-[#242424]
-          bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
+          border-white/10
+          bg-white/5
           p-10
-          shadow-[0_20px_80px_rgba(0,0,0,0.55)]
+          shadow-[0_20px_80px_rgba(0,0,0,0.6)]
           backdrop-blur-2xl
         "
       >
 
         {/* HEADER */}
         <div className="mb-8">
-          <p
-            className="
-              text-[11px]
-              uppercase
-              tracking-[0.38em]
-              text-[#D6B36A]
-              font-semibold
-              mb-3
-            "
-          >
-            EWC
-          </p>
-          <h1
-            className="
-              text-[34px]
-              leading-[1.05]
-              font-bold
-              tracking-[-0.04em]
-              text-[#F5F1E8]
-            "
-          >
-            Translation
-            Hub
-          </h1>
+          <img
+            src="/ewc26-logo.webp"
+            alt="EWC 26 Paris"
+            className="h-12 w-auto object-contain mb-6 mx-auto block"
+          />
           <p className="text-zinc-500 mt-4 text-sm">
             Sign in to continue
           </p>
@@ -205,7 +191,7 @@ export default function LoginPage() {
                 text-xs
                 uppercase
                 tracking-[0.18em]
-                text-zinc-500
+                text-gear-gradient
                 font-semibold
                 mb-3
               "
@@ -226,19 +212,19 @@ export default function LoginPage() {
                 h-[56px]
                 rounded-2xl
                 border
-                bg-[#121212]
+                bg-white/10
                 px-5
                 text-sm
                 text-white
                 outline-none
                 transition-all
-                placeholder:text-zinc-600
-                focus:bg-[#151515]
-                focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-                disabled:opacity-60
+                placeholder:text-white/30
+                focus:bg-white/15
+                focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]
+                disabled:opacity-50
                 ${errors.email
                   ? "border-red-500/60 focus:border-red-500"
-                  : "border-[#2A2A2A] focus:border-[#D6B36A]"
+                  : "border-white/20 focus:border-[#D6B36A]"
                 }
               `}
             />
@@ -255,7 +241,7 @@ export default function LoginPage() {
                 text-xs
                 uppercase
                 tracking-[0.18em]
-                text-zinc-500
+                text-gear-gradient
                 font-semibold
                 mb-3
               "
@@ -277,20 +263,20 @@ export default function LoginPage() {
                   h-[56px]
                   rounded-2xl
                   border
-                  bg-[#121212]
+                  bg-white/10
                   px-5
                   pr-12
                   text-sm
                   text-white
                   outline-none
                   transition-all
-                  placeholder:text-zinc-600
-                  focus:bg-[#151515]
-                  focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-                  disabled:opacity-60
+                  placeholder:text-white/30
+                  focus:bg-white/15
+                  focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]
+                  disabled:opacity-50
                   ${errors.password
                     ? "border-red-500/60 focus:border-red-500"
-                    : "border-[#2A2A2A] focus:border-[#D6B36A]"
+                    : "border-white/20 focus:border-[#D6B36A]"
                   }
                 `}
               />
@@ -298,21 +284,35 @@ export default function LoginPage() {
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-zinc-500
-                  hover:text-zinc-300
-                  transition
-                  text-xs
-                  font-semibold
-                  uppercase
-                  tracking-wide
+                  absolute right-4 top-1/2 -translate-y-1/2
+                  cursor-pointer transition hover:opacity-80
                 "
               >
-                {showPassword ? "Hide" : "Show"}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#eyeGradLogin)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <defs>
+                    <linearGradient id="eyeGradLogin" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#F0C75E" />
+                      <stop offset="35%" stopColor="#E89B3A" />
+                      <stop offset="65%" stopColor="#D9692A" />
+                      <stop offset="100%" stopColor="#BE3F1E" />
+                    </linearGradient>
+                  </defs>
+                  {showPassword ? (
+                    <>
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </>
+                  )}
+                </svg>
               </button>
             </div>
             {errors.password && (
@@ -326,23 +326,19 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading || isLocked}
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`)
+            e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`)
+          }}
           className="
+            btn-gear
             w-full
             h-[56px]
             mt-8
             rounded-2xl
-            border
-            border-[#D6B36A]/20
-            bg-[#D6B36A]
-            text-black
             text-sm
             font-semibold
-            transition-all
-            hover:bg-[#E7C989]
-            hover:shadow-[0_0_30px_rgba(214,179,106,0.20)]
-            active:scale-[0.99]
-            disabled:opacity-60
-            disabled:cursor-not-allowed
           "
         >
           {isLocked
@@ -357,7 +353,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => navigate("/forgot-password")}
-            className="text-zinc-500 hover:text-[#D6B36A] transition font-medium"
+            className="text-gear-gradient hover:opacity-80 transition font-semibold cursor-pointer"
           >
             Forgot password?
           </button>

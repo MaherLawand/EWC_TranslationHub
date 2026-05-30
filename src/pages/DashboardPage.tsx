@@ -1025,7 +1025,7 @@ React.useEffect(() => {
                             duration-200
                             cursor-pointer
                             ${active
-                              ? "bg-[#D6B36A] text-black border-[#D6B36A] shadow-[0_0_18px_rgba(214,179,106,0.25)]"
+                              ? "gear-fill border-transparent shadow-[0_0_18px_rgba(214,179,106,0.25)]"
                               : "bg-[#151515] text-zinc-400 border-[#2A2A2A] hover:border-[#3A3A3A] hover:text-white"
                             }
                           `}
@@ -1232,14 +1232,14 @@ React.useEffect(() => {
 
         {/* DELETE CONFIRM MODAL */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center px-4">
-            <div className="w-full max-w-[480px] bg-[#0E0E0E] border border-zinc-800 rounded-3xl p-8">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center px-4">
+            <div className="w-full max-w-[480px] bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
 
               <div className="mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl mb-5">
                   !
                 </div>
-                <h2 className="text-2xl font-bold">Delete Order</h2>
+                <h2 className="text-2xl font-bold text-gear-gradient w-fit">Delete Order</h2>
                 <p className="text-zinc-500 mt-3 leading-relaxed">
                   This action cannot be undone.
                   The order and all related delivery
@@ -1250,7 +1250,7 @@ React.useEffect(() => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="bg-zinc-900 border border-zinc-800 py-3 rounded-2xl font-semibold hover:bg-zinc-800 transition"
+                  className="bg-white/5 border border-white/15 text-zinc-300 py-3 rounded-2xl font-semibold hover:text-white hover:bg-white/10 transition"
                 >
                   Cancel
                 </button>

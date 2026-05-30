@@ -7,13 +7,15 @@ function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505] relative overflow-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.10),transparent_40%)] pointer-events-none" />
+      <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" src="/bg-video.mp4" />
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_40%)] pointer-events-none" />
       <div
         className="
           relative z-10 w-[420px]
-          rounded-[36px] border border-[#242424]
-          bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
-          p-10 shadow-[0_20px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl
+          rounded-[36px] border border-white/10
+          bg-white/5
+          p-10 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl
         "
       >
         {children}
@@ -81,8 +83,8 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="text-center mb-8">
-          <p className="text-[11px] uppercase tracking-[0.38em] text-[#D6B36A] font-semibold mb-3">EWC</p>
-          <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-[#F5F1E8] mb-3">
+          <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-10 w-auto object-contain mx-auto mb-5" />
+          <h1 className="text-[28px] leading-[1.1] font-bold tracking-[0.01em] text-[#F5F1E8] mb-3">
             Check your inbox
           </h1>
           <p className="text-zinc-400 text-sm leading-relaxed">
@@ -111,10 +113,8 @@ export default function ForgotPasswordPage() {
     <PageShell>
       {/* Header */}
       <div className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.38em] text-[#D6B36A] font-semibold mb-3">
-          EWC
-        </p>
-        <h1 className="text-[32px] leading-[1.05] font-bold tracking-[-0.04em] text-[#F5F1E8]">
+        <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-12 w-auto object-contain mb-6 mx-auto block" />
+        <h1 className="text-[32px] leading-[1.05] font-bold tracking-[0.01em] text-[#F5F1E8]">
           Forgot Password
         </h1>
         <p className="text-zinc-500 mt-3 text-sm">
@@ -127,7 +127,7 @@ export default function ForgotPasswordPage() {
           <label
             className="
               block text-xs uppercase tracking-[0.18em]
-              text-zinc-500 font-semibold mb-3
+              text-gear-gradient font-semibold mb-3
             "
           >
             Email
@@ -142,14 +142,14 @@ export default function ForgotPasswordPage() {
               if (emailError) setEmailError("")
             }}
             className={`
-              w-full h-[56px] rounded-2xl border bg-[#121212]
+              w-full h-[56px] rounded-2xl border bg-white/10
               px-5 text-sm text-white outline-none transition-all
-              placeholder:text-zinc-600
-              focus:bg-[#151515] focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-              disabled:opacity-60
+              placeholder:text-white/30
+              focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]
+              disabled:opacity-50
               ${emailError
                 ? "border-red-500/60 focus:border-red-500"
-                : "border-[#2A2A2A] focus:border-[#D6B36A]"
+                : "border-white/20 focus:border-[#D6B36A]"
               }
             `}
           />
@@ -161,11 +161,13 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={isLoading}
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`)
+            e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`)
+          }}
           className="
-            w-full h-[56px] mt-6 rounded-2xl border border-[#D6B36A]/20
-            bg-[#D6B36A] text-black text-sm font-semibold
-            transition-all hover:bg-[#E7C989] hover:shadow-[0_0_30px_rgba(214,179,106,0.20)]
-            active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed
+            btn-gear w-full h-[56px] mt-6 rounded-2xl text-sm font-semibold
           "
         >
           {isLoading ? "Sending..." : "Send Reset Link"}
@@ -176,7 +178,7 @@ export default function ForgotPasswordPage() {
         Remember your password?{" "}
         <button
           onClick={() => navigate("/login")}
-          className="text-[#D6B36A] hover:text-[#E7C989] transition font-medium"
+          className="text-gear-gradient hover:opacity-80 transition font-semibold cursor-pointer"
         >
           Back to login
         </button>

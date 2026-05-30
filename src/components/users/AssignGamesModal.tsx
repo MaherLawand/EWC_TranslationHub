@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import Select from "react-select"
+import { gearWarp } from "../../lib/gearHover"
 
 type Props = {
   show: boolean
@@ -51,12 +52,12 @@ export default function AssignGamesModal({
   const darkSelectStyles = {
     control: (base: any) => ({
       ...base,
-      backgroundColor: "#0A0A0A",
-      borderColor: "#2A2A2A",
+      backgroundColor: "rgba(255,255,255,0.10)",
+      borderColor: "rgba(255,255,255,0.20)",
       minHeight: 48,
       borderRadius: 16,
       boxShadow: "none",
-      ":hover": { borderColor: "#3A3A3A" },
+      ":hover": { borderColor: "#D6B36A" },
     }),
     menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
     menu: (base: any) => ({
@@ -106,25 +107,25 @@ export default function AssignGamesModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={tryClose}
     >
       <div
-        className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
+        className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
         onClick={(e) => e.stopPropagation()}
       >
 
         {/* HEADER */}
-        <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
+        <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">
               {user?.firstName} {user?.lastName}
             </p>
-            <h2 className="text-xl font-bold text-[#F5F1E8]">Assign Games</h2>
+            <h2 className="text-xl font-bold text-gear-gradient w-fit">Assign Games</h2>
           </div>
           <button
             onClick={tryClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/20 transition text-sm"
           >
             ✕
           </button>
@@ -132,7 +133,7 @@ export default function AssignGamesModal({
 
         {/* BODY */}
         <div className="flex-1 overflow-auto dark-scroll p-8">
-          <div className="bg-[#111111] border border-[#242424] rounded-[28px] p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+          <div className="bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
             <h3 className="text-sm font-semibold text-[#F5F1E8] mb-4">Game Assignments</h3>
             <div>
               <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
@@ -164,14 +165,15 @@ export default function AssignGamesModal({
         </div>
 
         {/* FOOTER */}
-        <div className="border-t border-[#1E1E1E] bg-[#0A0A0A] p-6 rounded-b-3xl flex-shrink-0">
+        <div className="border-t border-white/10 bg-white/[0.02] p-6 rounded-b-3xl flex-shrink-0">
           <button
             disabled={isSavingAssignments || !isDirty}
             onClick={saveAssignments}
+            onMouseMove={gearWarp}
             className={`w-full py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-3 ${
               isSavingAssignments || !isDirty
                 ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
-                : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
+                : "btn-gear"
             }`}
           >
             {isSavingAssignments && (
@@ -183,14 +185,14 @@ export default function AssignGamesModal({
 
         {/* DISCARD CONFIRM OVERLAY */}
         {showDiscardConfirm && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
-            <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center rounded-t-3xl sm:rounded-3xl z-10 px-6">
+            <div className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-2xl p-6 w-full max-w-xs shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
               <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
               <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDiscardConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                  className="flex-1 py-2.5 rounded-xl border border-white/15 bg-white/5 text-zinc-300 text-sm hover:text-white hover:bg-white/10 transition"
                 >
                   Keep Editing
                 </button>

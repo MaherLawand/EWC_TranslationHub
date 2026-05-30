@@ -4,6 +4,7 @@ import { LANGUAGES } from "../../constants/languages"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
+import { gearWarp } from "../../lib/gearHover"
 
 // Pre-built O(1) lookup — avoids a linear .find() scan on every render per pill
 const LANG_CODE_MAP = new Map(
@@ -304,14 +305,15 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
         </div>
 
         {/* ORDER COUNT */}
-        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-[#D6B36A] font-medium flex-shrink-0">
+        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-gear-gradient font-medium flex-shrink-0">
           {orders.length} Orders
         </div>
 
         {/* RESET */}
         <button
           onClick={onResetFilters}
-          className="h-[38px] px-4 rounded-xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] transition hover:bg-[#E4C27C] flex-shrink-0"
+          onMouseMove={gearWarp}
+          className="btn-gear h-[38px] px-4 rounded-xl text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] flex-shrink-0"
         >
           Reset
         </button>
@@ -484,7 +486,7 @@ const isUpdating =
         <div className="flex flex-wrap gap-1">
           {marketing.sourceLanguage.map((lang: string) => (
             <div key={lang} className="group/pill relative">
-              <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
+              <div className="gear-hover-text min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 transition cursor-default">
                 {getLanguageCode(lang)}
               </div>
               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
@@ -506,7 +508,7 @@ const isUpdating =
         <div className="flex flex-wrap gap-1">
           {marketing.targetLanguages.map((lang: string) => (
             <div key={lang} className="group/pill relative">
-              <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
+              <div className="gear-hover-fill min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] transition cursor-default">
                 {getLanguageCode(lang)}
               </div>
               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
@@ -747,21 +749,21 @@ const isUpdating =
 
     {/* ASSIGN MODAL */}
     {assignOrderId && (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={tryCloseAssignModal}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={tryCloseAssignModal}>
         <div
-          className="bg-[#0A0A0A] border border-[#1E1E1E] rounded-3xl w-[480px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh] relative"
+          className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl w-[480px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh] relative"
           onClick={(e) => e.stopPropagation()}
         >
 
           {/* HEADER */}
-          <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-[#1E1E1E] bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.06),transparent_70%)] rounded-t-3xl flex-shrink-0">
+          <div className="flex items-center justify-between px-7 pt-6 pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">Marketing Order</p>
-              <h2 className="text-lg font-bold text-[#F5F1E8]">Assign Users</h2>
+              <h2 className="text-lg font-bold text-gear-gradient w-fit">Assign Users</h2>
             </div>
             <button
               onClick={tryCloseAssignModal}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-500 hover:text-white hover:border-[#3A3A3A] transition text-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/20 transition text-sm"
             >
               ✕
             </button>
@@ -778,9 +780,9 @@ const isUpdating =
                   .map((u) => (
                     <span
                       key={u.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A1A1A] border border-[#D6B36A]/30 text-[#D6B36A] text-xs font-semibold"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-[#D6B36A]/30 text-xs font-semibold"
                     >
-                      {u.firstName} {u.lastName}
+                      <span className="text-gear-gradient">{u.firstName} {u.lastName}</span>
                       <button
                         onClick={() => toggleUser(u)}
                         className="text-[#D6B36A]/60 hover:text-white transition leading-none"
@@ -798,7 +800,7 @@ const isUpdating =
               value={assignSearch}
               onChange={(e) => setAssignSearch(e.target.value)}
               placeholder="Search users..."
-              className="w-full bg-[#111111] border border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-[#F5F1E8] placeholder:text-zinc-600 outline-none focus:border-[#D6B36A] transition"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#D6B36A] focus:bg-white/15 transition"
             />
 
             {/* USER LIST */}
@@ -829,20 +831,20 @@ const isUpdating =
                         onClick={() => toggleUser(u)}
                         className={`cursor-pointer w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition text-left ${
                           selected
-                            ? "bg-[#1A1A1A] border-[#D6B36A]/30"
-                            : "bg-[#111111] border-[#1E1E1E] hover:border-[#2A2A2A]"
+                            ? "bg-white/10 border-[#D6B36A]/30"
+                            : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/20"
                         }`}
                       >
                         <div>
-                          <p className={`text-sm font-semibold ${selected ? "text-[#F5F1E8]" : "text-zinc-300"}`}>
+                          <p className={`text-sm font-semibold ${selected ? "text-[#F5F1E8]" : "text-zinc-200"}`}>
                             {u.firstName} {u.lastName}
                           </p>
                           {u.position && (
-                            <p className="text-xs text-zinc-600 mt-0.5">{u.position.replace(/_/g, " ")}</p>
+                            <p className="text-xs text-zinc-400 mt-0.5">{u.position.replace(/_/g, " ")}</p>
                           )}
                         </div>
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition ${
-                          selected ? "bg-[#D6B36A] border-[#D6B36A]" : "border-[#2A2A2A]"
+                          selected ? "bg-[#D6B36A] border-[#D6B36A]" : "border-white/30"
                         }`}>
                           {selected && (
                             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -860,14 +862,15 @@ const isUpdating =
           </div>
 
           {/* FOOTER */}
-          <div className="border-t border-[#1E1E1E] p-5 rounded-b-3xl flex-shrink-0">
+          <div className="border-t border-white/10 bg-white/[0.02] p-5 rounded-b-3xl flex-shrink-0">
             <button
               onClick={saveAssign}
               disabled={isSavingAssign || !isAssignDirty}
+              onMouseMove={gearWarp}
               className={`w-full py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
                 isSavingAssign || !isAssignDirty
                   ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
-                  : "bg-[#D6B36A] text-black hover:bg-[#E4C27C]"
+                  : "btn-gear"
               }`}
             >
               {isSavingAssign && <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />}
@@ -877,14 +880,14 @@ const isUpdating =
 
           {/* DISCARD CONFIRM OVERLAY */}
           {showAssignDiscardConfirm && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-3xl z-10 px-6">
-              <div className="bg-[#111111] border border-[#2A2A2A] rounded-2xl p-6 w-full max-w-xs shadow-2xl">
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center rounded-3xl z-10 px-6">
+              <div className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-2xl p-6 w-full max-w-xs shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
                 <p className="text-[#F5F1E8] font-semibold text-sm mb-1">Discard changes?</p>
                 <p className="text-zinc-500 text-xs mb-5">You have unsaved changes that will be lost if you close.</p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowAssignDiscardConfirm(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-[#2A2A2A] text-zinc-400 text-sm hover:text-white hover:border-[#3A3A3A] transition"
+                    className="flex-1 py-2.5 rounded-xl border border-white/15 bg-white/5 text-zinc-300 text-sm hover:text-white hover:bg-white/10 transition"
                   >
                     Keep Editing
                   </button>

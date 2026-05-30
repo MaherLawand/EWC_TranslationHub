@@ -1,4 +1,5 @@
 import React from "react"
+import { gearWarp } from "../../lib/gearHover"
 
 type Props = {
   notifications: any[]
@@ -41,7 +42,7 @@ export default function NotificationsPage({
   function renderNotificationLine(notification: any, order: any) {
     const msg = notification.message ?? ""
     const unread = !notification.isRead
-    const gold = unread ? "text-[#D6B36A]" : "text-[#6B4F1A]"
+    const gold = unread ? "text-gear-gradient" : "text-gear-gradient opacity-50"
     const muted = unread ? "text-zinc-400" : "text-zinc-600"
 
     // "X has been marked as completed by John Doe"
@@ -133,22 +134,17 @@ export default function NotificationsPage({
         <button
           type="button"
           onClick={markNotificationsAsRead}
+          onMouseMove={gearWarp}
           className="
+            btn-gear
             h-[46px]
             px-5
             rounded-2xl
-            border
-            border-[#D6B36A]/20
-            bg-[#D6B36A]
-            text-black
             text-sm
             font-semibold
-            transition-all
             flex
             items-center
             justify-center
-            hover:bg-[#E7C989]
-            hover:shadow-[0_0_25px_rgba(214,179,106,0.18)]
             active:scale-[0.98]
             flex-shrink-0
           "
@@ -265,11 +261,10 @@ paginatedNotifications.map(
             <div className="flex-shrink-0">
               <div
                 className="
+                  gear-fill
                   px-2.5
                   h-[20px]
                   rounded-full
-                  bg-[#D6B36A]
-                  text-black
                   text-[10px]
                   font-bold
                   flex
@@ -366,8 +361,7 @@ paginatedNotifications.map(
                     ${
                       active
                         ? `
-                          bg-[#D6B36A]
-                          text-black
+                          gear-fill
                           shadow-[0_0_20px_rgba(214,179,106,0.25)]
                         `
                         : `

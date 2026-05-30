@@ -25,7 +25,7 @@ export default function SidebarItem({
         ${
           active
             ? `
-              bg-[#D6B36A]
+              gear-fill
               text-black
               font-semibold
               shadow-[0_0_25px_rgba(214,179,106,0.18)]

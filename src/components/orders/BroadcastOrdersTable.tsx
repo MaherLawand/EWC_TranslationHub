@@ -3,6 +3,7 @@ import ReactDOM from "react-dom"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
+import { gearWarp } from "../../lib/gearHover"
 
 import { LANGUAGES } from "../../constants/languages"
 
@@ -193,14 +194,15 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
         </div>
 
         {/* ORDER COUNT */}
-        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-[#D6B36A] font-medium flex-shrink-0">
+        <div className="h-[38px] px-3 flex items-center rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] text-sm text-gear-gradient font-medium flex-shrink-0">
           {orders.length} Orders
         </div>
 
         {/* RESET */}
         <button
           onClick={onResetFilters}
-          className="h-[38px] px-4 rounded-xl bg-[#D6B36A] text-black text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] transition hover:bg-[#E4C27C] flex-shrink-0"
+          onMouseMove={gearWarp}
+          className="btn-gear h-[38px] px-4 rounded-xl text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] flex-shrink-0"
         >
           Reset
         </button>
@@ -361,7 +363,7 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
                       <div className="flex flex-wrap gap-1">
                         {broadcast.sourceLanguage.map((lang: string) => (
                           <div key={lang} className="group/pill relative">
-                            <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
+                            <div className="gear-hover-text min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 transition cursor-default">
                               {getLanguageCode(lang)}
                             </div>
                             <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
@@ -383,7 +385,7 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
                       <div className="flex flex-wrap gap-1">
                         {broadcast.targetLanguages.map((lang: string) => (
                           <div key={lang} className="group/pill relative">
-                            <div className="min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
+                            <div className="gear-hover-fill min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] transition cursor-default">
                               {getLanguageCode(lang)}
                             </div>
                             <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">

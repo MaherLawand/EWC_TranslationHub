@@ -15,13 +15,15 @@ function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505] relative overflow-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.10),transparent_40%)] pointer-events-none" />
+      <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" src="/bg-video.mp4" />
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_40%)] pointer-events-none" />
       <div
         className="
           relative z-10 w-[440px]
-          rounded-[36px] border border-[#242424]
-          bg-[linear-gradient(180deg,#111111_0%,#0B0B0B_100%)]
-          p-10 shadow-[0_20px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl
+          rounded-[36px] border border-white/10
+          bg-white/5
+          p-10 shadow-[0_20px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl
         "
       >
         {children}
@@ -44,8 +46,8 @@ function ExpiredScreen() {
       </div>
 
       <div className="text-center mb-8">
-        <p className="text-[11px] uppercase tracking-[0.38em] text-[#D6B36A] font-semibold mb-3">EWC</p>
-        <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-[#F5F1E8] mb-3">
+        <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-10 w-auto object-contain mx-auto mb-5" />
+        <h1 className="text-[28px] leading-[1.1] font-bold tracking-[0.01em] text-[#F5F1E8] mb-3">
           Link Expired
         </h1>
         <p className="text-zinc-400 text-sm leading-relaxed">
@@ -156,10 +158,8 @@ export default function ResetPasswordPage() {
   return (
     <PageShell>
       <div className="mb-8">
-        <p className="text-[11px] uppercase tracking-[0.38em] text-[#D6B36A] font-semibold mb-3">
-          EWC
-        </p>
-        <h1 className="text-[32px] leading-[1.05] font-bold tracking-[-0.04em] text-[#F5F1E8]">
+        <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-12 w-auto object-contain mb-6 mx-auto block" />
+        <h1 className="text-[32px] leading-[1.05] font-bold tracking-[0.01em] text-[#F5F1E8]">
           Reset Password
         </h1>
         <p className="text-zinc-500 mt-3 text-sm">
@@ -172,7 +172,7 @@ export default function ResetPasswordPage() {
 
           {/* PASSWORD */}
           <div>
-            <label className="block text-xs uppercase tracking-[0.18em] text-zinc-500 font-semibold mb-3">
+            <label className="block text-xs uppercase tracking-[0.18em] text-gear-gradient font-semibold mb-3">
               New Password
             </label>
             <div className="relative">
@@ -183,27 +183,50 @@ export default function ResetPasswordPage() {
                 disabled={loading}
                 onChange={(e) => { setPassword(e.target.value); setError("") }}
                 className="
-                  w-full h-[56px] rounded-2xl border border-[#2A2A2A]
-                  bg-[#121212] px-5 pr-12 text-sm text-white outline-none transition-all
-                  placeholder:text-zinc-600
-                  focus:border-[#D6B36A] focus:bg-[#151515] focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-                  disabled:opacity-60
+                  w-full h-[56px] rounded-2xl border border-white/20
+                  bg-white/10 px-5 pr-12 text-sm text-white outline-none transition-all
+                  placeholder:text-white/30
+                  focus:border-[#D6B36A] focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]
+                  disabled:opacity-50
                 "
               />
               <button
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition text-xs font-semibold uppercase tracking-wide"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer transition hover:opacity-80"
               >
-                {showPassword ? "Hide" : "Show"}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#eyeGradReset1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <defs>
+                    <linearGradient id="eyeGradReset1" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#F0C75E" />
+                      <stop offset="35%" stopColor="#E89B3A" />
+                      <stop offset="65%" stopColor="#D9692A" />
+                      <stop offset="100%" stopColor="#BE3F1E" />
+                    </linearGradient>
+                  </defs>
+                  {showPassword ? (
+                    <>
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </>
+                  )}
+                </svg>
               </button>
             </div>
           </div>
 
           {/* CONFIRM */}
           <div>
-            <label className="block text-xs uppercase tracking-[0.18em] text-zinc-500 font-semibold mb-3">
+            <label className="block text-xs uppercase tracking-[0.18em] text-gear-gradient font-semibold mb-3">
               Confirm Password
             </label>
             <div className="relative">
@@ -214,15 +237,15 @@ export default function ResetPasswordPage() {
                 disabled={loading}
                 onChange={(e) => { setConfirm(e.target.value); setError("") }}
                 className={`
-                  w-full h-[56px] rounded-2xl border bg-[#121212] px-5 pr-12 text-sm text-white
-                  outline-none transition-all placeholder:text-zinc-600
-                  focus:bg-[#151515] focus:shadow-[0_0_25px_rgba(214,179,106,0.10)]
-                  disabled:opacity-60
+                  w-full h-[56px] rounded-2xl border bg-white/10 px-5 pr-12 text-sm text-white
+                  outline-none transition-all placeholder:text-white/30
+                  focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]
+                  disabled:opacity-50
                   ${confirm && password !== confirm
                     ? "border-red-500/60 focus:border-red-500"
                     : confirm && password === confirm
                     ? "border-green-500/50 focus:border-green-500"
-                    : "border-[#2A2A2A] focus:border-[#D6B36A]"
+                    : "border-white/20 focus:border-[#D6B36A]"
                   }
                 `}
               />
@@ -230,9 +253,32 @@ export default function ResetPasswordPage() {
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition text-xs font-semibold uppercase tracking-wide"
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer transition hover:opacity-80"
               >
-                {showConfirm ? "Hide" : "Show"}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#eyeGradReset2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <defs>
+                    <linearGradient id="eyeGradReset2" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#F0C75E" />
+                      <stop offset="35%" stopColor="#E89B3A" />
+                      <stop offset="65%" stopColor="#D9692A" />
+                      <stop offset="100%" stopColor="#BE3F1E" />
+                    </linearGradient>
+                  </defs>
+                  {showConfirm ? (
+                    <>
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                    </>
+                  ) : (
+                    <>
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </>
+                  )}
+                </svg>
               </button>
             </div>
           </div>
@@ -241,7 +287,7 @@ export default function ResetPasswordPage() {
 
         {/* STRENGTH CHECKLIST */}
         {password.length > 0 && (
-          <div className="mt-5 p-4 rounded-2xl border border-[#1F1F1F] bg-[#0D0D0D] space-y-2">
+          <div className="mt-5 p-4 rounded-2xl border border-white/10 bg-white/5 space-y-2">
             {RULES.map((rule) => {
               const met = rule.test(password)
               return (
@@ -271,11 +317,13 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={loading || !allRulesMet || password !== confirm}
+          onMouseMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`)
+            e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`)
+          }}
           className="
-            w-full h-[56px] mt-6 rounded-2xl border border-[#D6B36A]/20
-            bg-[#D6B36A] text-black text-sm font-semibold transition-all
-            hover:bg-[#E7C989] hover:shadow-[0_0_30px_rgba(214,179,106,0.20)]
-            active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed
+            btn-gear w-full h-[56px] mt-6 rounded-2xl text-sm font-semibold
           "
         >
           {loading ? "Saving..." : "Reset Password"}

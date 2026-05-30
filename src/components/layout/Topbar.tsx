@@ -1,4 +1,5 @@
 import React from "react"
+import { gearWarp } from "../../lib/gearHover"
 
 type OrderCounts = {
   PENDING: number
@@ -156,7 +157,8 @@ return (
         text-[30px]
         font-bold
         tracking-tight
-        text-[#F5F1E8]
+        text-gear-gradient
+        w-fit
         leading-none
       "
     >
@@ -259,24 +261,19 @@ return (
         onClick={() =>
           setShowModal(true)
         }
+        onMouseMove={gearWarp}
         className="
+          btn-gear
           h-[44px]
           sm:h-[52px]
           px-4
           sm:px-6
           rounded-2xl
-          bg-[#D6B36A]
-          text-black
           text-sm
           sm:text-base
           font-semibold
           tracking-wide
           shadow-[0_0_25px_rgba(214,179,106,0.18)]
-          transition-all
-          duration-300
-          hover:bg-[#E4C27C]
-          hover:shadow-[0_0_35px_rgba(214,179,106,0.28)]
-          hover:scale-[1.02]
           active:scale-[0.99]
           flex-shrink-0
         "

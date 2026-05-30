@@ -1,6 +1,7 @@
 import React from "react"
 import StatusBadge from "../shared/StatusBadge"
 import { LANGUAGES } from "../../constants/languages"
+import { gearWarp } from "../../lib/gearHover"
 
 type Props = {
   selectedOrder: any
@@ -41,7 +42,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function SectionLabel({ title }: { title: string }) {
   return (
-    <p className="text-xs font-semibold tracking-[0.15em] uppercase text-[#D6B36A] mb-2">
+    <p className="text-xs font-semibold tracking-[0.15em] uppercase text-gear-gradient w-fit mb-2">
       {title}
     </p>
   )
@@ -123,7 +124,7 @@ export default function OrderDetailsSidebar({
               selectedOrder.priority === "HIGH"
                 ? "bg-red-500/10 border-red-500/20 text-red-400"
                 : selectedOrder.priority === "MEDIUM"
-                ? "bg-yellow-500/10 border-yellow-500/20 text-[#D6B36A]"
+                ? "bg-yellow-500/10 border-yellow-500/20 text-gear-gradient"
                 : "bg-green-500/10 border-green-500/20 text-green-400"
             }`}>
               {selectedOrder.priority}
@@ -176,7 +177,7 @@ export default function OrderDetailsSidebar({
                     <Row label="Deadline">
                       <span>
                         {new Date(broadcast.deadlineDate).toLocaleDateString()}
-                        <span className="text-[#D6B36A] ml-1.5">
+                        <span className="text-gear-gradient ml-1.5">
                           {getDeadlineInfo(broadcast.deadlineDate).text}
                         </span>
                       </span>
@@ -194,7 +195,7 @@ export default function OrderDetailsSidebar({
                     <Row label="Deadline">
                       <span>
                         {new Date(marketing.deadlineDate).toLocaleDateString()}
-                        <span className="text-[#D6B36A] ml-1.5">
+                        <span className="text-gear-gradient ml-1.5">
                           {getDeadlineInfo(marketing.deadlineDate).text}
                         </span>
                       </span>
@@ -246,7 +247,7 @@ export default function OrderDetailsSidebar({
                         <div className="flex flex-wrap gap-1">
                           {src.map((lang: string) => (
                             <div key={lang} className="group relative">
-                              <div className="h-[26px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-2.5 text-xs font-semibold tracking-wide text-white hover:border-[#D6B36A] hover:text-[#D6B36A] transition cursor-default">
+                              <div className="gear-hover-text h-[26px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1B1B1B] px-2.5 text-xs font-semibold tracking-wide text-white transition cursor-default">
                                 {getLanguageCode(lang)}
                               </div>
                               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -265,7 +266,7 @@ export default function OrderDetailsSidebar({
                         <div className="flex flex-wrap gap-1">
                           {tgt.map((lang: string) => (
                             <div key={lang} className="group relative">
-                              <div className="h-[26px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-2.5 text-xs font-bold tracking-wide text-black hover:bg-[#D6B36A] hover:border-[#D6B36A] transition cursor-default">
+                              <div className="gear-hover-fill h-[26px] inline-flex items-center justify-center rounded-full border border-[#F5F1E8] bg-[#F5F1E8] px-2.5 text-xs font-bold tracking-wide text-black transition cursor-default">
                                 {getLanguageCode(lang)}
                               </div>
                               <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -324,7 +325,7 @@ export default function OrderDetailsSidebar({
                         <div className="min-w-0">
                           <p className="text-zinc-500 text-sm mb-0.5">Source File</p>
                           <a href={formatUrl(sourceLink)} target="_blank" rel="noopener noreferrer"
-                            className="text-[#D6B36A] underline text-base break-all hover:text-[#E7C989] transition">
+                            className="text-gear-gradient underline decoration-[#D6B36A]/60 text-base break-all transition">
                             {sourceLink}
                           </a>
                         </div>
@@ -336,7 +337,7 @@ export default function OrderDetailsSidebar({
                         <div className="min-w-0">
                           <p className="text-zinc-500 text-sm mb-0.5">SRT Available</p>
                           <a href={formatUrl(srtLink)} target="_blank" rel="noopener noreferrer"
-                            className="text-[#D6B36A] underline text-base break-all hover:text-[#E7C989] transition">
+                            className="text-gear-gradient underline decoration-[#D6B36A]/60 text-base break-all transition">
                             {srtLink}
                           </a>
                         </div>
@@ -362,7 +363,7 @@ export default function OrderDetailsSidebar({
                           <p className="text-[#F5F1E8] text-base font-semibold">{d.language}</p>
                           {d.deliveryLink ? (
                             <a href={formatUrl(d.deliveryLink)} target="_blank" rel="noreferrer"
-                              className="text-[#D6B36A] underline text-base break-all mt-0.5 block">
+                              className="text-gear-gradient underline decoration-[#D6B36A]/60 text-base break-all mt-0.5 block">
                               {d.deliveryLink}
                             </a>
                           ) : (
@@ -383,9 +384,9 @@ export default function OrderDetailsSidebar({
                   onClick={() => setHistoryOpen((o) => !o)}
                   className="w-full flex items-center justify-between group py-1"
                 >
-                  <span className="text-xs font-semibold tracking-[0.15em] uppercase text-[#D6B36A] group-hover:text-[#E7C989] transition">
+                  <span className="text-xs font-semibold tracking-[0.15em] uppercase text-gear-gradient transition">
                     Edit History
-                    <span className="ml-1.5 text-[#D6B36A]/50">({orderDetail.editHistory.length})</span>
+                    <span className="ml-1.5 text-gear-gradient opacity-50">({orderDetail.editHistory.length})</span>
                   </span>
                   <svg
                     className={`w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-transform duration-200 ${historyOpen ? "rotate-180" : ""}`}
@@ -468,7 +469,8 @@ export default function OrderDetailsSidebar({
                 })
                 setShowModal(true)
               }}
-              className="bg-[#D6B36A] text-black py-2.5 rounded-xl font-semibold text-sm hover:bg-[#E4C27C] transition"
+              onMouseMove={gearWarp}
+              className="btn-gear py-2.5 rounded-xl font-semibold text-sm"
             >
               Edit Order
             </button>
