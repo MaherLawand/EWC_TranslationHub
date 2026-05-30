@@ -321,7 +321,7 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
                   <div className="flex items-center gap-2">
 
-                    <p className="font-medium text-[#F5F1E8]">
+                    <p className="font-normal text-[#F5F1E8]">
                       {order.title}
                     </p>
 
