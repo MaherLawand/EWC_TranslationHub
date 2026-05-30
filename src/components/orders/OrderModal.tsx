@@ -764,7 +764,7 @@ today.setHours(0, 0, 0, 0)
           {/* DELIVERY DATE */}
           <div>
             <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
-              Delivery Date <span className="text-red-400">*</span>
+              Delivery Date (Shoot Date)<span className="text-red-400">*</span>
             </label>
             <DatePicker
               selected={newOrder.deliveryDate ? new Date(newOrder.deliveryDate) : null}

@@ -436,7 +436,7 @@ const isUpdating =
 
     <div className="flex items-center gap-2">
 
-      <p className="font-semibold text-[#F5F1E8]">
+      <p className="font-medium text-[#F5F1E8]">
         {order.title}
       </p>
 

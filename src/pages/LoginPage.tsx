@@ -135,7 +135,7 @@ export default function LoginPage() {
         {/* HEADER */}
         <div className="mb-8">
           <img
-            src="/ewc26-logo.webp"
+            src="/ewc26-logo.webp?v=1"
             alt="EWC 26 Paris"
             className="h-12 w-auto object-contain mb-6 mx-auto block"
           />

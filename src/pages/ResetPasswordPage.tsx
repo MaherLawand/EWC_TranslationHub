@@ -46,7 +46,7 @@ function ExpiredScreen() {
       </div>
 
       <div className="text-center mb-8">
-        <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-10 w-auto object-contain mx-auto mb-5" />
+        <img src="/ewc26-logo.webp?v=1" alt="EWC 26 Paris" className="h-10 w-auto object-contain mx-auto mb-5" />
         <h1 className="text-[28px] leading-[1.1] font-bold tracking-[0.01em] text-[#F5F1E8] mb-3">
           Link Expired
         </h1>
@@ -158,7 +158,7 @@ export default function ResetPasswordPage() {
   return (
     <PageShell>
       <div className="mb-8">
-        <img src="/ewc26-logo.webp" alt="EWC 26 Paris" className="h-12 w-auto object-contain mb-6 mx-auto block" />
+        <img src="/ewc26-logo.webp?v=1" alt="EWC 26 Paris" className="h-12 w-auto object-contain mb-6 mx-auto block" />
         <h1 className="text-[32px] leading-[1.05] font-bold tracking-[0.01em] text-[#F5F1E8]">
           Reset Password
         </h1>
