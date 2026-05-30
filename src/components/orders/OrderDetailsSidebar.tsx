@@ -321,7 +321,7 @@ export default function OrderDetailsSidebar({
                   <Card className="space-y-3">
                     {sourceLink && (
                       <div className="flex items-start gap-2.5">
-                        <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
+                        <img src="/google-drive.png?v=2" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
                           <p className="text-zinc-500 text-sm mb-0.5">Source File</p>
                           <a href={formatUrl(sourceLink)} target="_blank" rel="noopener noreferrer"
@@ -333,7 +333,7 @@ export default function OrderDetailsSidebar({
                     )}
                     {srtLink && (
                       <div className="flex items-start gap-2.5">
-                        <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
+                        <img src="/google-drive.png?v=2" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
                           <p className="text-zinc-500 text-sm mb-0.5">SRT Available</p>
                           <a href={formatUrl(srtLink)} target="_blank" rel="noopener noreferrer"
@@ -358,7 +358,7 @@ export default function OrderDetailsSidebar({
                   <div className="space-y-2">
                     {deliveries.map((d: any) => (
                       <div key={d.id} className="flex items-start gap-2.5 bg-[#111111] border border-[#242424] rounded-xl px-3 py-2.5">
-                        <img src="/google-drive.png" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
+                        <img src="/google-drive.png?v=2" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
                         <div className="min-w-0">
                           <p className="text-[#F5F1E8] text-base font-semibold">{d.language}</p>
                           {d.deliveryLink ? (

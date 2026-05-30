@@ -7,7 +7,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505] relative overflow-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" src="/bg-video.mp4" />
+      <video autoPlay muted loop playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" src="/bg-video.mp4?v=2" />
       <div className="absolute inset-0 bg-black/60 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.08),transparent_40%)] pointer-events-none" />
       <div

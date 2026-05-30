@@ -107,7 +107,7 @@ export default function LoginPage() {
         playsInline
         preload="auto"
         className="absolute inset-0 w-full h-full object-cover"
-        src="/bg-video.mp4"
+        src="/bg-video.mp4?v=2"
       />
       {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/60 pointer-events-none" />

@@ -111,7 +111,7 @@ export default function Sidebar({
       >
         <img
           key={selectedEvent}
-          src={selectedEvent === "ENC" ? "/ENCLOGO.png" : "/EWCLOGO.png"}
+          src={selectedEvent === "ENC" ? "/ENCLOGO.png?v=2" : "/EWCLOGO.png?v=2"}
           alt={selectedEvent === "ENC" ? "ENC Logo" : "EWC Logo"}
           className="w-[120%] h-auto object-contain"
         />
