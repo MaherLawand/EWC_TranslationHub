@@ -80,7 +80,7 @@ export default function UserModal({
     else createUser()
   }
 
-  const inputBase = "w-full bg-white/10 border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
+  const inputBase = "w-full bg-white/10 border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
   const inputNormal = `${inputBase} border-white/20 focus:border-[#D6B36A]`
   const inputError = `${inputBase} border-red-500/60 focus:border-red-500`
 
@@ -90,7 +90,7 @@ export default function UserModal({
       onClick={tryClose}
     >
       <div
-        className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
+        className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
         onClick={(e) => e.stopPropagation()}
       >
 

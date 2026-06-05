@@ -38,6 +38,10 @@ export function useOrders({
   const [isLoadingMarketing, setIsLoadingMarketing] = React.useState(false)
   const marketingAbortRef = React.useRef<AbortController | null>(null)
 
+  // ─── List mode (grouped vs flat) per table, driven by server response ──────
+  const [broadcastMode, setBroadcastMode] = React.useState<"grouped" | "flat">("grouped")
+  const [marketingMode, setMarketingMode] = React.useState<"grouped" | "flat">("grouped")
+
   // ─── Detail view state ────────────────────────────────────────────────────
   const [selectedOrderDetail, setSelectedOrderDetail] = React.useState<any | null>(null)
   const [isLoadingDetail, setIsLoadingDetail] = React.useState(false)
@@ -67,6 +71,15 @@ export function useOrders({
       status: full.status,
       priority: full.priority,
       dateAdded: full.dateAdded,
+      isParent: full.isParent ?? false,
+      parentId: full.parentId ?? null,
+      // Count badge (grouped mode). Falls back to nested array length if present.
+      subOrderCount: full._count?.subOrders ?? (Array.isArray(full.subOrders) ? full.subOrders.length : 0),
+      subOrders: Array.isArray(full.subOrders)
+        ? full.subOrders.map((s: any) => toListOrder(s))
+        : [],
+      // Flat-mode breadcrumb reference to the parent (present on sub-order rows).
+      parent: full.parent ? { id: full.parent.id, title: full.parent.title } : null,
       broadcast: full.broadcast ? {
         id: full.broadcast.id,
         sourceLanguage: full.broadcast.sourceLanguage,
@@ -169,6 +182,7 @@ export function useOrders({
       setBroadcastOrders(data.orders)
       setBroadcastTotalPages(data.totalPages || 1)
       setBroadcastPage(data.page || page)
+      setBroadcastMode(data.mode === "flat" ? "flat" : "grouped")
     } catch (e: any) {
       if (e?.name !== "AbortError") console.error("Broadcast fetch error:", e)
     } finally {
@@ -198,6 +212,7 @@ export function useOrders({
       setMarketingOrders(data.orders)
       setMarketingTotalPages(data.totalPages || 1)
       setMarketingPage(data.page || page)
+      setMarketingMode(data.mode === "flat" ? "flat" : "grouped")
     } catch (e: any) {
       if (e?.name !== "AbortError") console.error("Marketing fetch error:", e)
     } finally {
@@ -233,6 +248,27 @@ export function useOrders({
       }
     } finally {
       if (detailAbortRef.current === controller) setIsLoadingDetail(false)
+    }
+  }
+
+  // ─── Lazy-fetch a parent's sub-orders (paginated) when its row is expanded ─
+  async function fetchSubOrders(parentId: string, page = 1) {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${parentId}/sub-orders?page=${page}&limit=50`,
+        { credentials: "include" }
+      )
+      if (!res.ok) throw new Error("Failed to fetch sub-orders")
+      const data = await res.json()
+      return {
+        subOrders: Array.isArray(data.subOrders) ? data.subOrders.map((s: any) => toListOrder(s)) : [],
+        total: data.total ?? 0,
+        page: data.page ?? page,
+        totalPages: data.totalPages ?? 1,
+      }
+    } catch (e) {
+      console.error("Sub-orders fetch error:", e)
+      return { subOrders: [], total: 0, page, totalPages: 1 }
     }
   }
 
@@ -294,6 +330,142 @@ export function useOrders({
       resetOrderState()
     } catch (error) {
       console.error("Create order error:", error)
+    } finally {
+      isSavingRef.current = false
+      setIsSavingOrder(false)
+    }
+  }
+
+  // ─── Create a "big order" (parent) + its sub-orders in one flow ───────────
+  // parentPayload: shared fields (title, type, game, deadline, priority, notes…)
+  // subItems: array of full sub-order payloads (each typically a duplicate of
+  // the shared data with its own title).
+  async function createBigOrder(parentPayload: any, subItems: any[]) {
+    if (!parentPayload?.title || isSavingRef.current) return
+    isSavingRef.current = true
+    try {
+      setIsSavingOrder(true)
+
+      // 1. Create the parent ("big order") carrying the shared fields.
+      const parentRes = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...parentPayload,
+          isParent: true,
+          event: selectedEvent,
+          estimatedMinutes: Number(parentPayload.estimatedMinutes) || 0,
+          game: parentPayload.type === "MARKETING" ? "-" : parentPayload.game,
+        }),
+      })
+
+      const parent = await parentRes.json()
+      if (!parentRes.ok) {
+        toast.error(parent.message || "Failed to create big order")
+        return
+      }
+
+      // 2. Bulk-create the sub-orders under the new parent.
+      if (Array.isArray(subItems) && subItems.length > 0) {
+        const payload = subItems.map((item) => ({
+          ...item,
+          event: selectedEvent,
+          estimatedMinutes: Number(item.estimatedMinutes) || 0,
+          game: item.type === "MARKETING" ? "-" : item.game,
+        }))
+
+        const subRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/orders/${parent.id}/sub-orders`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: payload }),
+          }
+        )
+        const subData = await subRes.json()
+        if (!subRes.ok) {
+          toast.error(subData.message || "Failed to create sub-orders")
+          // Parent was created; refresh so it still appears.
+        }
+      }
+
+      // 3. Refresh the relevant list.
+      if (parent.type === "MARKETING") {
+        await fetchMarketingOrders(1)
+      } else {
+        await fetchBroadcastOrders(1)
+      }
+
+      setShowModal(false)
+      resetOrderState()
+      toast.success("Big order created")
+      return parent
+    } catch (error) {
+      console.error("Create big order error:", error)
+      toast.error("Something went wrong")
+    } finally {
+      isSavingRef.current = false
+      setIsSavingOrder(false)
+    }
+  }
+
+  // ─── Create sub-orders under a parent ("big order") ───────────────────────
+  // items: array of full sub-order payloads. Created atomically server-side.
+  async function createSubOrders(parentId: string, items: any[]) {
+    if (!parentId || !Array.isArray(items) || items.length === 0) return
+    if (isSavingRef.current) return
+    isSavingRef.current = true
+    try {
+      setIsSavingOrder(true)
+
+      const payload = items.map((item) => ({
+        ...item,
+        event: item.event ?? selectedEvent,
+        estimatedMinutes: Number(item.estimatedMinutes) || 0,
+        game: item.type === "MARKETING" ? "-" : item.game,
+      }))
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${parentId}/sub-orders`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: payload }),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to create sub-orders")
+        return
+      }
+
+      // Re-fetch the relevant list so the parent group reflects new children.
+      const parentType = data?.type
+      if (parentType === "MARKETING") {
+        await fetchMarketingOrders(1)
+      } else {
+        await fetchBroadcastOrders(1)
+      }
+
+      // Refresh the sidebar if the parent is open.
+      if (selectedOrder?.id === parentId) {
+        fetchOrderDetail(parentId)
+      }
+
+      toast.success(
+        items.length === 1
+          ? "Sub-order added"
+          : `${items.length} sub-orders added`
+      )
+      return data
+    } catch (error) {
+      console.error("Create sub-orders error:", error)
+      toast.error("Something went wrong")
     } finally {
       isSavingRef.current = false
       setIsSavingOrder(false)
@@ -470,6 +642,7 @@ export function useOrders({
     broadcastTotalPages,
     isLoadingBroadcast,
     fetchBroadcastOrders,
+    broadcastMode,
     // Marketing
     marketingOrders,
     setMarketingOrders,
@@ -477,6 +650,9 @@ export function useOrders({
     marketingTotalPages,
     isLoadingMarketing,
     fetchMarketingOrders,
+    marketingMode,
+    // Sub-orders (lazy)
+    fetchSubOrders,
     // Detail
     selectedOrderDetail,
     setSelectedOrderDetail,
@@ -493,6 +669,8 @@ export function useOrders({
     setDeletingOrderId,
     // Actions
     createOrder,
+    createSubOrders,
+    createBigOrder,
     updateOrder,
     updateOrderStatus,
     deleteOrder,

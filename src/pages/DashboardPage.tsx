@@ -301,12 +301,15 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     broadcastTotalPages,
     isLoadingBroadcast,
     fetchBroadcastOrders,
+    broadcastMode,
     marketingOrders,
     setMarketingOrders,
     marketingPage,
     marketingTotalPages,
     isLoadingMarketing,
     fetchMarketingOrders,
+    marketingMode,
+    fetchSubOrders,
     editedOrder,
     setEditedOrder,
     isSavingOrder,
@@ -315,6 +318,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     deletingOrderId,
     setDeletingOrderId,
     createOrder,
+    createSubOrders,
+    createBigOrder,
     updateOrder,
     updateOrderStatus,
     deleteOrder,
@@ -595,6 +600,16 @@ React.useEffect(() => {
   // calls the latest function / reads the latest state without going stale.
   // Updated INLINE during render (not in useEffect) so they are always current
   // before any event handler — useEffect runs after paint and can miss events.
+  // Status patch signal for the order tables: a sub-order's status lives only in
+  // each table's local subCache (lazy-loaded on expand), not in the top-level
+  // orders state — so an in-place status update must be pushed into the tables.
+  const [statusPatch, setStatusPatch] = React.useState<{ id: string; status: string; nonce: number } | null>(null)
+
+  // Bumped on any structural change (create / edit / delete) so the order tables
+  // refresh the sub-orders of currently-expanded parents. Pure status changes use
+  // statusPatch instead (lightweight in-place, no refetch).
+  const [subRefresh, setSubRefresh] = React.useState(0)
+
   const selectedOrderDetailRef = React.useRef(selectedOrderDetail)
   selectedOrderDetailRef.current = selectedOrderDetail
 
@@ -633,6 +648,8 @@ React.useEffect(() => {
       createdTimer = setTimeout(() => {
         if (type === "BROADCAST") { fetchBroadcastOrdersRef.current(1); fetchOrderCounts() }
         else if (type === "MARKETING") { fetchMarketingOrdersRef.current(1); fetchOrderCounts() }
+        // A new sub-order may belong to an expanded parent → refresh its rows.
+        setSubRefresh((n) => n + 1)
       }, 2000)
     })
 
@@ -649,12 +666,34 @@ React.useEffect(() => {
         } else if (type === "MARKETING") {
           setMarketingOrders((prev: any[]) => prev.map((o) => o.id === id ? { ...o, status } : o))
         }
+        // Push the patch into the tables so a sub-order row inside an expanded
+        // parent's subCache (which isn't in the top-level state) also updates.
+        setStatusPatch({ id, status, nonce: Date.now() })
+        // Patch the open sidebar in-place so the user never sees a stale badge.
+        // Case 1: the sidebar is showing the order whose status just changed.
+        // selectedOrder drives the header badge; selectedOrderDetail drives the
+        // richer detail section — both must be patched.
+        if (selectedOrderDetailRef.current?.id === id) {
+          setSelectedOrder((prev: any) => prev ? { ...prev, status } : prev)
+          setSelectedOrderDetail((prev: any) => prev ? { ...prev, status } : prev)
+        }
+        // Case 2: the sidebar is showing a parent whose sub-order was just patched.
+        if (selectedOrderDetailRef.current?.subOrders?.some((s: any) => s.id === id)) {
+          setSelectedOrderDetail((prev: any) =>
+            prev
+              ? { ...prev, subOrders: prev.subOrders.map((s: any) => s.id === id ? { ...s, status } : s) }
+              : prev
+          )
+        }
       } else {
         // Full edit — stay on the user's current page, preserve filters
         if (patchedTimer) clearTimeout(patchedTimer)
         patchedTimer = setTimeout(() => {
           if (type === "BROADCAST") fetchBroadcastOrdersRef.current(broadcastPageRef.current)
           else if (type === "MARKETING") fetchMarketingOrdersRef.current(marketingPageRef.current)
+          // The edited order may be a sub-order inside an expanded parent (its row
+          // lives in the table's subCache, not the top-level list) → refresh it.
+          setSubRefresh((n) => n + 1)
         }, 1000)
         // Sidebar refresh — immediate, no debounce needed
         if (selectedOrderDetailRef.current?.id === id) {
@@ -671,6 +710,8 @@ React.useEffect(() => {
         setMarketingOrders((prev: any[]) => prev.filter((o) => o.id !== id))
       }
       fetchOrderCounts()
+      // A deleted sub-order may still be cached under an expanded parent → refresh.
+      setSubRefresh((n) => n + 1)
     })
 
     socket.on("new-notification", (notification: any) => {
@@ -1145,6 +1186,10 @@ React.useEffect(() => {
                   formatFilter={formatFilter}
                   setFormatFilter={setFormatFilter}
                   selectedEvent={selectedEvent}
+                  mode={broadcastMode}
+                  fetchSubOrders={fetchSubOrders}
+                  statusPatch={statusPatch}
+                  subRefresh={subRefresh}
                 />
               )}
 
@@ -1179,6 +1224,10 @@ React.useEffect(() => {
                   formatFilter={formatFilter}
                   setFormatFilter={setFormatFilter}
                   selectedEvent={selectedEvent}
+                  mode={marketingMode}
+                  fetchSubOrders={fetchSubOrders}
+                  statusPatch={statusPatch}
+                  subRefresh={subRefresh}
                 />
               )}
             </>
@@ -1224,6 +1273,8 @@ React.useEffect(() => {
                 canManageOrders={canManageOrders}
                 getDeadlineInfo={getDeadlineInfo}
                 activePage={activePage}
+                onSelectOrder={onRowClick}
+                createSubOrders={createSubOrders}
               />
             )}
           </div>
@@ -1236,9 +1287,6 @@ React.useEffect(() => {
             <div className="w-full max-w-[480px] bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
 
               <div className="mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-2xl mb-5">
-                  !
-                </div>
                 <h2 className="text-2xl font-bold text-gear-gradient w-fit">Delete Order</h2>
                 <p className="text-zinc-500 mt-3 leading-relaxed">
                   This action cannot be undone.
@@ -1280,6 +1328,8 @@ React.useEffect(() => {
           selectedOrder={selectedOrder}
           setSelectedOrder={setSelectedOrder}
           createOrder={createOrder}
+          createBigOrder={createBigOrder}
+          createSubOrders={createSubOrders}
           updateOrder={updateOrder}
           selectedEvent={selectedEvent}
           onAssignUsers={onAssignUsers}

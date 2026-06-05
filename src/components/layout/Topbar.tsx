@@ -45,6 +45,8 @@ function Topbar({
 
           case "my-orders":
             return "My Orders"
+            case "notifications":
+              return "Notifications"
 
       case "users":
         return "Users"
@@ -70,6 +72,9 @@ function Topbar({
 
       case "my-games":
         return "Manage your games"
+
+        case "notifications":
+          return "Manage your notifications"
       
       case "my-orders":
         return "Manage your translation requests"
@@ -255,7 +260,7 @@ return (
   )}
 
   {/* ACTION */}
-  {activePage !== "users" &&
+  {(activePage !== "users" && activePage !== "notifications") &&
     canManageOrders && (
       <button
         onClick={() =>

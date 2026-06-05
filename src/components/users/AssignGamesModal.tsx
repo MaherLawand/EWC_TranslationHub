@@ -101,7 +101,7 @@ export default function AssignGamesModal({
       ":hover": { backgroundColor: "#2A2A2A", color: "white" },
     }),
     input: (base: any) => ({ ...base, color: "#F5F1E8" }),
-    placeholder: (base: any) => ({ ...base, color: "#52525b" }),
+    placeholder: (base: any) => ({ ...base, color: "#8b8b93" }),
     singleValue: (base: any) => ({ ...base, color: "#F5F1E8" }),
   }
 
@@ -111,7 +111,7 @@ export default function AssignGamesModal({
       onClick={tryClose}
     >
       <div
-        className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
+        className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[600px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[95vh] sm:max-h-[90vh] relative"
         onClick={(e) => e.stopPropagation()}
       >
 

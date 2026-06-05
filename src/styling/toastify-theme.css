@@ -1,0 +1,90 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   EWC Translation Hub — react-toastify theme
+   Dark, glassy surface with the brand gold (#D6B36A) accent so toasts match
+   the rest of the app. Import this AFTER "react-toastify/dist/ReactToastify.css"
+   (it is imported globally in main.tsx, so these overrides win).
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --ewc-toast-bg: rgba(14, 14, 14, 0.92);
+  --ewc-toast-border: rgba(214, 179, 106, 0.22);
+  --ewc-toast-text: #f5f1e8;
+  --ewc-gold: #d6b36a;
+  --ewc-success: #22c55e;
+  --ewc-warning: #f59e0b;
+  --ewc-danger: #ef4444;
+  --ewc-info: #d6b36a;
+
+  /* react-toastify CSS variables (v9/v10) — set here so even default theme picks them up */
+  --toastify-color-light: var(--ewc-toast-bg);
+  --toastify-color-dark: var(--ewc-toast-bg);
+  --toastify-color-info: var(--ewc-info);
+  --toastify-color-success: var(--ewc-success);
+  --toastify-color-warning: var(--ewc-warning);
+  --toastify-color-error: var(--ewc-danger);
+  --toastify-text-color-light: var(--ewc-toast-text);
+  --toastify-text-color-dark: var(--ewc-toast-text);
+  --toastify-font-family: inherit;
+}
+
+/* Toast surface */
+.Toastify__toast {
+  background: var(--ewc-toast-bg) !important;
+  color: var(--ewc-toast-text) !important;
+  border: 1px solid var(--ewc-toast-border) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55) !important;
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 12px 14px;
+}
+
+.Toastify__toast-body {
+  color: var(--ewc-toast-text) !important;
+  font-weight: 500;
+}
+
+/* Accent bar on the left, tinted by toast type */
+.Toastify__toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 16px 0 0 16px;
+  background: var(--ewc-gold);
+}
+
+.Toastify__toast--success::before { background: var(--ewc-success); }
+.Toastify__toast--error::before   { background: var(--ewc-danger); }
+.Toastify__toast--warning::before { background: var(--ewc-warning); }
+.Toastify__toast--info::before    { background: var(--ewc-gold); }
+
+/* Icons tinted to match */
+.Toastify__toast--success .Toastify__toast-icon svg { fill: var(--ewc-success); }
+.Toastify__toast--error .Toastify__toast-icon svg   { fill: var(--ewc-danger); }
+.Toastify__toast--warning .Toastify__toast-icon svg { fill: var(--ewc-warning); }
+.Toastify__toast--info .Toastify__toast-icon svg,
+.Toastify__toast--default .Toastify__toast-icon svg { fill: var(--ewc-gold); }
+
+/* Close button */
+.Toastify__close-button {
+  color: var(--ewc-toast-text) !important;
+  opacity: 0.5;
+}
+.Toastify__close-button:hover {
+  opacity: 1;
+  color: var(--ewc-gold) !important;
+}
+
+/* Progress bar — gold by default, type-tinted otherwise */
+.Toastify__progress-bar {
+  background: var(--ewc-gold) !important;
+}
+.Toastify__progress-bar--success { background: var(--ewc-success) !important; }
+.Toastify__progress-bar--error   { background: var(--ewc-danger) !important; }
+.Toastify__progress-bar--warning { background: var(--ewc-warning) !important; }
+.Toastify__progress-bar--info    { background: var(--ewc-gold) !important; }

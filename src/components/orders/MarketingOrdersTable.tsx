@@ -35,6 +35,20 @@ type Props = {
   formatFilter: string[]
   setFormatFilter: (v: string[]) => void
   selectedEvent: string
+  mode?: "grouped" | "flat"
+  fetchSubOrders?: (
+    parentId: string,
+    page?: number
+  ) => Promise<{
+    subOrders: any[]
+    total: number
+    page: number
+    totalPages: number
+  }>
+  statusPatch?: { id: string; status: string; nonce: number } | null
+  /** Bumped whenever a structural change (create/edit/delete) occurs so all
+   *  currently-expanded parents reload their sub-orders to show fresh data. */
+  subRefresh?: number
 }
 
 export default function MarketingOrdersTable({
@@ -58,6 +72,10 @@ export default function MarketingOrdersTable({
   formatFilter,
   setFormatFilter,
   selectedEvent,
+  mode = "grouped",
+  fetchSubOrders,
+  statusPatch,
+  subRefresh,
 }: Props) {
 
 const canUpdateStatus =
@@ -234,6 +252,26 @@ async function saveAssign() {
   try {
     setUpdatingOrderId(orderId)
 
+    // Optimistic: if this is an expanded sub-order, patch its cached row right
+    // away so the actor sees the change instantly (the socket round-trip + the
+    // statusPatch effect will confirm it for everyone).
+    setSubCache((prev) => {
+      let changed = false
+      const next = new Map(prev)
+      for (const [pid, entry] of next) {
+        if (entry.rows.some((r: any) => r.id === orderId)) {
+          next.set(pid, {
+            ...entry,
+            rows: entry.rows.map((r: any) =>
+              r.id === orderId ? { ...r, status } : r
+            ),
+          })
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+
     await updateOrderStatus(
       orderId,
       status
@@ -244,6 +282,408 @@ async function saveAssign() {
 }
 
 const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
+
+// Expandable parent ("big order") rows
+const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
+
+// Lazy-loaded sub-orders per parent: { rows, loading, page, totalPages }
+type SubCacheEntry = { rows: any[]; loading: boolean; page: number; totalPages: number }
+const [subCache, setSubCache] = React.useState<Map<string, SubCacheEntry>>(new Map())
+
+// Live ref so the orders effect can read the current expansion without
+// re-running when it changes.
+const expandedIdsRef = React.useRef(expandedIds)
+expandedIdsRef.current = expandedIds
+
+// Switching grouped ↔ flat fundamentally changes the row set → full reset.
+React.useEffect(() => {
+  setExpandedIds(new Set())
+  setSubCache(new Map())
+}, [mode])
+
+// When the orders list changes (create/edit/delete refetch), DON'T collapse
+// everything. Keep parents that are still present expanded; only when the set
+// of order ids actually changes do we refresh the open parents' sub-orders so
+// their rows stay fresh. A pure in-place status patch (same ids) is a no-op
+// here, so expanded sub-orders never flicker on a status update.
+const prevOrderIdsRef = React.useRef<string>("")
+React.useEffect(() => {
+  const ids = orders.map((o: any) => o.id)
+  const sig = ids.join(",")
+  const present = new Set(ids)
+  const stillExpanded = [...expandedIdsRef.current].filter((id) => present.has(id))
+
+  if (stillExpanded.length !== expandedIdsRef.current.size) {
+    setExpandedIds(new Set(stillExpanded))
+    setSubCache((prev) => {
+      const next = new Map<string, SubCacheEntry>()
+      for (const id of stillExpanded) {
+        const e = prev.get(id)
+        if (e) next.set(id, e)
+      }
+      return next
+    })
+  }
+
+  if (sig !== prevOrderIdsRef.current) {
+    const isFirst = prevOrderIdsRef.current === ""
+    prevOrderIdsRef.current = sig
+    // Refresh still-open parents' sub-orders so a real list change doesn't
+    // leave stale rows (skip the very first render — nothing is expanded yet).
+    if (!isFirst) for (const id of stillExpanded) loadSubOrders(id, 1)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [orders])
+
+// Apply an incoming in-place status patch to a cached sub-order row (sub-orders
+// live only in subCache, not in the top-level orders state).
+React.useEffect(() => {
+  if (!statusPatch) return
+  setSubCache((prev) => {
+    let changed = false
+    const next = new Map(prev)
+    for (const [pid, entry] of next) {
+      if (entry.rows.some((r: any) => r.id === statusPatch.id)) {
+        next.set(pid, {
+          ...entry,
+          rows: entry.rows.map((r: any) =>
+            r.id === statusPatch.id ? { ...r, status: statusPatch.status } : r
+          ),
+        })
+        changed = true
+      }
+    }
+    return changed ? next : prev
+  })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [statusPatch?.nonce])
+
+// When a structural change (create/edit/delete) is signalled, reload the
+// sub-orders for every currently-expanded parent so their rows stay fresh
+// without collapsing the expansion or triggering a full page reload.
+React.useEffect(() => {
+  if (subRefresh === undefined || subRefresh === 0) return
+  for (const id of expandedIdsRef.current) loadSubOrders(id, 1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [subRefresh])
+
+async function loadSubOrders(parentId: string, page = 1) {
+  if (!fetchSubOrders) return
+  setSubCache((prev) => {
+    const next = new Map(prev)
+    const existing = next.get(parentId)
+    next.set(parentId, {
+      rows: existing?.rows ?? [],
+      loading: true,
+      page: existing?.page ?? 1,
+      totalPages: existing?.totalPages ?? 1,
+    })
+    return next
+  })
+  const data = await fetchSubOrders(parentId, page)
+  setSubCache((prev) => {
+    const next = new Map(prev)
+    const existing = next.get(parentId)
+    const baseRows = page > 1 ? existing?.rows ?? [] : []
+    next.set(parentId, {
+      rows: [...baseRows, ...data.subOrders],
+      loading: false,
+      page: data.page,
+      totalPages: data.totalPages,
+    })
+    return next
+  })
+}
+
+function toggleExpand(e: React.MouseEvent, id: string) {
+  e.stopPropagation()
+  setExpandedIds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+      if (!subCache.get(id)?.rows.length) loadSubOrders(id, 1)
+    }
+    return next
+  })
+}
+
+// Renders a single order row. `isSub` = an indented sub-order under a parent.
+function renderRow(order: any, isSub: boolean) {
+  const marketing = order.marketing
+  const isUpdating = updatingOrderId === order.id
+  const isParent = order.isParent
+  const isExpanded = expandedIds.has(order.id)
+  // A parent's status is derived from its sub-orders → not manually editable.
+  const canEditThisStatus = canUpdateStatus && !isParent
+  const validAssignments = marketing?.assignments?.filter((a: any) => a.user) || []
+  // Flat mode (search/filter active): sub-orders appear as their own rows with
+  // a "part of {parent}" breadcrumb and no expand chevron.
+  const isFlat = mode === "flat"
+  const showBreadcrumb = isFlat && order.parentId && order.parent
+
+  return (
+    <tr
+      key={order.id}
+      onClick={() => onRowClick(order)}
+      className={`
+        group/row
+        border-b
+        border-[#1F1F1F]
+        hover:bg-[rgba(214,179,106,0.03)]
+        cursor-pointer
+        transition-colors
+        duration-150
+        ${isSub ? "bg-white/[0.015]" : ""}
+      `}
+    >
+
+      {/* ORDER */}
+      <td className="px-6 py-2.5 align-center">
+
+        <div className="flex items-center gap-2" style={isSub ? { paddingLeft: 28 } : undefined}>
+
+          {isParent && !isFlat && (
+            <button
+              onClick={(e) => toggleExpand(e, order.id)}
+              title={isExpanded ? "Collapse" : "Expand"}
+              className="flex-shrink-0 w-5 h-5 inline-flex items-center justify-center rounded-md text-[#E8C77E] hover:text-[#F5D98A] hover:bg-[#1A1A1A] transition"
+            >
+              <span className={`text-gear-gradient text-[15px] transition-transform ${isExpanded ? "rotate-90" : ""}`}>▶</span>
+            </button>
+          )}
+
+          {(isSub || showBreadcrumb) && (
+            <span className="flex-shrink-0 text-gear-gradient text-xs">↳</span>
+          )}
+
+          <p className="font-normal text-[#F5F1E8]">
+            {order.title}
+          </p>
+
+          {isParent && !isFlat && (
+            <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#D6B36A]/10 border border-[#D6B36A]/30 text-gear-gradient text-[10px] font-semibold">
+              {order.subOrderCount ?? order._count?.subOrders ?? order.subOrders?.length ?? 0} sub
+            </span>
+          )}
+
+          {showBreadcrumb && (
+            <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-medium">
+              part of {order.parent.title}
+            </span>
+          )}
+
+          <button
+            onClick={(e) => copyOrderLink(e, order.id)}
+            title="Copy link"
+            className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+          >
+            {copiedId === order.id ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="2" width="6" height="4" rx="1" />
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              </svg>
+            )}
+          </button>
+
+        </div>
+
+      </td>
+
+      {/* CONTENT TITLE */}
+      <td className="px-6 py-2.5 align-center">
+        <div>
+          <p className="text-[#F5F1E8] font-medium">
+            {marketing?.contentTitle
+              ? marketing.contentTitle
+              : <span className="text-zinc-600">—</span>}
+          </p>
+        </div>
+      </td>
+
+      {/* LANGUAGES */}
+      <td className="px-6 py-2.5 align-center">
+
+        <div className="flex flex-nowrap items-center gap-2">
+
+          {/* SOURCE */}
+          {marketing?.sourceLanguage?.length ? (
+            <div className="flex flex-nowrap gap-1">
+              {marketing.sourceLanguage.map((lang: string) => (
+                <div key={lang} className="group/pill relative">
+                  <div className="gear-hover-text min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 transition cursor-default">
+                    {getLanguageCode(lang)}
+                  </div>
+                  <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
+                    <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
+                      {lang}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className="text-zinc-600">—</span>
+          )}
+
+          <span className="text-zinc-500">→</span>
+
+          {/* TARGET */}
+          {marketing?.targetLanguages?.length ? (
+            <div className="flex flex-nowrap gap-1">
+              {marketing.targetLanguages.map((lang: string) => (
+                <div key={lang} className="group/pill relative">
+                  <div className="gear-hover-fill min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] transition cursor-default">
+                    {getLanguageCode(lang)}
+                  </div>
+                  <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
+                    <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
+                      {lang}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className="text-zinc-600">—</span>
+          )}
+
+        </div>
+
+      </td>
+
+      {/* FORMAT */}
+      <td className="px-6 py-2.5 align-center">
+
+        {!marketing?.deliveryFormats?.length ? (
+          <span className="text-zinc-600">—</span>
+        ) : (
+          <div className="flex flex-nowrap gap-2">
+            {marketing?.deliveryFormats?.map(
+              (formatItem: any) => (
+                <span
+                  key={formatItem.id}
+                  className="border border-[#2B2B2B] bg-[#171717] px-3 py-0.5 rounded-xl text-xs font-semibold tracking-wide text-[#F5F1E8]"
+                >
+                  {formatItem.format}
+                </span>
+              )
+            )}
+          </div>
+        )}
+
+      </td>
+
+      {/* DEADLINE */}
+      <td className="px-6 py-2.5 text-zinc-300 align-center">
+        {marketing?.deadlineDate ? (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
+            {(() => {
+              const info = getDeadlineInfo(marketing.deadlineDate)
+              return <span className={`text-sm ${info.color}`}>{info.text}</span>
+            })()}
+          </div>
+        ) : (
+          <span className="text-zinc-600">—</span>
+        )}
+      </td>
+
+      {/* STATUS */}
+      <td className="px-6 py-2.5 align-center whitespace-nowrap">
+
+        <div
+          className="inline-flex flex-shrink-0"
+          onMouseEnter={(e) => canEditThisStatus && openStatusPortal(e, order.id, order.status)}
+          onMouseLeave={canEditThisStatus ? closeStatusPortal : undefined}
+        >
+          {canEditThisStatus ? (
+            <button
+              onClick={(e) => e.stopPropagation()}
+              disabled={isUpdating}
+              className="rounded-xl transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <div className="whitespace-nowrap">
+                {isUpdating ? (
+                  <div className="min-w-[110px] h-[36px] inline-flex items-center justify-center rounded-xl border border-[#2A2A2A] bg-[#171717] text-[#D6B36A] text-xs font-semibold animate-pulse">
+                    Updating...
+                  </div>
+                ) : (
+                  <StatusBadge status={order.status} />
+                )}
+              </div>
+            </button>
+          ) : (
+            <div className="whitespace-nowrap">
+              <StatusBadge status={order.status} />
+            </div>
+          )}
+        </div>
+
+      </td>
+
+      {/* PRIORITY */}
+      <td className="px-6 py-2.5 align-center">
+
+        <span
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
+            order.priority === "HIGH"
+              ? "bg-red-500/10 text-red-400 border-red-500/20"
+              : order.priority === "MEDIUM"
+              ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+              : "bg-green-500/10 text-green-400 border-green-500/20"
+          }`}
+        >
+          {order.priority}
+        </span>
+
+      </td>
+
+      {/* ASSIGN */}
+      <td className="px-6 py-2.5 align-center" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="inline-flex"
+          onMouseEnter={validAssignments.length > 0 ? (e) => openAssignPortal(e, validAssignments) : undefined}
+          onMouseLeave={validAssignments.length > 0 ? closeAssignPortal : undefined}
+        >
+          {canAssignUsers ? (
+            <button
+              onClick={(e) => openAssignModal(e, order)}
+              title={validAssignments.length ? `${validAssignments.length} assigned` : "Assign users"}
+              className={`group cursor-pointer relative overflow-hidden inline-flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${
+                validAssignments.length
+                  ? "bg-[#1A1A1A] border-[#D6B36A] text-[#D6B36A]"
+                  : "bg-[#1A1A1A] border-[#2A2A2A] text-zinc-400 hover:border-[#D6B36A] hover:text-[#D6B36A]"
+              }`}
+            >
+              <span className="absolute inset-0 rounded-full bg-[#D6B36A]/10 scale-0 origin-top-right group-hover:scale-100 transition-transform duration-300 ease-out" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="relative w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          ) : validAssignments.length > 0 ? (
+            <div
+              title={`${validAssignments.length} assigned`}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#1A1A1A] border border-[#D6B36A] text-[#D6B36A] cursor-default select-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          ) : (
+            <span className="text-zinc-600 text-xs">—</span>
+          )}
+        </div>
+      </td>
+
+    </tr>
+  )
+}
 
   return (
     <>
@@ -408,270 +848,74 @@ const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
   ) : (
 
-    orders.map((order) => {
-
-            const marketing =
-              order.marketing
-
-const isUpdating =
-  updatingOrderId === order.id
-
-            return (
-             <tr
-  key={order.id}
-  onClick={() => onRowClick(order)}
-  className="
-    group/row
-    border-b
-    border-[#1F1F1F]
-    hover:bg-[rgba(214,179,106,0.03)]
-    cursor-pointer
-    transition-colors
-    duration-150
-  "
->
-
-  {/* ORDER */}
-  <td className="px-6 py-2.5 align-center">
-
-    <div className="flex items-center gap-2">
-
-      <p className="font-normal text-[#F5F1E8]">
-        {order.title}
-      </p>
-
-      <button
-        onClick={(e) => copyOrderLink(e, order.id)}
-        title="Copy link"
-        className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
-      >
-        {copiedId === order.id ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="9" y="2" width="6" height="4" rx="1" />
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-          </svg>
-        )}
-      </button>
-
-    </div>
-
-  </td>
-
-  {/* CONTENT TITLE */}
-  <td className="px-6 py-2.5 align-center">
-
-    <div>
-
-      <p className="text-[#F5F1E8] font-medium">
-        {marketing?.contentTitle
-          ? marketing.contentTitle
-          : <span className="text-zinc-600">—</span>}
-      </p>
-
-    </div>
-
-  </td>
-
-  {/* LANGUAGES */}
-  <td className="px-6 py-2.5 align-center">
-
-    <div className="flex flex-wrap items-center gap-2">
-
-      {/* SOURCE */}
-      {marketing?.sourceLanguage?.length ? (
-        <div className="flex flex-wrap gap-1">
-          {marketing.sourceLanguage.map((lang: string) => (
-            <div key={lang} className="group/pill relative">
-              <div className="gear-hover-text min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 transition cursor-default">
-                {getLanguageCode(lang)}
-              </div>
-              <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
-                  {lang}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <span className="text-zinc-600">—</span>
-      )}
-
-      <span className="text-zinc-500">→</span>
-
-      {/* TARGET */}
-      {marketing?.targetLanguages?.length ? (
-        <div className="flex flex-wrap gap-1">
-          {marketing.targetLanguages.map((lang: string) => (
-            <div key={lang} className="group/pill relative">
-              <div className="gear-hover-fill min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] transition cursor-default">
-                {getLanguageCode(lang)}
-              </div>
-              <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
-                  {lang}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <span className="text-zinc-600">—</span>
-      )}
-
-    </div>
-
-  </td>
-
-  {/* FORMAT */}
-<td className="px-6 py-2.5 align-center">
-
-  {!marketing?.deliveryFormats?.length ? (
-    <span className="text-zinc-600">—</span>
-  ) : (
-  <div className="flex flex-wrap gap-2">
-
-    {marketing?.deliveryFormats?.map(
-      (formatItem: any) => (
-        <span
-          key={formatItem.id}
-          className="
-            border
-            border-[#2B2B2B]
-            bg-[#171717]
-            px-3
-            py-0.5
-            rounded-xl
-            text-xs
-            font-semibold
-            tracking-wide
-            text-[#F5F1E8]
-          "
-        >
-          {formatItem.format}
-        </span>
-      )
-    )}
-
-  </div>
-  )}
-
-</td>
-
-{/* DEADLINE */}
-<td className="px-6 py-2.5 text-zinc-300 align-center">
-  {marketing?.deadlineDate ? (
-    <div className="flex items-center gap-2 whitespace-nowrap">
-      <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
-      {(() => {
-        const info = getDeadlineInfo(marketing.deadlineDate)
-        return <span className={`text-sm ${info.color}`}>{info.text}</span>
-      })()}
-    </div>
-  ) : (
-    <span className="text-zinc-600">—</span>
-  )}
-</td>
-
-{/* STATUS */}
-<td className="px-6 py-2.5 align-center whitespace-nowrap">
-
-  <div
-    className="inline-flex flex-shrink-0"
-    onMouseEnter={(e) => canUpdateStatus && openStatusPortal(e, order.id, order.status)}
-    onMouseLeave={canUpdateStatus ? closeStatusPortal : undefined}
-  >
-    {canUpdateStatus ? (
-      <button
-        onClick={(e) => e.stopPropagation()}
-        disabled={isUpdating}
-        className="rounded-xl transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        <div className="whitespace-nowrap">
-          {isUpdating ? (
-            <div className="min-w-[110px] h-[36px] inline-flex items-center justify-center rounded-xl border border-[#2A2A2A] bg-[#171717] text-[#D6B36A] text-xs font-semibold animate-pulse">
-              Updating...
-            </div>
-          ) : (
-            <StatusBadge status={order.status} />
-          )}
-        </div>
-      </button>
+    mode === "flat" ? (
+      // Flat mode: results include sub-orders as their own rows. Reorder so each
+      // parent appears first with its matching sub-orders grouped right beneath
+      // it (instead of scattered by the deadline sort). Sub-orders whose parent
+      // isn't in the result set keep their own place (shown with a breadcrumb).
+      (() => {
+        const byId = new Map(orders.map((o: any) => [o.id, o]))
+        const childrenByParent = new Map<string, any[]>()
+        for (const o of orders as any[]) {
+          if (o.parentId && byId.has(o.parentId)) {
+            const arr = childrenByParent.get(o.parentId) || []
+            arr.push(o)
+            childrenByParent.set(o.parentId, arr)
+          }
+        }
+        const ordered: any[] = []
+        const seen = new Set<string>()
+        for (const o of orders as any[]) {
+          if (seen.has(o.id)) continue
+          // Skip children that will be emitted under their parent below.
+          if (o.parentId && byId.has(o.parentId)) continue
+          ordered.push(o)
+          seen.add(o.id)
+          const kids = childrenByParent.get(o.id)
+          if (kids) for (const k of kids) {
+            if (!seen.has(k.id)) { ordered.push(k); seen.add(k.id) }
+          }
+        }
+        return ordered.map((order) => renderRow(order, false))
+      })()
     ) : (
-      <div className="whitespace-nowrap">
-        <StatusBadge status={order.status} />
-      </div>
-    )}
-  </div>
-
-</td>
-
-  {/* PRIORITY */}
-  <td className="px-6 py-2.5 align-center">
-
-    <span
-      className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-        order.priority === "HIGH"
-          ? "bg-red-500/10 text-red-400 border-red-500/20"
-          : order.priority === "MEDIUM"
-          ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-          : "bg-green-500/10 text-green-400 border-green-500/20"
-      }`}
-    >
-      {order.priority}
-    </span>
-
-  </td>
-
-  {/* ASSIGN */}
-  <td className="px-6 py-2.5 align-center" onClick={(e) => e.stopPropagation()}>
-    {(() => {
-      const validAssignments = marketing?.assignments?.filter((a: any) => a.user) || []
-      return (
-        <div
-          className="inline-flex"
-          onMouseEnter={validAssignments.length > 0 ? (e) => openAssignPortal(e, validAssignments) : undefined}
-          onMouseLeave={validAssignments.length > 0 ? closeAssignPortal : undefined}
-        >
-          {canAssignUsers ? (
-            <button
-              onClick={(e) => openAssignModal(e, order)}
-              title={validAssignments.length ? `${validAssignments.length} assigned` : "Assign users"}
-              className={`group cursor-pointer relative overflow-hidden inline-flex items-center justify-center h-8 w-8 rounded-full border transition-colors ${
-                validAssignments.length
-                  ? "bg-[#1A1A1A] border-[#D6B36A] text-[#D6B36A]"
-                  : "bg-[#1A1A1A] border-[#2A2A2A] text-zinc-400 hover:border-[#D6B36A] hover:text-[#D6B36A]"
-              }`}
-            >
-              <span className="absolute inset-0 rounded-full bg-[#D6B36A]/10 scale-0 origin-top-right group-hover:scale-100 transition-transform duration-300 ease-out" />
-              <svg xmlns="http://www.w3.org/2000/svg" className="relative w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-          ) : validAssignments.length > 0 ? (
-            <div
-              title={`${validAssignments.length} assigned`}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#1A1A1A] border border-[#D6B36A] text-[#D6B36A] cursor-default select-none"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-          ) : (
-            <span className="text-zinc-600 text-xs">—</span>
-          )}
-        </div>
-      )
-    })()}
-  </td>
-
-</tr>
-            )
+      // Grouped mode: parents render with lazy-loaded sub-orders on expand.
+      orders.flatMap((order) => {
+            const rows = [renderRow(order, false)]
+            if (order.isParent && expandedIds.has(order.id)) {
+              const entry = subCache.get(order.id)
+              if (entry) {
+                entry.rows.forEach((sub: any) => rows.push(renderRow(sub, true)))
+              }
+              if (entry?.loading) {
+                rows.push(
+                  <tr key={`${order.id}-loading`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
+                    <td colSpan={8} className="px-6 py-3" style={{ paddingLeft: 56 }}>
+                      <div className="flex items-center gap-2 text-zinc-500 text-sm">
+                        <div className="w-3.5 h-3.5 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
+                        Loading sub-orders…
+                      </div>
+                    </td>
+                  </tr>
+                )
+              } else if (entry && entry.page < entry.totalPages) {
+                rows.push(
+                  <tr key={`${order.id}-more`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
+                    <td colSpan={8} className="px-6 py-2" style={{ paddingLeft: 56 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); loadSubOrders(order.id, entry.page + 1) }}
+                        className="text-xs font-semibold text-[#E8C77E] hover:text-[#F5D98A] transition"
+                      >
+                        Load more sub-orders
+                      </button>
+                    </td>
+                  </tr>
+                )
+              }
+            }
+            return rows
           })
+    )
         )}
 
         </tbody>
@@ -751,7 +995,7 @@ const isUpdating =
     {assignOrderId && (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={tryCloseAssignModal}>
         <div
-          className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl w-[480px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh] relative"
+          className="bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-3xl w-[480px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh] relative"
           onClick={(e) => e.stopPropagation()}
         >
 
@@ -800,7 +1044,7 @@ const isUpdating =
               value={assignSearch}
               onChange={(e) => setAssignSearch(e.target.value)}
               placeholder="Search users..."
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#D6B36A] focus:bg-white/15 transition"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#D6B36A] focus:bg-white/15 transition"
             />
 
             {/* USER LIST */}

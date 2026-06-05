@@ -21,6 +21,8 @@ type Props = {
   deleteOrder: () => void
   canManageOrders: boolean
   getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
+  onSelectOrder?: (order: any) => void
+  createSubOrders?: (parentId: string, items: any[]) => void
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -66,9 +68,15 @@ export default function OrderDetailsSidebar({
   canManageOrders,
   getDeadlineInfo,
   activePage,
+  onSelectOrder,
+  createSubOrders,
 }: Props) {
 
   const [historyOpen, setHistoryOpen] = React.useState(false)
+
+  // Sub-order quick-add (parent only)
+  const [newSubTitle, setNewSubTitle] = React.useState("")
+  const [newSubDeadline, setNewSubDeadline] = React.useState("")
 
   const isAdmin = currentUser?.role === "ADMIN"
 
@@ -87,6 +95,58 @@ export default function OrderDetailsSidebar({
 
   const broadcast = orderDetail?.broadcast
   const marketing = orderDetail?.marketing
+
+  // ── Sub-order relations ──────────────────────────────────────────────────
+  const isParent = orderDetail?.isParent ?? selectedOrder?.isParent ?? false
+  const parentInfo = orderDetail?.parent ?? null
+  const subOrders: any[] = orderDetail?.subOrders ?? selectedOrder?.subOrders ?? []
+  const parentOrderId = orderDetail?.id ?? selectedOrder?.id
+
+  // Duplicate the parent's shared fields into a new sub-order payload.
+  // `deadline` (optional) overrides the parent's deadline for this sub-order.
+  function buildSubPayloadFromParent(title: string, deadline?: string) {
+    const type = orderDetail?.type ?? selectedOrder?.type
+    const base: any = {
+      title,
+      type,
+      notes: orderDetail?.notes || "",
+      priority: orderDetail?.priority ?? selectedOrder?.priority ?? "MEDIUM",
+    }
+    if (type === "BROADCAST" && broadcast) {
+      base.game = broadcast.gameId || broadcast.game?.id || ""
+      base.estimatedMinutes = broadcast.estimatedMinutes || 0
+      base.sourceLanguage = broadcast.sourceLanguage || []
+      base.targetLanguages = broadcast.targetLanguages || []
+      base.sourceFileLink = broadcast.sourceFileLink || ""
+      base.srtAvailableLink = broadcast.srtAvailableLink || ""
+      base.deliveryDate = broadcast.deliveryDate || ""
+      base.deadline = deadline || broadcast.deadlineDate || ""
+      base.deliveryFormats = (broadcast.deliveryFormats || []).map((f: any) => ({
+        format: f.format,
+        deliveryLink: f.deliveryLink || "",
+      }))
+    } else if (marketing) {
+      base.contentTitle = marketing.contentTitle || ""
+      base.sourceLanguage = marketing.sourceLanguage || []
+      base.targetLanguages = marketing.targetLanguages || []
+      base.sourceFileLink = marketing.sourceFileLink || ""
+      base.srtAvailableLink = marketing.srtAvailableLink || ""
+      base.deadline = deadline || marketing.deadlineDate || ""
+      base.deliveryFormats = (marketing.deliveryFormats || []).map((f: any) => ({
+        format: f.format,
+        deliveryLink: f.deliveryLink || "",
+      }))
+    }
+    return base
+  }
+
+  function handleAddSubOrder() {
+    const title = newSubTitle.trim()
+    if (!title || !parentOrderId || !createSubOrders) return
+    createSubOrders(parentOrderId, [buildSubPayloadFromParent(title, newSubDeadline)])
+    setNewSubTitle("")
+    setNewSubDeadline("")
+  }
 
   return (
     <>
@@ -219,6 +279,160 @@ export default function OrderDetailsSidebar({
                 </Row>
               )}
             </Card>
+
+            {/* PARENT LINK — when viewing a sub-order */}
+            {parentInfo && (
+              <div>
+                <SectionLabel title="Part Of" />
+                <Card>
+                  <button
+                    onClick={() => onSelectOrder?.({ ...parentInfo, isParent: true })}
+                    className="w-full flex items-center justify-between gap-3 text-left group"
+                  >
+                    <span className="text-[#F5F1E8] text-base font-medium group-hover:text-[#D6B36A] transition truncate">
+                      {parentInfo.title}
+                    </span>
+                    <span className="text-[#D6B36A] text-sm flex-shrink-0">View big order →</span>
+                  </button>
+                </Card>
+              </div>
+            )}
+
+            {/* SUB ORDERS — when viewing a parent ("big order") */}
+            {isParent && (
+              <div>
+                <SectionLabel title={`Sub Orders (${subOrders.length})`} />
+                <Card className="space-y-3">
+                  {subOrders.length === 0 ? (
+                    <p className="text-zinc-600 text-sm">No sub-orders yet.</p>
+                  ) : (
+                    <>
+                      {/* COMPLETION PROGRESS */}
+                      {(() => {
+                        const done = subOrders.filter((s: any) => s.status === "COMPLETED").length
+                        const inProgress = subOrders.filter((s: any) => s.status === "IN_PROGRESS").length
+                        const pending = subOrders.length - done - inProgress
+                        const pct = Math.round((done / subOrders.length) * 100)
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-zinc-400">
+                                <span className="text-[#F5F1E8] font-semibold">{done}</span>
+                                <span className="text-zinc-600"> / {subOrders.length}</span> completed
+                              </span>
+                              <span className="text-sm font-semibold text-gear-gradient">{pct}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-[#1A1A1A] overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-[#D6B36A] transition-all duration-300"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] text-zinc-500 pt-0.5">
+                              {done > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />{done} done
+                                </span>
+                              )}
+                              {inProgress > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />{inProgress} in progress
+                                </span>
+                              )}
+                              {pending > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />{pending} pending
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })()}
+
+                      {/* SUB-ORDER LIST */}
+                      <div className="space-y-1.5">
+                        {subOrders.map((sub: any, i: number) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => onSelectOrder?.(sub)}
+                            className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-[#242424] bg-[#0E0E0E] hover:border-[#D6B36A]/40 hover:bg-[rgba(214,179,106,0.04)] transition text-left"
+                          >
+                            <span className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-lg bg-[#1A1A1A] border border-[#2A2A2A] text-[11px] font-semibold text-zinc-400 group-hover:text-[#D6B36A] group-hover:border-[#D6B36A]/40 transition">
+                              {i + 1}
+                            </span>
+                            {sub.priority && (
+                              <span
+                                title={sub.priority}
+                                className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${
+                                  sub.priority === "HIGH"
+                                    ? "bg-red-400"
+                                    : sub.priority === "MEDIUM"
+                                    ? "bg-yellow-400"
+                                    : "bg-green-400"
+                                }`}
+                              />
+                            )}
+                            <span className="flex-1 min-w-0 text-[#F5F1E8] text-sm font-medium truncate">
+                              {sub.title}
+                            </span>
+                            <StatusBadge status={sub.status} />
+                            <span className="flex-shrink-0 text-zinc-700 group-hover:text-[#D6B36A] transition text-sm">
+                              →
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {canManageOrders && createSubOrders && (
+                    <div className="space-y-2 pt-1 border-t border-[#1F1F1F] mt-1">
+                      <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-zinc-500 pt-2">
+                        Add Sub-Order
+                      </p>
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-400 mb-1">Sub-order title</label>
+                        <input
+                          value={newSubTitle}
+                          onChange={(e) => setNewSubTitle(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleAddSubOrder() }}
+                          placeholder="Sub-order title…"
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+                        />
+                      </div>
+                      <div className="flex items-end gap-2">
+                        <div className="relative flex-1">
+                          <label className="block text-[11px] font-medium text-zinc-400 mb-1">Deadline date</label>
+                          <input
+                            type="date"
+                            value={newSubDeadline}
+                            onChange={(e) => setNewSubDeadline(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleAddSubOrder() }}
+                            title="Deadline (defaults to the main order's deadline)"
+                            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition [color-scheme:dark]"
+                          />
+                        </div>
+                        <button
+                          onClick={handleAddSubOrder}
+                          onMouseMove={gearWarp}
+                          disabled={!newSubTitle.trim()}
+                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex-shrink-0 ${
+                            newSubTitle.trim()
+                              ? "btn-gear"
+                              : "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
+                          }`}
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-zinc-600">
+                        Leave the date empty to use the main order's deadline.
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            )}
 
             {/* NOTES — only if present */}
             {orderDetail?.notes && (
@@ -423,6 +637,7 @@ export default function OrderDetailsSidebar({
         <div className="flex-shrink-0 bg-[#0A0A0A] border-t border-[#1F1F1F] px-6 py-4">
           <div className="grid grid-cols-2 gap-3">
             <button
+              disabled={isLoadingDetail || !orderDetail}
               onClick={() => {
                 if (!orderDetail) return
                 setIsEditing(true)
@@ -470,17 +685,18 @@ export default function OrderDetailsSidebar({
                 setShowModal(true)
               }}
               onMouseMove={gearWarp}
-              className="btn-gear py-2.5 rounded-xl font-semibold text-sm"
+              className="btn-gear py-2.5 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
               Edit Order
             </button>
 
             <button
+              disabled={isLoadingDetail || !orderDetail}
               onClick={() => {
                 setDeletingOrderId(selectedOrder.id)
                 setShowDeleteModal(true)
               }}
-              className="bg-[#1A1212] border border-red-500/20 text-red-400 py-2.5 rounded-xl font-semibold text-sm hover:bg-red-500/10 transition"
+              className="bg-[#1A1212] border border-red-500/20 text-red-400 py-2.5 rounded-xl font-semibold text-sm hover:bg-red-500/10 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
             >
               Delete Order
             </button>

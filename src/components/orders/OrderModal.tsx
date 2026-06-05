@@ -41,6 +41,10 @@ type Props = {
 
   createOrder: (assignUserIds?: string[]) => void
 
+  createBigOrder?: (parentPayload: any, subItems: any[]) => void
+
+  createSubOrders?: (parentId: string, items: any[]) => Promise<any> | void
+
   updateOrder: () => void
 
   onAssignUsers?: (orderId: string, userIds: string[]) => Promise<void>
@@ -62,6 +66,8 @@ export default function OrderModal({
   selectedOrder,
   setSelectedOrder,
   createOrder,
+  createBigOrder,
+  createSubOrders,
   games,
   fetchGames,
   updateOrder,
@@ -90,6 +96,65 @@ export default function OrderModal({
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
   const [allUsers, setAllUsers] = useState<any[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+
+  // ── Sub-orders create flow ────────────────────────────────────────────────
+  // No tabs/modes: the form is always a normal order. If the user adds one or
+  // more sub-orders, it is created as a "big order" (parent + sub-orders);
+  // otherwise it is created as a standalone single order.
+  // Each sub-order inherits all of the parent's form data; only its title differs.
+  // Each sub-order carries its own title + deadline; everything else is
+  // inherited from the parent form (newOrder).
+  type SubOrderItem = { title: string; deadline: string }
+  const [subOrderItems, setSubOrderItems] = useState<SubOrderItem[]>([])
+  // True once the user actually has sub-orders → create as a big order.
+  const hasSubOrders = subOrderItems.some((s) => s.title.trim())
+
+  // Reset the sub-orders flow whenever the modal (re)opens.
+  useEffect(() => {
+    if (showModal) {
+      setSubOrderItems([])
+    }
+  }, [showModal, isEditing, editingOrderId])
+
+  // While editing, the sub-orders panel is only offered for standalone orders
+  // (not already-parent, not themselves a sub-order). Adding sub-orders here
+  // promotes the standalone order into a big order.
+  const canAddSubOrdersWhileEditing =
+    isEditing && !selectedOrder?.isParent && !selectedOrder?.parentId
+
+  // Parse a trailing integer and increment it: "Teaser 1" → "Teaser 2";
+  // "Teaser" → "Teaser 2"; "" → "Sub-order 1".
+  function nextTitle(prev: string): string {
+    const base = (prev || "").trim()
+    if (!base) return "Sub-order 1"
+    const match = base.match(/^(.*?)(\d+)\s*$/)
+    if (match) {
+      const prefix = match[1]
+      const num = parseInt(match[2], 10) + 1
+      return `${prefix}${num}`
+    }
+    return `${base} 2`
+  }
+
+  function addSubOrder() {
+    setSubOrderItems((prev) => {
+      const last = prev.length > 0 ? prev[prev.length - 1].title : newOrder.title
+      // New sub-orders default their deadline to the parent's deadline.
+      return [...prev, { title: nextTitle(last), deadline: newOrder.deadline || "" }]
+    })
+  }
+
+  function updateSubOrderTitle(index: number, value: string) {
+    setSubOrderItems((prev) => prev.map((s, i) => (i === index ? { ...s, title: value } : s)))
+  }
+
+  function updateSubOrderDeadline(index: number, value: string) {
+    setSubOrderItems((prev) => prev.map((s, i) => (i === index ? { ...s, deadline: value } : s)))
+  }
+
+  function removeSubOrder(index: number) {
+    setSubOrderItems((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const clearError = useCallback((field: string) => {
     setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
@@ -132,10 +197,41 @@ export default function OrderModal({
     return Object.keys(e).length === 0
   }
 
+  function buildSubItems() {
+    // Sub-orders inherit all shared fields from the parent (newOrder);
+    // their title + deadline can differ. Filter out blank titles.
+    return subOrderItems
+      .filter((s) => s.title.trim())
+      .map((s) => ({
+        ...newOrder,
+        title: s.title.trim(),
+        deadline: s.deadline || newOrder.deadline,
+      }))
+  }
+
   function handleSubmit() {
     if (!validate()) return
-    if (isEditing) updateOrder()
-    else createOrder(newOrder.type === "MARKETING" ? selectedUserIds : [])
+    if (isEditing) {
+      // Editing a standalone order and adding sub-orders promotes it into a
+      // big order: save the parent's edits first, then create the sub-orders.
+      if (canAddSubOrdersWhileEditing && hasSubOrders && createSubOrders && editingOrderId) {
+        const subItems = buildSubItems()
+        const result = createSubOrders(editingOrderId, subItems)
+        if (result && typeof (result as any).then === "function") {
+          ;(result as Promise<any>).then(() => updateOrder())
+        } else {
+          updateOrder()
+        }
+        return
+      }
+      updateOrder()
+      return
+    }
+    if (hasSubOrders && createBigOrder) {
+      createBigOrder(newOrder, buildSubItems())
+      return
+    }
+    createOrder(newOrder.type === "MARKETING" ? selectedUserIds : [])
   }
 
   const isDirty = JSON.stringify(newOrder) !== initialOrderRef.current
@@ -264,7 +360,7 @@ setNewOrder({
 
   placeholder: (base: any) => ({
     ...base,
-    color: "#52525b",
+    color: "#8b8b93",
   }),
 
   singleValue: (base: any) => ({
@@ -292,7 +388,7 @@ today.setHours(0, 0, 0, 0)
   },
 }}
   onClick={(e) => e.stopPropagation()}
-  className={`bg-white/5 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_20px_80px_rgba(0,0,0,0.6)] w-full relative ${
+  className={`bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[90vh] shadow-[0_20px_80px_rgba(0,0,0,0.6)] w-full relative ${
     newOrder.deliveries?.length > 0
       ? "sm:max-w-[1200px]"
       : "sm:max-w-[700px]"
@@ -302,10 +398,10 @@ today.setHours(0, 0, 0, 0)
       <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">
-            {isEditing ? "Editing" : "New Order"}
+            {isEditing ? "Editing" : hasSubOrders ? "New Big Order" : "New Order"}
           </p>
           <h2 className="text-xl font-bold text-gear-gradient w-fit">
-            {isEditing ? "Edit Order" : "Create Order"}
+            {isEditing ? "Edit Order" : hasSubOrders ? "Create Big Order" : "Create Order"}
           </h2>
         </div>
         <button
@@ -316,6 +412,7 @@ today.setHours(0, 0, 0, 0)
         </button>
       </div>
 <div className="flex-1 overflow-auto p-4 sm:p-8 dark-scroll">
+
       {/* FORM */}
   {/* FORM */}
 <div
@@ -347,7 +444,7 @@ today.setHours(0, 0, 0, 0)
             value={newOrder.title}
             onChange={(e) => { setNewOrder({ ...newOrder, title: e.target.value }); clearError("title") }}
             placeholder="Enter title"
-            className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:bg-white/15 ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
+            className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
           />
           {errors.title && <p className="text-red-400 text-xs mt-1.5">{errors.title}</p>}
         </div>
@@ -377,7 +474,7 @@ today.setHours(0, 0, 0, 0)
       px-4
       py-3
       text-white
-      placeholder:text-white/30
+      placeholder:text-white/50
       resize-y
       outline-none
       focus:border-[#D6B36A]
@@ -411,7 +508,7 @@ today.setHours(0, 0, 0, 0)
               setAllUsers([])
               setErrors({})
             }}
-            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
           >
             <option value="BROADCAST">Broadcast</option>
             <option value="MARKETING">Marketing</option>
@@ -436,7 +533,7 @@ today.setHours(0, 0, 0, 0)
                   e.target.value,
               })
             }
-            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
           >
             <option value="PENDING">
               Pending
@@ -465,7 +562,7 @@ today.setHours(0, 0, 0, 0)
         priority: e.target.value,
       })
     }
-    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
   >
     <option value="LOW">
       Low
@@ -527,7 +624,7 @@ today.setHours(0, 0, 0, 0)
               type="number"
               value={newOrder.estimatedMinutes}
               onChange={(e) => { setNewOrder({ ...newOrder, estimatedMinutes: e.target.value }); clearError("estimatedMinutes") }}
-              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:bg-white/15 ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 ${errors.estimatedMinutes ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
             />
             {errors.estimatedMinutes && <p className="text-red-400 text-xs mt-1.5">{errors.estimatedMinutes}</p>}
           </div>
@@ -737,7 +834,7 @@ today.setHours(0, 0, 0, 0)
                     e.target.value,
                 })
               }
-              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
             />
           </div>
 
@@ -757,7 +854,7 @@ today.setHours(0, 0, 0, 0)
                 })
               }
               placeholder="Paste SRT link..."
-              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
             />
           </div>
 
@@ -773,7 +870,7 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select delivery date"
               wrapperClassName="w-full"
-              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deliveryDate ? "border-red-500/60" : "border-white/20"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50 ${errors.deliveryDate ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deliveryDate && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryDate}</p>}
           </div>
@@ -790,7 +887,7 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
               wrapperClassName="w-full"
-              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
@@ -1070,7 +1167,7 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste source link..."
-          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
         />
       </div>
 
@@ -1090,7 +1187,7 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste SRT link..."
-          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
         />
       </div>
 
@@ -1106,7 +1203,7 @@ today.setHours(0, 0, 0, 0)
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
               wrapperClassName="w-full"
-              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
+              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
             />
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
@@ -1130,7 +1227,7 @@ today.setHours(0, 0, 0, 0)
             })
           }
           placeholder="Paste delivered file link..."
-          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+          className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
         />
       </div> */}
 
@@ -1269,7 +1366,7 @@ transition={{
 
               placeholder="Paste delivery link..."
 
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
             />
 
           </div>
@@ -1297,7 +1394,7 @@ transition={{
               setNewOrder({ ...newOrder, deliveryFormats: updated })
             }}
             placeholder={`Paste ${formatItem.format} link...`}
-            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/30"
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
           />
         </div>
       ))}
@@ -1312,28 +1409,117 @@ transition={{
 )}
 </AnimatePresence>
 </div>
+
+{/* SUB ORDERS PANEL — shown when creating, or when editing a standalone order
+    (adding sub-orders here promotes it into a big order). */}
+{(!isEditing || canAddSubOrdersWhileEditing) && (
+  <div className="mt-6 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
+    <div className="flex items-center justify-between mb-2">
+      <div>
+        <h3 className="text-lg font-semibold text-gear-gradient w-fit">Sub Orders</h3>
+        <span className="text-xs text-zinc-500">optional</span>
+      </div>
+      <span className="text-xs text-zinc-500">{subOrderItems.length} sub-order{subOrderItems.length === 1 ? "" : "s"}</span>
+    </div>
+    <p className="text-xs text-zinc-500 mb-5">
+      {canAddSubOrdersWhileEditing
+        ? "Add sub-orders to turn this into a big order. Each copies the fields above — just set its title and deadline."
+        : "Add sub-orders to create a big order. Each copies the fields above — just set its title and deadline."}
+    </p>
+
+    <div className="space-y-3">
+      {subOrderItems.map((item, index) => (
+        <div key={index} className="flex items-end gap-3">
+          <span className="text-xs text-zinc-500 w-6 flex-shrink-0 pb-2.5">{index + 1}.</span>
+          <div className="flex-1 min-w-0">
+            <label className="block text-[11px] font-medium text-zinc-400 mb-1">Sub-order title</label>
+            <input
+              value={item.title}
+              onChange={(e) => updateSubOrderTitle(index, e.target.value)}
+              placeholder="Sub-order title"
+              className="w-full min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+            />
+          </div>
+          <div className="flex-shrink-0 w-[150px]">
+            <label className="block text-[11px] font-medium text-zinc-400 mb-1">Deadline date</label>
+            <DatePicker
+              selected={item.deadline ? new Date(item.deadline) : null}
+              onChange={(date: Date | null) => updateSubOrderDeadline(index, date?.toISOString().split("T")[0] || "")}
+              minDate={today}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Deadline"
+              wrapperClassName="w-[150px]"
+              className="w-[150px] bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => removeSubOrder(index)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition flex-shrink-0"
+            title="Remove sub-order"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+
+    <button
+      type="button"
+      onClick={addSubOrder}
+      className="mt-4 w-full py-2.5 rounded-xl border border-dashed border-[#D6B36A]/40 text-[#D6B36A] text-sm font-medium hover:bg-[#D6B36A]/10 transition"
+    >
+      + Add sub-order
+    </button>
+
+    {subOrderItems.length === 0 && (
+      <p className="text-xs text-zinc-500 mt-3 text-center">
+        {canAddSubOrdersWhileEditing
+          ? "No sub-orders — this will stay a normal single order."
+          : "No sub-orders — this will be created as a normal single order."}
+      </p>
+    )}
+  </div>
+)}
+
 </div>
 {/* BUTTONS */}
 <div className="border-t border-white/10 bg-white/[0.02] p-6 rounded-b-3xl flex-shrink-0">
 
+  {(() => {
+    // While editing, allow submit when the form is dirty OR when sub-orders are
+    // being added (promoting a standalone order into a big order).
+    const editSubmitBlocked = isEditing && !isDirty && !(canAddSubOrdersWhileEditing && hasSubOrders)
+    const submitDisabled = isSavingOrder || editSubmitBlocked
+    return (
   <button
-    disabled={isSavingOrder || (isEditing && !isDirty)}
+    disabled={submitDisabled}
     onClick={handleSubmit}
     onMouseMove={gearWarp}
     className={`w-full py-3.5 rounded-2xl font-semibold transition ${
-      isSavingOrder || (isEditing && !isDirty)
+      submitDisabled
         ? "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
         : "btn-gear"
     }`}
   >
     {isSavingOrder
       ? isEditing
-        ? "Saving Changes..."
+        ? canAddSubOrdersWhileEditing && hasSubOrders
+          ? "Saving..."
+          : "Saving Changes..."
+        : hasSubOrders
+        ? "Creating Big Order..."
         : "Creating Order..."
       : isEditing
-      ? "Save Changes"
+      ? canAddSubOrdersWhileEditing && hasSubOrders
+        ? "Save & Add Sub-Orders"
+        : "Save Changes"
+      : hasSubOrders
+      ? "Create Big Order"
       : "Create Order"}
   </button>
+    )
+  })()}
 
 </div>
 
