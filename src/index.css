@@ -166,6 +166,11 @@
   html {
     @apply font-sans;
     }
+  /* Force dark system color scheme on native selects so Windows Chromium
+     renders them dark (matching macOS) instead of the OS light default. */
+  select {
+    color-scheme: dark;
+    }
   /* Premium: every enabled button shows a pointer on hover */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
