@@ -83,6 +83,11 @@ export default function UserModal({
   const inputBase = "w-full bg-white/10 border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
   const inputNormal = `${inputBase} border-white/20 focus:border-[#D6B36A]`
   const inputError = `${inputBase} border-red-500/60 focus:border-red-500`
+  // Selects use a solid dark background so Windows doesn't bleed its white
+  // native-control layer through the semi-transparent bg-white/10.
+  const selectBase = "w-full bg-[#242424] border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-[#2e2e2e] focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
+  const selectNormal = `${selectBase} border-white/20 focus:border-[#D6B36A]`
+  const selectError = `${selectBase} border-red-500/60 focus:border-red-500`
 
   return (
     <div
@@ -193,7 +198,7 @@ export default function UserModal({
                 <select
                   value={userForm.role}
                   onChange={(e) => { setUserForm({ ...userForm, role: e.target.value }); clearError("role") }}
-                  className={errors.role ? inputError : inputNormal}
+                  className={errors.role ? selectError : selectNormal}
                 >
                   <option value="">Select Role</option>
                   <option value="ADMIN">Admin</option>
@@ -210,7 +215,7 @@ export default function UserModal({
                 <select
                   value={userForm.department}
                   onChange={(e) => { setUserForm({ ...userForm, department: e.target.value }); clearError("department") }}
-                  className={errors.department ? inputError : inputNormal}
+                  className={errors.department ? selectError : selectNormal}
                 >
                   <option value="">Select Department</option>
                   <option value="BROADCAST">Broadcast</option>
@@ -227,7 +232,7 @@ export default function UserModal({
                 <select
                   value={userForm.position}
                   onChange={(e) => { setUserForm({ ...userForm, position: e.target.value }); clearError("position") }}
-                  className={errors.position ? inputError : inputNormal}
+                  className={errors.position ? selectError : selectNormal}
                 >
                   <option value="">Select Position</option>
                   <option value="PRODUCER">Producer</option>

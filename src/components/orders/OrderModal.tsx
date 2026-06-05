@@ -508,7 +508,7 @@ today.setHours(0, 0, 0, 0)
               setAllUsers([])
               setErrors({})
             }}
-            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+            className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
           >
             <option value="BROADCAST">Broadcast</option>
             <option value="MARKETING">Marketing</option>
@@ -533,7 +533,7 @@ today.setHours(0, 0, 0, 0)
                   e.target.value,
               })
             }
-            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+            className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
           >
             <option value="PENDING">
               Pending
@@ -562,7 +562,7 @@ today.setHours(0, 0, 0, 0)
         priority: e.target.value,
       })
     }
-    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+    className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
   >
     <option value="LOW">
       Low
@@ -931,7 +931,7 @@ today.setHours(0, 0, 0, 0)
 
     className="
       w-full
-      bg-white/10
+      bg-[#242424]
       border
       border-white/20
       rounded-2xl
@@ -940,7 +940,7 @@ today.setHours(0, 0, 0, 0)
       text-white
       outline-none
       focus:border-[#D6B36A]
-      focus:bg-white/15
+      focus:bg-[#2e2e2e]
       transition
     "
   >
