@@ -402,7 +402,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
       (n: any) => !n.isRead
     )
 
-    if (hasUnread) markNotificationsAsRead()
+    if (!hasUnread) return
+
+    // Give the user 4 seconds to see which notifications are unread before
+    // marking them all as read. Clears if they navigate away first.
+    const timer = setTimeout(() => markNotificationsAsRead(), 4000)
+    return () => clearTimeout(timer)
   }, [activePage, currentUser])
 
   React.useEffect(() => {
