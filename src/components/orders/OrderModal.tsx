@@ -585,8 +585,8 @@ today.setHours(0, 0, 0, 0)
               placeholder="Search game..."
               styles={{
                 ...darkSelectStyles,
-                control: (base: any, state: any) => ({
-                  ...darkSelectStyles.control(base, state),
+                control: (base: any) => ({
+                  ...darkSelectStyles.control(base),
                   borderColor: errors.game ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.20)",
                 }),
               }}
