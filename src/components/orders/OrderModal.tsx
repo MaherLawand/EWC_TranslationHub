@@ -490,29 +490,29 @@ today.setHours(0, 0, 0, 0)
             Order Type
           </label>
 
-          <select
-            value={newOrder.type}
-            onChange={(e) => {
-              const type = e.target.value
+          <Select
+            styles={darkSelectStyles}
+            isSearchable={false}
+            options={[
+              { value: "BROADCAST", label: "Broadcast" },
+              { value: "MARKETING", label: "Marketing" },
+            ]}
+            value={{ value: newOrder.type, label: newOrder.type === "BROADCAST" ? "Broadcast" : "Marketing" }}
+            onChange={(selected) => {
+              const type = selected?.value || "BROADCAST"
               setNewOrder({
                 ...newOrder,
                 type,
-                // broadcast-only — reset when switching away
                 game: "",
                 estimatedMinutes: "",
                 deliveryDate: "",
-                // marketing-only — reset when switching away
                 contentTitle: "",
               })
               setSelectedUserIds([])
               setAllUsers([])
               setErrors({})
             }}
-            className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
-          >
-            <option value="BROADCAST">Broadcast</option>
-            <option value="MARKETING">Marketing</option>
-          </select>
+          />
         </div>
 
         {/* STATUS */}
@@ -521,32 +521,20 @@ today.setHours(0, 0, 0, 0)
             Status
           </label>
 
-          <select
-            value={
-              newOrder.status ||
-              "PENDING"
-            }
-            onChange={(e) =>
-              setNewOrder({
-                ...newOrder,
-                status:
-                  e.target.value,
-              })
-            }
-            className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
-          >
-            <option value="PENDING">
-              Pending
-            </option>
-
-            <option value="IN_PROGRESS">
-              In Progress
-            </option>
-
-            <option value="COMPLETED">
-              Completed
-            </option>
-          </select>
+          <Select
+            styles={darkSelectStyles}
+            isSearchable={false}
+            options={[
+              { value: "PENDING", label: "Pending" },
+              { value: "IN_PROGRESS", label: "In Progress" },
+              { value: "COMPLETED", label: "Completed" },
+            ]}
+            value={(() => {
+              const s = newOrder.status || "PENDING"
+              return { value: s, label: s === "PENDING" ? "Pending" : s === "IN_PROGRESS" ? "In Progress" : "Completed" }
+            })()}
+            onChange={(selected) => setNewOrder({ ...newOrder, status: selected?.value || "PENDING" })}
+          />
         </div>
 
         <div>
@@ -554,28 +542,20 @@ today.setHours(0, 0, 0, 0)
     Priority
   </label>
 
-  <select
-    value={newOrder.priority}
-    onChange={(e) =>
-      setNewOrder({
-        ...newOrder,
-        priority: e.target.value,
-      })
-    }
-    className="w-full bg-[#242424] border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-[#2e2e2e] transition placeholder:text-white/50"
-  >
-    <option value="LOW">
-      Low
-    </option>
-
-    <option value="MEDIUM">
-      Medium
-    </option>
-
-    <option value="HIGH">
-      High
-    </option>
-  </select>
+  <Select
+    styles={darkSelectStyles}
+    isSearchable={false}
+    options={[
+      { value: "LOW", label: "Low" },
+      { value: "MEDIUM", label: "Medium" },
+      { value: "HIGH", label: "High" },
+    ]}
+    value={(() => {
+      const p = newOrder.priority || "MEDIUM"
+      return { value: p, label: p === "LOW" ? "Low" : p === "MEDIUM" ? "Medium" : "High" }
+    })()}
+    onChange={(selected) => setNewOrder({ ...newOrder, priority: selected?.value || "MEDIUM" })}
+  />
 </div>
 
       </div>

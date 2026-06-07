@@ -1,5 +1,44 @@
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { gearWarp } from "../../lib/gearHover"
+
+const darkSelectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: "#242424",
+    borderColor: state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
+    minHeight: 48,
+    borderRadius: 12,
+    boxShadow: "none",
+    ":hover": { borderColor: "#D6B36A" },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    backgroundColor: "#111111",
+    border: "1px solid #242424",
+    borderRadius: 16,
+    overflow: "hidden",
+    zIndex: 9999,
+    boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+  }),
+  menuList: (base: any) => ({
+    ...base,
+    backgroundColor: "#111111",
+    padding: 8,
+  }),
+  option: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: state.isFocused ? "#1A1A1A" : "transparent",
+    color: state.isFocused ? "#F5F1E8" : "#A1A1AA",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 14,
+    marginBottom: 2,
+  }),
+  input: (base: any) => ({ ...base, color: "#F5F1E8" }),
+  placeholder: (base: any) => ({ ...base, color: "#8b8b93" }),
+  singleValue: (base: any) => ({ ...base, color: "#F5F1E8" }),
+}
 
 type Props = {
   showUserModal: boolean
@@ -83,11 +122,6 @@ export default function UserModal({
   const inputBase = "w-full bg-white/10 border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
   const inputNormal = `${inputBase} border-white/20 focus:border-[#D6B36A]`
   const inputError = `${inputBase} border-red-500/60 focus:border-red-500`
-  // Selects use a solid dark background so Windows doesn't bleed its white
-  // native-control layer through the semi-transparent bg-white/10.
-  const selectBase = "w-full bg-[#242424] border rounded-xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-[#2e2e2e] focus:shadow-[0_0_25px_rgba(214,179,106,0.15)]"
-  const selectNormal = `${selectBase} border-white/20 focus:border-[#D6B36A]`
-  const selectError = `${selectBase} border-red-500/60 focus:border-red-500`
 
   return (
     <div
@@ -195,15 +229,23 @@ export default function UserModal({
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
                   Role <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={userForm.role}
-                  onChange={(e) => { setUserForm({ ...userForm, role: e.target.value }); clearError("role") }}
-                  className={errors.role ? selectError : selectNormal}
-                >
-                  <option value="">Select Role</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="USER">User</option>
-                </select>
+                <Select
+                  styles={{
+                    ...darkSelectStyles,
+                    control: (base: any, state: any) => ({
+                      ...darkSelectStyles.control(base, state),
+                      borderColor: errors.role ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
+                    }),
+                  }}
+                  isSearchable={false}
+                  placeholder="Select Role"
+                  options={[
+                    { value: "ADMIN", label: "Admin" },
+                    { value: "USER", label: "User" },
+                  ]}
+                  value={userForm.role ? { value: userForm.role, label: userForm.role === "ADMIN" ? "Admin" : "User" } : null}
+                  onChange={(selected) => { setUserForm({ ...userForm, role: selected?.value || "" }); clearError("role") }}
+                />
                 {errors.role && <p className="text-red-400 text-xs mt-1.5">{errors.role}</p>}
               </div>
 
@@ -212,15 +254,23 @@ export default function UserModal({
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
                   Department <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={userForm.department}
-                  onChange={(e) => { setUserForm({ ...userForm, department: e.target.value }); clearError("department") }}
-                  className={errors.department ? selectError : selectNormal}
-                >
-                  <option value="">Select Department</option>
-                  <option value="BROADCAST">Broadcast</option>
-                  <option value="MARKETING">Marketing</option>
-                </select>
+                <Select
+                  styles={{
+                    ...darkSelectStyles,
+                    control: (base: any, state: any) => ({
+                      ...darkSelectStyles.control(base, state),
+                      borderColor: errors.department ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
+                    }),
+                  }}
+                  isSearchable={false}
+                  placeholder="Select Department"
+                  options={[
+                    { value: "BROADCAST", label: "Broadcast" },
+                    { value: "MARKETING", label: "Marketing" },
+                  ]}
+                  value={userForm.department ? { value: userForm.department, label: userForm.department === "BROADCAST" ? "Broadcast" : "Marketing" } : null}
+                  onChange={(selected) => { setUserForm({ ...userForm, department: selected?.value || "" }); clearError("department") }}
+                />
                 {errors.department && <p className="text-red-400 text-xs mt-1.5">{errors.department}</p>}
               </div>
 
@@ -229,18 +279,29 @@ export default function UserModal({
                 <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
                   Position <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={userForm.position}
-                  onChange={(e) => { setUserForm({ ...userForm, position: e.target.value }); clearError("position") }}
-                  className={errors.position ? selectError : selectNormal}
-                >
-                  <option value="">Select Position</option>
-                  <option value="PRODUCER">Producer</option>
-                  <option value="POST_PRODUCTION_MANAGER">Post Production Manager</option>
-                  <option value="TRANSLATOR">Translator</option>
-                  <option value="EDITOR">Editor</option>
-                  <option value="VIEWER">Viewer</option>
-                </select>
+                <Select
+                  styles={{
+                    ...darkSelectStyles,
+                    control: (base: any, state: any) => ({
+                      ...darkSelectStyles.control(base, state),
+                      borderColor: errors.position ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
+                    }),
+                  }}
+                  isSearchable={false}
+                  placeholder="Select Position"
+                  options={[
+                    { value: "PRODUCER", label: "Producer" },
+                    { value: "POST_PRODUCTION_MANAGER", label: "Post Production Manager" },
+                    { value: "TRANSLATOR", label: "Translator" },
+                    { value: "EDITOR", label: "Editor" },
+                    { value: "VIEWER", label: "Viewer" },
+                  ]}
+                  value={userForm.position ? {
+                    value: userForm.position,
+                    label: { PRODUCER: "Producer", POST_PRODUCTION_MANAGER: "Post Production Manager", TRANSLATOR: "Translator", EDITOR: "Editor", VIEWER: "Viewer" }[userForm.position as string] || userForm.position,
+                  } : null}
+                  onChange={(selected) => { setUserForm({ ...userForm, position: selected?.value || "" }); clearError("position") }}
+                />
                 {errors.position && <p className="text-red-400 text-xs mt-1.5">{errors.position}</p>}
               </div>
 
