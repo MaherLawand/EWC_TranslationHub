@@ -585,12 +585,11 @@ today.setHours(0, 0, 0, 0)
               placeholder="Search game..."
               styles={{
                 ...darkSelectStyles,
-                control: (base: any) => ({
-                  ...darkSelectStyles.control(base),
-                  borderColor: errors.game ? "rgba(239,68,68,0.6)" : base.borderColor,
+                control: (base: any, state: any) => ({
+                  ...darkSelectStyles.control(base, state),
+                  borderColor: errors.game ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.20)",
                 }),
               }}
-              className="text-sm"
             />
             {errors.game && <p className="text-red-400 text-xs mt-1.5">{errors.game}</p>}
           </div>
@@ -895,57 +894,19 @@ today.setHours(0, 0, 0, 0)
     Content Title
   </label>
 
-  <select
-    value={
-      newOrder.contentTitle || ""
-    }
-
-    onChange={(e) =>
-      setNewOrder({
-        ...newOrder,
-
-        contentTitle:
-          e.target.value,
-      })
-    }
-
-    className="
-      w-full
-      bg-[#242424]
-      border
-      border-white/20
-      rounded-2xl
-      px-4
-      py-3
-      text-white
-      outline-none
-      focus:border-[#D6B36A]
-      focus:bg-[#2e2e2e]
-      transition
-    "
-  >
-
-    <option value="">
-      Select content
-    </option>
-
-    <option value="Content 1">
-      Content 1
-    </option>
-
-    <option value="Content 2">
-      Content 2
-    </option>
-
-    <option value="Content 3">
-      Content 3
-    </option>
-
-    <option value="Others">
-      Others
-    </option>
-
-  </select>
+  <Select
+    styles={darkSelectStyles}
+    isSearchable={false}
+    placeholder="Select content"
+    options={[
+      { value: "Content 1", label: "Content 1" },
+      { value: "Content 2", label: "Content 2" },
+      { value: "Content 3", label: "Content 3" },
+      { value: "Others", label: "Others" },
+    ]}
+    value={newOrder.contentTitle ? { value: newOrder.contentTitle, label: newOrder.contentTitle } : null}
+    onChange={(selected) => setNewOrder({ ...newOrder, contentTitle: selected?.value || "" })}
+  />
 
 </div>
 
