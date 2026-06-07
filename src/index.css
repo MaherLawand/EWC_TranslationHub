@@ -2,43 +2,48 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Gear — EWC brand font, self-hosted from /src/assets/fonts/ */
+/* Gear — EWC brand font, self-hosted.
+   WOFF2 (TrueType-hinted) is served to all modern browsers; TTF is the
+   fallback. TrueType outlines + ttfautohint fix CFF rendering on Windows. */
 @font-face {
   font-family: 'Gear';
   font-style: normal;
   font-display: swap;
   font-weight: 300;
-  src: url('./assets/fonts/Gear_Light.otf') format('opentype');
+  src: url('./assets/fonts/Gear_Light.woff2') format('woff2'),
+       url('./assets/fonts/Gear_Light.ttf')   format('truetype');
 }
 @font-face {
   font-family: 'Gear';
   font-style: normal;
   font-display: swap;
   font-weight: 400;
-  src: url('./assets/fonts/Gear_Regular.otf') format('opentype');
+  src: url('./assets/fonts/Gear_Regular.woff2') format('woff2'),
+       url('./assets/fonts/Gear_Regular.ttf')   format('truetype');
 }
 @font-face {
   font-family: 'Gear';
   font-style: normal;
   font-display: swap;
   font-weight: 500;
-  src: url('./assets/fonts/Gear_Medium.otf') format('opentype');
+  src: url('./assets/fonts/Gear_Medium.woff2') format('woff2'),
+       url('./assets/fonts/Gear_Medium.ttf')   format('truetype');
 }
 @font-face {
   font-family: 'Gear';
   font-style: normal;
   font-display: swap;
   font-weight: 700;
-  tracking: -0.01em;
-  src: url('./assets/fonts/Gear_Bold.otf') format('opentype');
+  src: url('./assets/fonts/Gear_Bold.woff2') format('woff2'),
+       url('./assets/fonts/Gear_Bold.ttf')   format('truetype');
 }
 @font-face {
   font-family: 'Gear';
   font-style: normal;
   font-display: swap;
   font-weight: 900;
-  tracking: -0.01em;
-  src: url('./assets/fonts/Gear_Black.otf') format('opentype');
+  src: url('./assets/fonts/Gear_Black.woff2') format('woff2'),
+       url('./assets/fonts/Gear_Black.ttf')   format('truetype');
 }
 
 @custom-variant dark (&:is(.dark *));
