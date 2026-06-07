@@ -665,11 +665,21 @@ React.useEffect(() => {
     let patchedTimer: ReturnType<typeof setTimeout> | null = null
     socket.on("order-patched", ({ id, type, status }: { id: string; type: string; status?: string }) => {
       if (status) {
-        // Status-only — patch in-place, no re-fetch
+        // Status-only — patch in-place, no re-fetch.
+        // Bail out early if the order already has this status in local state
+        // (deduplicates concurrent socket events for the same change).
         if (type === "BROADCAST") {
-          setBroadcastOrders((prev: any[]) => prev.map((o) => o.id === id ? { ...o, status } : o))
+          setBroadcastOrders((prev: any[]) => {
+            const target = prev.find((o) => o.id === id)
+            if (target && target.status === status) return prev
+            return prev.map((o) => o.id === id ? { ...o, status } : o)
+          })
         } else if (type === "MARKETING") {
-          setMarketingOrders((prev: any[]) => prev.map((o) => o.id === id ? { ...o, status } : o))
+          setMarketingOrders((prev: any[]) => {
+            const target = prev.find((o) => o.id === id)
+            if (target && target.status === status) return prev
+            return prev.map((o) => o.id === id ? { ...o, status } : o)
+          })
         }
         // Push the patch into the tables so a sub-order row inside an expanded
         // parent's subCache (which isn't in the top-level state) also updates.

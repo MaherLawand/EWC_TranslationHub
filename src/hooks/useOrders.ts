@@ -54,6 +54,9 @@ export function useOrders({
   // Synchronous ref guard — prevents double-submit from rapid clicks before
   // the async setIsSavingOrder(true) has committed to React state.
   const isSavingRef = React.useRef(false)
+  // Per-orderId in-flight guard for status updates — prevents same-user
+  // double-submit before the network round-trip completes.
+  const updatingStatusIdsRef = React.useRef(new Set<string>())
   const [deletingOrderId, setDeletingOrderId] = React.useState("")
 
 
@@ -293,9 +296,13 @@ export function useOrders({
         }
       )
 
-      if (!response.ok) throw new Error("Failed to create order")
+      const createData = await response.json()
+      if (!response.ok) {
+        toast.error(createData.message || "Failed to create order")
+        return
+      }
 
-      let createdOrder = await response.json()
+      let createdOrder = createData
 
       // Assign users immediately after creation if any were selected
       if (assignUserIds.length > 0 && createdOrder.id) {
@@ -326,10 +333,12 @@ export function useOrders({
       setSelectedOrder(createdOrder)
       fetchOrderDetail(createdOrder.id)
 
+      toast.success("Order created successfully")
       setShowModal(false)
       resetOrderState()
     } catch (error) {
       console.error("Create order error:", error)
+      toast.error("Something went wrong")
     } finally {
       isSavingRef.current = false
       setIsSavingOrder(false)
@@ -494,6 +503,13 @@ export function useOrders({
 
       const data = await response.json()
 
+      if (response.status === 409) {
+        // Another user saved between when this user opened the modal and submitted.
+        // Keep the modal open so they can see the conflict message and decide what to do.
+        toast.error(data.message || "This order was recently modified by someone else. Please close and reopen to see the latest changes.")
+        return
+      }
+
       if (!response.ok) {
         toast.error(data.message || "Failed to update order")
         return
@@ -530,6 +546,10 @@ export function useOrders({
 
   // ─── Update order status ──────────────────────────────────────────────────
   async function updateOrderStatus(orderId: string, status: string) {
+    // Prevent the same user from firing concurrent requests for the same order
+    // before the first one completes (e.g. rapid double-click).
+    if (updatingStatusIdsRef.current.has(orderId)) return
+    updatingStatusIdsRef.current.add(orderId)
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/orders/${orderId}/status`,
@@ -556,6 +576,8 @@ export function useOrders({
     } catch (error) {
       console.error(error)
       toast.error("Failed to update order status")
+    } finally {
+      updatingStatusIdsRef.current.delete(orderId)
     }
   }
 
@@ -567,7 +589,11 @@ export function useOrders({
         { method: "DELETE", credentials: "include" }
       )
 
-      if (!response.ok) throw new Error("Failed to delete order")
+      const deleteData = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        toast.error(deleteData.message || "Failed to delete order")
+        return
+      }
 
       setBroadcastOrders((prev) => prev.filter((o) => o.id !== deletingOrderId))
       setMarketingOrders((prev) => prev.filter((o) => o.id !== deletingOrderId))
@@ -575,8 +601,10 @@ export function useOrders({
       setSelectedOrder(null)
       setSelectedOrderDetail(null)
       setShowDeleteModal(false)
+      toast.success("Order deleted")
     } catch (error) {
       console.error(error)
+      toast.error("Failed to delete order")
     }
   }
 

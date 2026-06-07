@@ -139,9 +139,11 @@ export function useUsers() {
       }
       // Re-fetch page 1 so new user appears at top
       await fetchUsers(1, userSearch)
+      toast.success("User created successfully")
       setShowUserModal(false)
     } catch (error) {
       console.error(error)
+      toast.error("Something went wrong")
     } finally {
       setIsSavingUser(false)
     }
@@ -160,15 +162,20 @@ export function useUsers() {
           body: JSON.stringify(userForm),
         }
       )
-      if (!response.ok) throw new Error("Failed to update user")
-      const updated = await response.json()
+      const updateData = await response.json()
+      if (!response.ok) {
+        toast.error(updateData.message || "Failed to update user")
+        return
+      }
       // Update in-place so we don't lose page position
       setUsers((prev) =>
-        prev.map((u) => (u.id === updated.id ? updated : u))
+        prev.map((u) => (u.id === updateData.id ? updateData : u))
       )
+      toast.success("User updated successfully")
       setShowUserModal(false)
     } catch (error) {
       console.error(error)
+      toast.error("Something went wrong")
     } finally {
       setIsSavingUser(false)
     }
@@ -249,8 +256,10 @@ export function useUsers() {
       }
       // Re-fetch current page so counts stay accurate
       await fetchUsers(usersPage, userSearch)
+      toast.success("User deleted")
     } catch (error) {
       console.error(error)
+      toast.error("Failed to delete user")
     }
   }
 
