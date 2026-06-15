@@ -38,6 +38,18 @@ const darkSelectStyles = {
   input: (base: any) => ({ ...base, color: "#F5F1E8" }),
   placeholder: (base: any) => ({ ...base, color: "#8b8b93" }),
   singleValue: (base: any) => ({ ...base, color: "#F5F1E8" }),
+  // Render the menu in a body-level portal so the modal's scroll container
+  // can't clip it; keep it above the modal.
+  menuPortal: (base: any) => ({ ...base, zIndex: 99999 }),
+}
+
+// Props shared by every Select so the dropdown flips up when there's no room
+// below (e.g. Position, the last field) and is never clipped by the modal.
+const selectMenuProps = {
+  menuPlacement: "auto" as const,
+  menuPosition: "fixed" as const,
+  menuPortalTarget: typeof document !== "undefined" ? document.body : undefined,
+  menuShouldScrollIntoView: true,
 }
 
 type Props = {
@@ -237,6 +249,7 @@ export default function UserModal({
                       borderColor: errors.role ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
                     }),
                   }}
+                  {...selectMenuProps}
                   isSearchable={false}
                   placeholder="Select Role"
                   options={[
@@ -262,6 +275,7 @@ export default function UserModal({
                       borderColor: errors.department ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
                     }),
                   }}
+                  {...selectMenuProps}
                   isSearchable={false}
                   placeholder="Select Department"
                   options={[
@@ -287,6 +301,7 @@ export default function UserModal({
                       borderColor: errors.position ? "rgba(239,68,68,0.6)" : state.isFocused ? "#D6B36A" : "rgba(255,255,255,0.20)",
                     }),
                   }}
+                  {...selectMenuProps}
                   isSearchable={false}
                   placeholder="Select Position"
                   options={[
