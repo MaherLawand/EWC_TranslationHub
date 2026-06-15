@@ -4,6 +4,11 @@ import {
   type Language,
 } from "../../constants/languages"
 import Select from "react-select"
+import {
+  BROADCAST_FORMAT_OPTIONS,
+  MARKETING_FORMAT_OPTIONS,
+  formatLabel,
+} from "../../constants/deliveryFormats"
 import { motion, AnimatePresence } from "framer-motion"
 import { gearWarp } from "../../lib/gearHover"
 import DatePicker from "react-datepicker"
@@ -747,25 +752,12 @@ today.setHours(0, 0, 0, 0)
 <Select
   isMulti
   styles={darkSelectStyles}
-  options={[
-    {
-      value: "SRT",
-      label: "SRT",
-    },
-    {
-      value: "BURNED_IN",
-      label: "BURNED IN",
-    },
-    {
-      value: "TEXT",
-      label: "TEXT",
-    },
-  ]}
+  options={BROADCAST_FORMAT_OPTIONS}
   value={
     newOrder.deliveryFormats?.map(
       (item: any) => ({
         value: item.format,
-        label: item.format,
+        label: formatLabel(item.format),
       })
     ) || []
   }
@@ -919,25 +911,12 @@ today.setHours(0, 0, 0, 0)
       <Select
   isMulti
   styles={darkSelectStyles}
-  options={[
-    {
-      value: "SRT",
-      label: "SRT",
-    },
-    {
-      value: "BURNED_IN",
-      label: "BURNED IN",
-    },
-    {
-      value: "TEXT",
-      label: "TEXT",
-    },
-  ]}
+  options={MARKETING_FORMAT_OPTIONS}
   value={
     newOrder.deliveryFormats?.map(
       (item: any) => ({
         value: item.format,
-        label: item.format,
+        label: formatLabel(item.format),
       })
     ) || []
   }

@@ -1,6 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom"
 import { LANGUAGES } from "../../constants/languages"
+import { MARKETING_FORMAT_OPTIONS, formatLabel } from "../../constants/deliveryFormats"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
@@ -570,7 +571,7 @@ function renderRow(order: any, isSub: boolean) {
                   key={formatItem.id}
                   className="border border-[#2B2B2B] bg-[#171717] px-3 py-0.5 rounded-xl text-xs font-semibold tracking-wide text-[#F5F1E8]"
                 >
-                  {formatItem.format}
+                  {formatLabel(formatItem.format)}
                 </span>
               )
             )}
@@ -737,9 +738,9 @@ function renderRow(order: any, isSub: boolean) {
             className="h-[38px] min-w-[124px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl px-3 pr-7 text-sm font-medium text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
           >
             <option value="">All Formats</option>
-            <option value="SRT">SRT</option>
-            <option value="BURNED_IN">BURNED IN</option>
-            <option value="TEXT">TEXT</option>
+            {MARKETING_FORMAT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
         </div>
