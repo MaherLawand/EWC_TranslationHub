@@ -564,12 +564,12 @@ function renderRow(order: any, isSub: boolean) {
         {!marketing?.deliveryFormats?.length ? (
           <span className="text-zinc-600">—</span>
         ) : (
-          <div className="flex flex-nowrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {marketing?.deliveryFormats?.map(
               (formatItem: any) => (
                 <span
                   key={formatItem.id}
-                  className="border border-[#2B2B2B] bg-[#171717] px-3 py-0.5 rounded-xl text-xs font-semibold tracking-wide text-[#F5F1E8]"
+                  className="inline-flex items-center shrink-0 whitespace-nowrap border border-[#2B2B2B] bg-[#171717] px-3 py-0.5 rounded-xl text-xs font-semibold tracking-wide text-[#F5F1E8] leading-none"
                 >
                   {formatLabel(formatItem.format)}
                 </span>
