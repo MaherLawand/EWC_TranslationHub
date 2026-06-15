@@ -1122,20 +1122,29 @@ React.useEffect(() => {
                             onClick={() => setSelectedGameFilter(active ? "" : game.id)}
                             title={game.name}
                             className={`
-                              relative w-[80px] h-[80px] flex items-center justify-center
+                              relative w-[88px] flex flex-col items-center justify-start gap-1.5
                               rounded-2xl transition-all duration-200
                               ${active ? "scale-110" : "opacity-55 hover:opacity-100 hover:scale-110"}
                             `}
                           >
-                            {active && <div className="absolute inset-0 rounded-2xl" />}
-                            <img
-                              src={game.logo}
-                              alt={game.name}
+                            <div className="w-[80px] h-[80px] flex items-center justify-center">
+                              <img
+                                src={game.logo}
+                                alt={game.name}
+                                className={`
+                                  relative z-10 w-[60px] h-[60px] object-contain
+                                  ${active ? "border border-[#D6B36A] rounded-lg p-1" : ""}
+                                `}
+                              />
+                            </div>
+                            <span
                               className={`
-                                relative z-10 w-[60px] h-[60px] object-contain
-                                ${active ? "border border-[#D6B36A] rounded-lg p-1" : ""}
+                                w-full text-center text-[10px] leading-tight truncate
+                                ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-400"}
                               `}
-                            />
+                            >
+                              {game.name}
+                            </span>
                           </button>
                         )
                       })
