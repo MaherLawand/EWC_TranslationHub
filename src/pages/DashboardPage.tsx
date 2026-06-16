@@ -6,6 +6,7 @@ import BroadcastOrdersTable from "../components/orders/BroadcastOrdersTable"
 import MarketingOrdersTable from "../components/orders/MarketingOrdersTable"
 import OrderDetailsSidebar from "../components/orders/OrderDetailsSidebar"
 import OrderModal from "../components/orders/OrderModal"
+import { FeedbackPanel } from "../components/orders/OrderFeedback"
 import UserModal from "../components/users/UserModal"
 import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
@@ -330,6 +331,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     fetchOrderDetail,
     fetchOrderCounts,
     toListOrder,
+    fetchOrderFeedback,
+    createOrderFeedback,
+    updateOrderFeedback,
+    deleteOrderFeedback,
   } = useOrders({
     activePage,
     search,
@@ -615,6 +620,13 @@ React.useEffect(() => {
   // statusPatch instead (lightweight in-place, no refetch).
   const [subRefresh, setSubRefresh] = React.useState(0)
 
+  // Feedback: which order's feedback panel is open (translator), and a nonce
+  // bumped by the "order-feedback" socket event so open panels/bubbles refresh.
+  // The panel lives at page level (not inside a table row) so a list refresh
+  // never unmounts it or clears the translator's draft.
+  const [feedbackOrder, setFeedbackOrder] = React.useState<{ id: string; title: string } | null>(null)
+  const [feedbackRefresh, setFeedbackRefresh] = React.useState(0)
+
   const selectedOrderDetailRef = React.useRef(selectedOrderDetail)
   selectedOrderDetailRef.current = selectedOrderDetail
 
@@ -729,6 +741,21 @@ React.useEffect(() => {
       setSubRefresh((n) => n + 1)
     })
 
+    // order-feedback: feedback was added/edited/deleted on some order.
+    //  • bump a nonce so any OPEN panel/bubble refreshes its thread in place
+    //  • refresh the order lists (current page) so each row's feedback-count
+    //    badge stays accurate. The panel lives at page level, so this list
+    //    refresh never closes it or touches the translator's draft.
+    let feedbackTimer: ReturnType<typeof setTimeout> | null = null
+    socket.on("order-feedback", () => {
+      setFeedbackRefresh((n) => n + 1)
+      if (feedbackTimer) clearTimeout(feedbackTimer)
+      feedbackTimer = setTimeout(() => {
+        fetchBroadcastOrdersRef.current(broadcastPageRef.current)
+        fetchMarketingOrdersRef.current(marketingPageRef.current)
+      }, 600)
+    })
+
     socket.on("new-notification", (notification: any) => {
       setCurrentUser((prev: any) => {
         if (!prev) return prev
@@ -765,6 +792,7 @@ React.useEffect(() => {
     return () => {
       if (createdTimer) clearTimeout(createdTimer)
       if (patchedTimer) clearTimeout(patchedTimer)
+      if (feedbackTimer) clearTimeout(feedbackTimer)
       socket.disconnect()
     }
   }, [currentUser?.id])
@@ -896,6 +924,47 @@ React.useEffect(() => {
   function onRowClick(order: any) {
     setSelectedOrder(order)
     fetchOrderDetail(order.id)
+  }
+
+  // Duplicate flow: open the order modal in CREATE mode, pre-filled with every
+  // field of the selected order, so the user reviews and creates it manually.
+  async function openDuplicateOrder(order: any) {
+    // Pull the full detail so every field (links, deliveries, languages) is present.
+    const detail = await fetchOrderDetail(order.id)
+    const src = detail || order
+    const isMarketing = src.type === "MARKETING"
+    const detailSide = isMarketing ? src.marketing : src.broadcast
+
+    setIsEditing(false)
+    setEditingOrderId("")
+    setNewOrder({
+      title: src.title || "",
+      contentTitle: src.marketing?.contentTitle || "",
+      notes: src.notes || "",
+      game: src.broadcast?.gameId || "",
+      type: src.type || "BROADCAST",
+      event: src.event || selectedEvent,
+      status: src.status || "PENDING",
+      priority: src.priority || "MEDIUM",
+      sourceLanguage: detailSide?.sourceLanguage || [],
+      targetLanguages: detailSide?.targetLanguages || [],
+      deliveryFormats:
+        detailSide?.deliveryFormats?.map((f: any) => ({
+          format: f.format,
+          deliveryLink: f.deliveryLink || "",
+        })) || [],
+      deadline: detailSide?.deadlineDate?.split("T")[0] || "",
+      sourceFileLink: detailSide?.sourceFileLink || "",
+      srtAvailableLink: detailSide?.srtAvailableLink || "",
+      estimatedMinutes: String(src.broadcast?.estimatedMinutes || ""),
+      deliveryDate: src.broadcast?.deliveryDate?.split("T")[0] || "",
+      deliveries:
+        detailSide?.deliveries?.map((d: any) => ({
+          language: d.language,
+          deliveryLink: d.deliveryLink || "",
+        })) || [],
+    })
+    setShowModal(true)
   }
 
   function resetOrderState() {
@@ -1145,7 +1214,7 @@ React.useEffect(() => {
                             <span
                               className={`
                                 w-full text-center text-[10px] leading-tight truncate
-                                ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-300"}
+                                ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-400"}
                               `}
                             >
                               {game.name}
@@ -1219,6 +1288,11 @@ React.useEffect(() => {
                   fetchSubOrders={fetchSubOrders}
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}
+                  canManageOrders={canManageOrders}
+                  onDuplicate={openDuplicateOrder}
+                  onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
+                  fetchOrderFeedback={fetchOrderFeedback}
+                  feedbackRefresh={feedbackRefresh}
                 />
               )}
 
@@ -1257,6 +1331,11 @@ React.useEffect(() => {
                   fetchSubOrders={fetchSubOrders}
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}
+                  canManageOrders={canManageOrders}
+                  onDuplicate={openDuplicateOrder}
+                  onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
+                  fetchOrderFeedback={fetchOrderFeedback}
+                  feedbackRefresh={feedbackRefresh}
                 />
               )}
             </>
@@ -1366,6 +1445,18 @@ React.useEffect(() => {
           canAssignUsers={canManageOrders}
           setIsEditing={setIsEditing}
           setEditingOrderId={setEditingOrderId}
+        />
+
+        {/* FEEDBACK PANEL — page-level so list refreshes never disrupt the draft */}
+        <FeedbackPanel
+          order={feedbackOrder}
+          currentUser={currentUser}
+          onClose={() => setFeedbackOrder(null)}
+          fetchOrderFeedback={fetchOrderFeedback}
+          createOrderFeedback={createOrderFeedback}
+          updateOrderFeedback={updateOrderFeedback}
+          deleteOrderFeedback={deleteOrderFeedback}
+          feedbackRefresh={feedbackRefresh}
         />
 
         {/* USER MODAL */}

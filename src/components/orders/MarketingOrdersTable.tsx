@@ -2,6 +2,7 @@ import React from "react"
 import ReactDOM from "react-dom"
 import { LANGUAGES } from "../../constants/languages"
 import { MARKETING_FORMAT_OPTIONS, formatLabel } from "../../constants/deliveryFormats"
+import { FeedbackButton, type Feedback } from "./OrderFeedback"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
@@ -50,6 +51,16 @@ type Props = {
   /** Bumped whenever a structural change (create/edit/delete) occurs so all
    *  currently-expanded parents reload their sub-orders to show fresh data. */
   subRefresh?: number
+  /** Whether the current user can create/manage orders (controls Duplicate). */
+  canManageOrders?: boolean
+  /** Open the create modal pre-filled with this order's data (duplicate). */
+  onDuplicate?: (order: any) => void | Promise<void>
+  /** Translator click → open the feedback panel for this order. */
+  onOpenFeedback?: (order: any) => void
+  /** Fetch feedback for an order (used by the manager hover bubble). */
+  fetchOrderFeedback?: (orderId: string) => Promise<Feedback[]>
+  /** Bumped when any feedback changes so open bubbles refresh. */
+  feedbackRefresh?: number
 }
 
 export default function MarketingOrdersTable({
@@ -77,6 +88,11 @@ export default function MarketingOrdersTable({
   fetchSubOrders,
   statusPatch,
   subRefresh,
+  canManageOrders,
+  onDuplicate,
+  onOpenFeedback,
+  fetchOrderFeedback,
+  feedbackRefresh,
 }: Props) {
 
 const canUpdateStatus =
@@ -97,6 +113,22 @@ const [updatingOrderId, setUpdatingOrderId] =
 
 const [copiedId, setCopiedId] =
   React.useState<string | null>(null)
+
+// Tracks the order whose duplicate is currently being prepared (detail fetch +
+// modal open) so the button shows a spinner and can't be clicked repeatedly.
+const [duplicatingId, setDuplicatingId] =
+  React.useState<string | null>(null)
+
+async function handleDuplicate(e: React.MouseEvent, order: any) {
+  e.stopPropagation()
+  if (!onDuplicate || duplicatingId) return
+  setDuplicatingId(order.id)
+  try {
+    await onDuplicate(order)
+  } finally {
+    setDuplicatingId(null)
+  }
+}
 
 function copyOrderLink(e: React.MouseEvent, orderId: string) {
   e.stopPropagation()
@@ -478,7 +510,7 @@ function renderRow(order: any, isSub: boolean) {
           <button
             onClick={(e) => copyOrderLink(e, order.id)}
             title="Copy link"
-            className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+            className="flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
           >
             {copiedId === order.id ? (
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
@@ -491,6 +523,36 @@ function renderRow(order: any, isSub: boolean) {
               </svg>
             )}
           </button>
+
+          {/* DUPLICATE — only for standalone orders (no sub-orders), managers only.
+              Uses the brand gradient to distinguish it from the grey Copy link. */}
+          {canManageOrders && onDuplicate && !isParent && !order.parentId && (
+            <button
+              onClick={(e) => handleDuplicate(e, order)}
+              disabled={duplicatingId === order.id}
+              title="Duplicate order"
+              className="flex-shrink-0 p-1 rounded-md transition-all hover:bg-[#1A1A1A] disabled:cursor-wait"
+            >
+              {duplicatingId === order.id ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D6B36A" strokeWidth="2.5" strokeLinecap="round" className="animate-spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#dupGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <defs>
+                    <linearGradient id="dupGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#F0C75E" />
+                      <stop offset="35%" stopColor="#E89B3A" />
+                      <stop offset="65%" stopColor="#D9692A" />
+                      <stop offset="100%" stopColor="#BE3F1E" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="8" y="8" width="13" height="13" rx="2" ry="2" />
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+              )}
+            </button>
+          )}
 
         </div>
 
@@ -682,6 +744,21 @@ function renderRow(order: any, isSub: boolean) {
         </div>
       </td>
 
+      {/* FEEDBACK */}
+      <td className="px-6 py-2.5 align-center text-right">
+        {onOpenFeedback && fetchOrderFeedback && (
+          <div className="inline-flex justify-end">
+            <FeedbackButton
+              order={order}
+              currentUser={currentUser}
+              onOpen={onOpenFeedback}
+              fetchOrderFeedback={fetchOrderFeedback}
+              feedbackRefresh={feedbackRefresh}
+            />
+          </div>
+        )}
+      </td>
+
     </tr>
   )
 }
@@ -819,6 +896,10 @@ function renderRow(order: any, isSub: boolean) {
     Assign
   </th>
 
+  <th className="text-right px-6 py-3">
+    Feedback
+  </th>
+
 </tr>
 
         </thead>
@@ -829,7 +910,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={8}
+        colSpan={9}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -840,7 +921,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={8}
+        colSpan={9}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -891,7 +972,7 @@ function renderRow(order: any, isSub: boolean) {
               if (entry?.loading) {
                 rows.push(
                   <tr key={`${order.id}-loading`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={8} className="px-6 py-3" style={{ paddingLeft: 56 }}>
+                    <td colSpan={9} className="px-6 py-3" style={{ paddingLeft: 56 }}>
                       <div className="flex items-center gap-2 text-zinc-500 text-sm">
                         <div className="w-3.5 h-3.5 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
                         Loading sub-orders…
@@ -902,7 +983,7 @@ function renderRow(order: any, isSub: boolean) {
               } else if (entry && entry.page < entry.totalPages) {
                 rows.push(
                   <tr key={`${order.id}-more`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={8} className="px-6 py-2" style={{ paddingLeft: 56 }}>
+                    <td colSpan={9} className="px-6 py-2" style={{ paddingLeft: 56 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); loadSubOrders(order.id, entry.page + 1) }}
                         className="text-xs font-semibold text-[#E8C77E] hover:text-[#F5D98A] transition"

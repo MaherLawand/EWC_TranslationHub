@@ -78,6 +78,7 @@ export function useOrders({
       parentId: full.parentId ?? null,
       // Count badge (grouped mode). Falls back to nested array length if present.
       subOrderCount: full._count?.subOrders ?? (Array.isArray(full.subOrders) ? full.subOrders.length : 0),
+      feedbackCount: full._count?.feedback ?? 0,
       subOrders: Array.isArray(full.subOrders)
         ? full.subOrders.map((s: any) => toListOrder(s))
         : [],
@@ -608,6 +609,70 @@ export function useOrders({
     }
   }
 
+  // ─── Order feedback (translator comments) ─────────────────────────────────
+  async function fetchOrderFeedback(orderId: string) {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${orderId}/feedback`,
+        { credentials: "include" }
+      )
+      if (!res.ok) return []
+      return await res.json()
+    } catch (e) {
+      console.error("Fetch feedback error:", e)
+      return []
+    }
+  }
+
+  async function createOrderFeedback(orderId: string, message: string) {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/orders/${orderId}/feedback`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      }
+    )
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast.error(data.message || "Failed to add feedback")
+      throw new Error(data.message || "Failed to add feedback")
+    }
+    return data
+  }
+
+  async function updateOrderFeedback(feedbackId: string, message: string) {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/orders/feedback/${feedbackId}`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      }
+    )
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast.error(data.message || "Failed to update feedback")
+      throw new Error(data.message || "Failed to update feedback")
+    }
+    return data
+  }
+
+  async function deleteOrderFeedback(feedbackId: string) {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/orders/feedback/${feedbackId}`,
+      { method: "DELETE", credentials: "include" }
+    )
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast.error(data.message || "Failed to delete feedback")
+      throw new Error(data.message || "Failed to delete feedback")
+    }
+    return data
+  }
+
   // ─── Trigger fetches when page/filters change ─────────────────────────────
   const prevSelectedEventRef = React.useRef(selectedEvent)
   React.useEffect(() => {
@@ -705,5 +770,10 @@ export function useOrders({
     toListOrder,
     orderCounts,
     fetchOrderCounts,
+    // Feedback
+    fetchOrderFeedback,
+    createOrderFeedback,
+    updateOrderFeedback,
+    deleteOrderFeedback,
   }
 }
