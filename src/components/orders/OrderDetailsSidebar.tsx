@@ -157,6 +157,7 @@ export default function OrderDetailsSidebar({
       />
 
     <div className="
+      animate-sidebar-in
       fixed inset-y-0 right-0 z-50
       w-full sm:w-[480px]
       lg:relative lg:inset-auto lg:z-auto lg:w-[480px] lg:h-full
@@ -173,18 +174,18 @@ export default function OrderDetailsSidebar({
           ✕
         </button>
 
-        <h1 className="text-[21px] font-bold tracking-tight text-[#F5F1E8] leading-snug pr-8">
+        <h1 className="text-[21px] font-bold tracking-tight text-[#F5F1E8] leading-snug pr-8 break-words [overflow-wrap:anywhere]">
           {selectedOrder.title}
         </h1>
 
         <div className="mt-3 flex items-center gap-2">
           <StatusBadge status={selectedOrder.status} />
           {selectedOrder.priority && (
-            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
+            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
               selectedOrder.priority === "HIGH"
                 ? "bg-red-500/10 border-red-500/20 text-red-400"
                 : selectedOrder.priority === "MEDIUM"
-                ? "bg-yellow-500/10 border-yellow-500/20 text-gear-gradient"
+                ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400"
                 : "bg-green-500/10 border-green-500/20 text-green-400"
             }`}>
               {selectedOrder.priority}
@@ -204,7 +205,7 @@ export default function OrderDetailsSidebar({
             ))}
           </div>
         ) : (
-          <>
+          <div className="detail-stagger space-y-4" key={orderDetail?.id ?? selectedOrder?.id}>
 
             {/* OVERVIEW — all key-value info in one card */}
             <Card>
@@ -627,7 +628,7 @@ export default function OrderDetailsSidebar({
               </div>
             )}
 
-          </>
+          </div>
         )}
       </div>
 

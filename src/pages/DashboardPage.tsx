@@ -1392,7 +1392,7 @@ React.useEffect(() => {
         {/* DELETE CONFIRM MODAL */}
         {showDeleteModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center px-4">
-            <div className="w-full max-w-[480px] bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
+            <div className="w-full max-w-[480px] bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
 
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gear-gradient w-fit">Delete Order</h2>

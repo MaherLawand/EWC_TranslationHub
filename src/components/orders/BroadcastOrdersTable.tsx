@@ -3,6 +3,7 @@ import ReactDOM from "react-dom"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { FeedbackButton, type Feedback } from "./OrderFeedback"
+import LanguagesCell from "./LanguagesCell"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -379,7 +380,7 @@ function renderRow(order: any, isSub: boolean) {
             <span className="flex-shrink-0 text-gear-gradient text-xs">↳</span>
           )}
 
-          <p className="font-normal text-[#F5F1E8]">
+          <p title={order.title} className="font-normal text-[#F5F1E8] max-w-[320px] truncate">
             {order.title}
           </p>
 
@@ -455,53 +456,7 @@ function renderRow(order: any, isSub: boolean) {
 
       {/* LANGUAGES */}
       <td className="px-6 py-2.5 align-center">
-
-        <div className="flex flex-nowrap items-center gap-2">
-
-          {/* SOURCE */}
-          {broadcast?.sourceLanguage?.length ? (
-            <div className="flex flex-nowrap gap-1">
-              {broadcast.sourceLanguage.map((lang: string) => (
-                <div key={lang} className="group/pill relative">
-                  <div className="gear-hover-text min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full border border-[#2D2D2D] bg-[#1A1A1A] text-[#EAEAEA] text-[10px] font-bold tracking-[0.12em] px-2 transition cursor-default">
-                    {getLanguageCode(lang)}
-                  </div>
-                  <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                    <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
-                      {lang}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <span className="text-zinc-600">—</span>
-          )}
-
-          <span className="text-zinc-500">→</span>
-
-          {/* TARGET */}
-          {broadcast?.targetLanguages?.length ? (
-            <div className="flex flex-nowrap gap-1">
-              {broadcast.targetLanguages.map((lang: string) => (
-                <div key={lang} className="group/pill relative">
-                  <div className="gear-hover-fill min-w-[34px] h-[22px] inline-flex items-center justify-center rounded-full bg-[#F5F1E8] text-black text-[10px] font-bold tracking-[0.12em] px-2 shadow-[0_0_15px_rgba(245,241,232,0.08)] transition cursor-default">
-                    {getLanguageCode(lang)}
-                  </div>
-                  <div className="pointer-events-none absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[115%] opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                    <div className="whitespace-nowrap rounded-lg border border-[#2D2D2D] bg-[#121212] px-2.5 py-1 text-[10px] text-[#F5F1E8]">
-                      {lang}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <span className="text-zinc-600">—</span>
-          )}
-
-        </div>
-
+        <LanguagesCell source={broadcast?.sourceLanguage} target={broadcast?.targetLanguages} />
       </td>
 
       {/* FORMAT */}
@@ -586,7 +541,7 @@ function renderRow(order: any, isSub: boolean) {
       <td className="px-6 py-2.5 align-center">
 
         <span
-          className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
+          className={`px-3 py-1 rounded-full text-sm font-medium border ${
             order.priority === "HIGH"
               ? "bg-red-500/10 text-red-400 border-red-500/20"
               : order.priority === "MEDIUM"
@@ -867,7 +822,7 @@ function renderRow(order: any, isSub: boolean) {
         style={{ position: "fixed", top: statusPortal.top, right: statusPortal.right, zIndex: 9999, transformOrigin: "top right" }}
         onMouseEnter={keepStatusPortal}
         onMouseLeave={closeStatusPortal}
-        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-[scaleIn_0.15s_ease-out_forwards]"
+        className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"
       >
         {canUpdateStatus && statusPortal.status === "PENDING" && (
           <>
