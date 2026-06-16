@@ -1122,12 +1122,17 @@ React.useEffect(() => {
                             onClick={() => setSelectedGameFilter(active ? "" : game.id)}
                             title={game.name}
                             className={`
-                              relative w-[88px] flex flex-col items-center justify-start gap-1.5
+                              group relative w-[88px] flex flex-col items-center justify-start gap-1.5
                               rounded-2xl transition-all duration-200
-                              ${active ? "scale-110" : "opacity-55 hover:opacity-100 hover:scale-110"}
+                              ${active ? "scale-110" : "hover:scale-110"}
                             `}
                           >
-                            <div className="w-[80px] h-[80px] flex items-center justify-center">
+                            <div
+                              className={`
+                                w-[80px] h-[80px] flex items-center justify-center transition-opacity duration-200
+                                ${active ? "opacity-100" : "opacity-55 group-hover:opacity-100"}
+                              `}
+                            >
                               <img
                                 src={game.logo}
                                 alt={game.name}
@@ -1140,7 +1145,7 @@ React.useEffect(() => {
                             <span
                               className={`
                                 w-full text-center text-[10px] leading-tight truncate
-                                ${active ? "text-[#D6B36A] font-semibold" : "text-white"}
+                                ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-300"}
                               `}
                             >
                               {game.name}
