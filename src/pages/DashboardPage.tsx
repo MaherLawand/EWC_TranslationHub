@@ -1140,7 +1140,7 @@ React.useEffect(() => {
                             <span
                               className={`
                                 w-full text-center text-[10px] leading-tight truncate
-                                ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-200"}
+                                ${active ? "text-[#D6B36A] font-semibold" : "text-white"}
                               `}
                             >
                               {game.name}
