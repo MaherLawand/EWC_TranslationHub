@@ -52,7 +52,9 @@ export function FeedbackButton({
   feedbackRefresh?: number
 }) {
   const isTranslator = currentUser?.position === "TRANSLATOR"
-  const count = order?.feedbackCount ?? 0
+  // List rows arrive raw from the server (carry _count.feedback); mapped rows
+  // carry feedbackCount. Support both.
+  const count = order?.feedbackCount ?? order?._count?.feedback ?? 0
 
   // Manager hover bubble state
   const [hovered, setHovered] = React.useState(false)
