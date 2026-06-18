@@ -602,11 +602,11 @@ function renderRow(order: any, isSub: boolean) {
       {/* DEADLINE */}
       <td className="px-6 py-2.5 text-zinc-300 align-center">
         {marketing?.deadlineDate ? (
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex flex-col leading-tight whitespace-nowrap">
             <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
             {(() => {
               const info = getDeadlineInfo(marketing.deadlineDate)
-              return <span className={`text-sm ${info.color}`}>{info.text}</span>
+              return <span className={`text-xs ${info.color}`}>{info.text}</span>
             })()}
           </div>
         ) : (
@@ -702,9 +702,9 @@ function renderRow(order: any, isSub: boolean) {
       </td>
 
       {/* FEEDBACK */}
-      <td className="px-6 py-2.5 align-center text-right">
+      <td className="px-6 py-2.5 align-center text-center">
         {onOpenFeedback && fetchOrderFeedback && (
-          <div className="inline-flex justify-end">
+          <div className="flex justify-center">
             <FeedbackButton
               order={order}
               currentUser={currentUser}
@@ -853,7 +853,7 @@ function renderRow(order: any, isSub: boolean) {
     Assign
   </th>
 
-  <th className="text-right px-6 py-3">
+  <th className="text-center px-6 py-3">
     Feedback
   </th>
 

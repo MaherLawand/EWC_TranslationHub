@@ -10,6 +10,8 @@ export function useOrders({
   contentTitleFilter,
   selectedGameFilter,
   deadlineSort,
+  tierSort,
+  tierFilter,
   selectedEvent,
   orderIdFilter,
   newOrder,
@@ -128,6 +130,8 @@ export function useOrders({
     if (contentTitleFilter) params.append("contentTitle", contentTitleFilter)
     if (selectedGameFilter) params.append("gameId", selectedGameFilter)
     if (deadlineSort) params.append("deadlineSort", deadlineSort)
+    if (tierSort) params.append("tierSort", tierSort)
+    if (tierFilter) params.append("tier", tierFilter)
     if (selectedEvent) params.append("event", selectedEvent)
 
     return params
@@ -148,6 +152,7 @@ export function useOrders({
         if (formatFilter.length > 0) formatFilter.forEach((f: string) => params.append("format", f))
         if (contentTitleFilter) params.append("contentTitle", contentTitleFilter)
         if (selectedGameFilter) params.append("gameId", selectedGameFilter)
+        if (tierFilter) params.append("tier", tierFilter)
         if (selectedEvent) params.append("event", selectedEvent)
       }
       if (type) params.append("type", type)
@@ -704,6 +709,8 @@ export function useOrders({
     contentTitleFilter,
     selectedGameFilter,
     deadlineSort,
+    tierSort,
+    tierFilter,
     selectedEvent,
     orderIdFilter,
   ])
@@ -723,6 +730,7 @@ export function useOrders({
     formatFilter,
     contentTitleFilter,
     selectedGameFilter,
+    tierFilter,
     selectedEvent,
     orderIdFilter,
   ])

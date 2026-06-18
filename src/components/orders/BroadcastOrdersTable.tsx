@@ -17,6 +17,24 @@ function getLanguageCode(name: string) {
   return LANG_CODE_MAP.get(name) ?? name.slice(0, 2).toUpperCase()
 }
 
+// Game production tier badge: 1 = highest (gold), 3 = lowest (dim).
+function TierBadge({ tier }: { tier: number }) {
+  const cls =
+    tier === 1
+      ? "border-[#D6B36A]/50 bg-[#D6B36A]/15 text-[#E8C77E]"
+      : tier === 2
+      ? "border-white/15 bg-white/5 text-zinc-300"
+      : "border-white/10 bg-white/[0.03] text-zinc-500"
+  return (
+    <span
+      title={`Tier ${tier}`}
+      className={`flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-md border text-[10px] font-bold ${cls}`}
+    >
+      {tier}
+    </span>
+  )
+}
+
 type Props = {
   orders: any[]
   currentUser: any
@@ -36,6 +54,10 @@ type Props = {
   }
   deadlineSort: string
   setDeadlineSort: (v: string) => void
+  tierSort?: string
+  setTierSort?: (v: string) => void
+  tierFilter?: string
+  setTierFilter?: (v: string) => void
   onResetFilters: () => void
   isLoading?: boolean
   search: string
@@ -82,6 +104,10 @@ export default function BroadcastOrdersTable({
   currentUser,
   deadlineSort,
   setDeadlineSort,
+  tierSort,
+  setTierSort,
+  tierFilter,
+  setTierFilter,
   onResetFilters,
   isLoading,
   search,
@@ -362,7 +388,7 @@ function renderRow(order: any, isSub: boolean) {
     >
 
       {/* ORDER */}
-      <td className="px-6 py-2.5 align-center">
+      <td className="pl-6 pr-3 py-2.5 align-center">
 
         <div className="flex items-center gap-2" style={isSub ? { paddingLeft: 28 } : undefined}>
 
@@ -384,11 +410,7 @@ function renderRow(order: any, isSub: boolean) {
             {order.title}
           </p>
 
-          {isParent && !isFlat && (
-            <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#D6B36A]/10 border border-[#D6B36A]/30 text-gear-gradient text-[10px] font-semibold">
-              {order.subOrderCount ?? order._count?.subOrders ?? order.subOrders?.length ?? 0} sub
-            </span>
-          )}
+       
 
           {showBreadcrumb && (
             <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-medium">
@@ -448,10 +470,15 @@ function renderRow(order: any, isSub: boolean) {
       </td>
 
       {/* GAME */}
-      <td className="px-6 py-2.5 text-zinc-300 align-center">
-        {broadcast?.game?.name
-          ? broadcast.game.name
-          : <span className="text-zinc-600">—</span>}
+      <td className="pl-3 pr-6 py-2.5 text-zinc-300 align-center">
+        {broadcast?.game?.name ? (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            {broadcast.game.tier != null && <TierBadge tier={broadcast.game.tier} />}
+            <span>{broadcast.game.name}</span>
+          </div>
+        ) : (
+          <span className="text-zinc-600">—</span>
+        )}
       </td>
 
       {/* LANGUAGES */}
@@ -485,14 +512,14 @@ function renderRow(order: any, isSub: boolean) {
       <td className="px-6 py-2.5 text-zinc-300 align-center">
 
         {broadcast?.deadlineDate ? (
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex flex-col leading-tight whitespace-nowrap">
             <span>
               {new Date(broadcast.deadlineDate).toLocaleDateString()}
             </span>
             {(() => {
               const info = getDeadlineInfo(broadcast.deadlineDate)
               return (
-                <span className={`text-sm ${info.color}`}>
+                <span className={`text-xs ${info.color}`}>
                   {info.text}
                 </span>
               )
@@ -555,9 +582,9 @@ function renderRow(order: any, isSub: boolean) {
       </td>
 
       {/* FEEDBACK */}
-      <td className="px-6 py-2.5 align-center text-right">
+      <td className="px-6 py-2.5 align-center text-center">
         {onOpenFeedback && fetchOrderFeedback && (
-          <div className="inline-flex justify-end">
+          <div className="flex justify-center">
             <FeedbackButton
               order={order}
               currentUser={currentUser}
@@ -617,6 +644,21 @@ function renderRow(order: any, isSub: boolean) {
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
         </div>
 
+        {/* TIER */}
+        <div className="relative">
+          <select
+            value={tierFilter || ""}
+            onChange={(e) => setTierFilter?.(e.target.value)}
+            className="h-[38px] min-w-[124px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-xl px-3 pr-7 text-sm font-medium text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+          >
+            <option value="">All Tiers</option>
+            <option value="1">Tier 1</option>
+            <option value="2">Tier 2</option>
+            <option value="3">Tier 3</option>
+          </select>
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
+        </div>
+
         {/* FORMAT */}
         <div className="relative">
           <select
@@ -666,12 +708,21 @@ function renderRow(order: any, isSub: boolean) {
 
           <tr>
 
-            <th className="text-left px-6 py-3">
+            <th className="text-left pl-6 pr-3 py-3">
               Order
             </th>
 
-            <th className="text-left px-6 py-3">
-              Game
+            <th className="pl-3 pr-6 py-3">
+              <button
+                onClick={() => setTierSort?.(tierSort === "ASC" ? "DESC" : tierSort === "DESC" ? "" : "ASC")}
+                title="Sort by game tier (1 = highest)"
+                className={`flex items-center gap-1.5 text-left cursor-pointer transition-colors ${tierSort ? "text-[#D6B36A]" : "hover:text-white"}`}
+              >
+                Game
+                <span className={`text-[10px] ${tierSort ? "opacity-100" : "opacity-60"}`}>
+                  {tierSort === "ASC" ? "↓" : tierSort === "DESC" ? "↑" : "↕"}
+                </span>
+              </button>
             </th>
 
             <th className="text-left px-6 py-3">
@@ -702,7 +753,7 @@ function renderRow(order: any, isSub: boolean) {
               Priority
             </th>
 
-            <th className="text-right px-6 py-3">
+            <th className="text-center px-6 py-3">
               Feedback
             </th>
 

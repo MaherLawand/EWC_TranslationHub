@@ -262,12 +262,12 @@ export function FeedbackPanel({
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-overlay-fade"
+      className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-overlay-fade"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-feedback-pop bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl w-full sm:max-w-[560px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[90vh]"
+        className="animate-feedback-pop bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-3xl w-full sm:max-w-[560px] shadow-[0_20px_80px_rgba(0,0,0,0.6)] flex flex-col max-h-[90vh]"
       >
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 flex-shrink-0">

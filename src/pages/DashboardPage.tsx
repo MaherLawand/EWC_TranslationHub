@@ -90,6 +90,18 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [deadlineSort, setDeadlineSort] =
     React.useState("")
 
+  // Game-tier sort (Broadcast only). Mutually exclusive with deadline sort.
+  const [tierSort, setTierSort] =
+    React.useState("")
+
+  // Game-tier filter (Broadcast only): "" = all, or "1" | "2" | "3".
+  const [tierFilter, setTierFilter] =
+    React.useState("")
+
+  // Activating one sort clears the other so only one ordering is ever applied.
+  const changeDeadlineSort = (v: string) => { setDeadlineSort(v); if (v) setTierSort("") }
+  const changeTierSort = (v: string) => { setTierSort(v); if (v) setDeadlineSort("") }
+
   const [selectedGameFilter, setSelectedGameFilter] =
     React.useState("")
 
@@ -344,6 +356,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     contentTitleFilter,
     selectedGameFilter,
     deadlineSort,
+    tierSort,
+    tierFilter,
     selectedEvent,
     orderIdFilter,
     newOrder,
@@ -995,6 +1009,8 @@ React.useEffect(() => {
     setPriorityFilter("All Priorities")
     setFormatFilter([])
     setDeadlineSort("")
+    setTierSort("")
+    setTierFilter("")
     setSelectedGameFilter("")
     setContentTitleFilter("")
     setOrderIdFilter("")
@@ -1275,7 +1291,11 @@ React.useEffect(() => {
                   updateOrderStatus={updateOrderStatus}
                   getDeadlineInfo={getDeadlineInfo}
                   deadlineSort={deadlineSort}
-                  setDeadlineSort={setDeadlineSort}
+                  setDeadlineSort={changeDeadlineSort}
+                  tierSort={tierSort}
+                  setTierSort={changeTierSort}
+                  tierFilter={tierFilter}
+                  setTierFilter={setTierFilter}
                   onResetFilters={resetFilters}
                   search={search}
                   setSearch={setSearch}
@@ -1318,7 +1338,7 @@ React.useEffect(() => {
                   getDeadlineInfo={getDeadlineInfo}
                   onAssignUsers={onAssignUsers}
                   deadlineSort={deadlineSort}
-                  setDeadlineSort={setDeadlineSort}
+                  setDeadlineSort={changeDeadlineSort}
                   onResetFilters={resetFilters}
                   search={search}
                   setSearch={setSearch}
