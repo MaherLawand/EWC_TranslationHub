@@ -1017,6 +1017,20 @@ React.useEffect(() => {
     setSelectedEvent(selectedEvent)
   }
 
+  // True when at least one filter/sort/search differs from its default — used to
+  // disable the Reset button when there's nothing to reset.
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    statusFilter !== "All Statuses" ||
+    priorityFilter !== "All Priorities" ||
+    formatFilter.length > 0 ||
+    deadlineSort !== "" ||
+    tierSort !== "" ||
+    tierFilter !== "" ||
+    selectedGameFilter !== "" ||
+    contentTitleFilter !== "" ||
+    orderIdFilter !== ""
+
   function toggleLanguage(language: string) {
     setNewOrder((prev: any) => {
       const alreadySelected = prev.targetLanguages.includes(language)
@@ -1297,6 +1311,7 @@ React.useEffect(() => {
                   tierFilter={tierFilter}
                   setTierFilter={setTierFilter}
                   onResetFilters={resetFilters}
+                  filtersActive={hasActiveFilters}
                   search={search}
                   setSearch={setSearch}
                   priorityFilter={priorityFilter}
@@ -1340,6 +1355,7 @@ React.useEffect(() => {
                   deadlineSort={deadlineSort}
                   setDeadlineSort={changeDeadlineSort}
                   onResetFilters={resetFilters}
+                  filtersActive={hasActiveFilters}
                   search={search}
                   setSearch={setSearch}
                   priorityFilter={priorityFilter}

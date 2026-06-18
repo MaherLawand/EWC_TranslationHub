@@ -31,6 +31,7 @@ type Props = {
   deadlineSort: string
   setDeadlineSort: (v: string) => void
   onResetFilters: () => void
+  filtersActive?: boolean
   isLoading?: boolean
   search: string
   setSearch: (v: string) => void
@@ -78,6 +79,7 @@ export default function MarketingOrdersTable({
   deadlineSort,
   setDeadlineSort,
   onResetFilters,
+  filtersActive = false,
   isLoading,
   search,
   setSearch,
@@ -802,8 +804,9 @@ function renderRow(order: any, isSub: boolean) {
         {/* RESET */}
         <button
           onClick={onResetFilters}
-          onMouseMove={gearWarp}
-          className="btn-gear h-[38px] px-4 rounded-xl text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] flex-shrink-0"
+          onMouseMove={filtersActive ? gearWarp : undefined}
+          disabled={!filtersActive}
+          className="btn-gear h-[38px] px-4 rounded-xl text-sm font-bold tracking-wide shadow-[0_0_14px_rgba(214,179,106,0.18)] flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           Reset
         </button>
