@@ -12,6 +12,7 @@ import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
+import { CONTENT_TITLES } from "../constants/contentTitles"
 import { toast, ToastContainer } from "react-toastify"
 import { useOrders } from "../hooks/useOrders"
 import { useUsers } from "../hooks/useUsers"
@@ -1163,7 +1164,7 @@ React.useEffect(() => {
                 {/* CONTENT TITLE PILLS */}
                 {(activePage === "marketing" || activePage === "my-orders") && (
                   <div className="flex flex-wrap items-center gap-2 pt-1">
-                    {["Content 1", "Content 2", "Content 3", "Others"].map((title) => {
+                    {CONTENT_TITLES.map((title) => {
                       const active = contentTitleFilter === title
                       return (
                         <button

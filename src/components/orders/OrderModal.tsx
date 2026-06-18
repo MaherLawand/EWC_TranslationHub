@@ -9,6 +9,7 @@ import {
   MARKETING_FORMAT_OPTIONS,
   formatLabel,
 } from "../../constants/deliveryFormats"
+import { CONTENT_TITLES } from "../../constants/contentTitles"
 import { motion, AnimatePresence } from "framer-motion"
 import { gearWarp } from "../../lib/gearHover"
 import DatePicker from "react-datepicker"
@@ -890,12 +891,7 @@ today.setHours(0, 0, 0, 0)
     styles={darkSelectStyles}
     isSearchable={false}
     placeholder="Select content"
-    options={[
-      { value: "Content 1", label: "Content 1" },
-      { value: "Content 2", label: "Content 2" },
-      { value: "Content 3", label: "Content 3" },
-      { value: "Others", label: "Others" },
-    ]}
+    options={CONTENT_TITLES.map((t) => ({ value: t, label: t }))}
     value={newOrder.contentTitle ? { value: newOrder.contentTitle, label: newOrder.contentTitle } : null}
     onChange={(selected) => setNewOrder({ ...newOrder, contentTitle: selected?.value || "" })}
   />
