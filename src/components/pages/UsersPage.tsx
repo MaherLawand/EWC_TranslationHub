@@ -439,34 +439,12 @@ export default function UsersPage({
             rounded-[32px]
             border
             border-white/10
-            bg-white/5
+            bg-[#0C0C0C]/95
             backdrop-blur-2xl
             p-8
             shadow-[0_20px_80px_rgba(0,0,0,0.6)]
           "
         >
-
-          <div
-            className="
-              w-16
-              h-16
-              rounded-2xl
-              bg-red-500/10
-              border
-              border-red-500/20
-              flex
-              items-center
-              justify-center
-              mx-auto
-              mb-6
-            "
-          >
-
-            <span className="text-3xl">
-              🗑️
-            </span>
-
-          </div>
 
           <div className="text-center">
 

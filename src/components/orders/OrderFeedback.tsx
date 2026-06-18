@@ -179,6 +179,7 @@ export function FeedbackButton({
         <div
           ref={wrapRef}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={closeBubble}
           style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
