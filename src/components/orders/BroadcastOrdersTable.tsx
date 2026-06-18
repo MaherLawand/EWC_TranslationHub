@@ -4,6 +4,7 @@ import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { FeedbackButton, type Feedback } from "./OrderFeedback"
 import LanguagesCell from "./LanguagesCell"
+import FormatsCell from "./FormatsCell"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -177,14 +178,27 @@ const [statusPortal, setStatusPortal] = React.useState<{
   orderId: string
   status: string
   top: number
-  right: number
+  left: number
 } | null>(null)
 const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
+// Opens (idempotent) and clamps the dropdown fully on-screen — flips above the
+// badge when there's no room below, and keeps it within the left/right edges.
+// Called by BOTH hover (desktop) and click/tap (mobile); always opens, never
+// toggles, so a tap's mouseenter+click pair can't cancel out.
 function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
+  e.stopPropagation()
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  setStatusPortal({ orderId, status, top: rect.bottom + 6, right: window.innerWidth - rect.right })
+  const MENU_W = 192
+  const MENU_H = 180
+  const PAD = 8
+  let left = rect.right - MENU_W
+  if (left + MENU_W > window.innerWidth - PAD) left = window.innerWidth - MENU_W - PAD
+  if (left < PAD) left = PAD
+  let top = rect.bottom + 6
+  if (top + MENU_H > window.innerHeight - PAD) top = Math.max(PAD, rect.top - MENU_H - 6)
+  setStatusPortal({ orderId, status, top, left })
 }
 function closeStatusPortal() {
   statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
@@ -192,6 +206,22 @@ function closeStatusPortal() {
 function keepStatusPortal() {
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
 }
+
+// Close on any tap/click outside the dropdown (mobile has no mouseleave).
+React.useEffect(() => {
+  if (!statusPortal) return
+  const close = () => setStatusPortal(null)
+  const id = window.setTimeout(() => {
+    document.addEventListener("click", close)
+    document.addEventListener("touchstart", close)
+  }, 0)
+  return () => {
+    window.clearTimeout(id)
+    document.removeEventListener("click", close)
+    document.removeEventListener("touchstart", close)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [statusPortal?.orderId])
 
   async function handleUpdateStatus(
   orderId: string,
@@ -488,24 +518,9 @@ function renderRow(order: any, isSub: boolean) {
 
       {/* FORMAT */}
       <td className="px-6 py-2.5 align-center">
-
-        {!broadcast?.deliveryFormats?.length ? (
-          <span className="text-zinc-600">—</span>
-        ) : (
-          <div className="flex flex-nowrap gap-2">
-            {broadcast?.deliveryFormats?.map(
-              (formatItem: any) => (
-                <span
-                  key={formatItem.id}
-                  className="border border-[#2B2B2B] bg-[#171717] px-3 py-0.5 rounded-xl text-xs font-semibold tracking-wide text-[#F5F1E8]"
-                >
-                  {formatItem.format}
-                </span>
-              )
-            )}
-          </div>
-        )}
-
+        <FormatsCell
+          formats={(broadcast?.deliveryFormats ?? []).map((f: any) => f.format)}
+        />
       </td>
 
       {/* DEADLINE */}
@@ -541,7 +556,7 @@ function renderRow(order: any, isSub: boolean) {
         >
           {canEditThisStatus ? (
             <button
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => openStatusPortal(e, order.id, order.status)}
               disabled={isUpdating}
               className="rounded-xl transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -870,7 +885,8 @@ function renderRow(order: any, isSub: boolean) {
     {/* STATUS PORTAL — rendered in document.body to escape overflow clipping */}
     {statusPortal && ReactDOM.createPortal(
       <div
-        style={{ position: "fixed", top: statusPortal.top, right: statusPortal.right, zIndex: 9999, transformOrigin: "top right" }}
+        style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999, transformOrigin: "top left" }}
+        onClick={(e) => e.stopPropagation()}
         onMouseEnter={keepStatusPortal}
         onMouseLeave={closeStatusPortal}
         className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"

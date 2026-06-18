@@ -61,7 +61,8 @@ export function FeedbackButton({
   const [items, setItems] = React.useState<Feedback[] | null>(null)
   const [loading, setLoading] = React.useState(false)
   const btnRef = React.useRef<HTMLButtonElement>(null)
-  const [pos, setPos] = React.useState<{ top: number; right: number } | null>(null)
+  const wrapRef = React.useRef<HTMLDivElement>(null)
+  const [pos, setPos] = React.useState<{ top: number; left: number; maxH: number } | null>(null)
   const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function load() {
@@ -71,11 +72,25 @@ export function FeedbackButton({
     setLoading(false)
   }
 
+  // Opens (idempotent). Prefers to drop below the button and caps the bubble
+  // height to the viewport; the layout-effect below then clamps the final top so
+  // a tall bubble anchors from the bottom instead of clipping off the top.
+  // Called by BOTH hover (desktop) and click/tap (mobile); always opens so a
+  // tap's mouseenter+click pair can't cancel out.
   function openBubble(e: React.MouseEvent) {
+    e.stopPropagation()
     if (hideTimer.current) clearTimeout(hideTimer.current)
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    // Anchor the bubble above-LEFT of the button so it never clips the screen edge.
-    setPos({ top: r.top, right: window.innerWidth - r.left })
+    const BUB_W = 320
+    const PAD = 8
+    let left = r.right - BUB_W
+    if (left + BUB_W > window.innerWidth - PAD) left = window.innerWidth - BUB_W - PAD
+    if (left < PAD) left = PAD
+    setPos({
+      top: r.bottom + 6,
+      left,
+      maxH: Math.min(360, window.innerHeight - 2 * PAD),
+    })
     setHovered(true)
     load()
   }
@@ -83,11 +98,41 @@ export function FeedbackButton({
     hideTimer.current = setTimeout(() => setHovered(false), 120)
   }
 
+  // After the bubble renders (or its content changes height), clamp its top so
+  // the whole bubble stays within the viewport — if it's too tall/low it shifts
+  // up to sit against the bottom edge; never clips the top.
+  React.useLayoutEffect(() => {
+    if (!hovered || !pos) return
+    const el = wrapRef.current
+    if (!el) return
+    const PAD = 8
+    const h = el.offsetHeight
+    let top = pos.top
+    if (top + h > window.innerHeight - PAD) top = window.innerHeight - h - PAD
+    if (top < PAD) top = PAD
+    el.style.top = `${top}px`
+  }, [hovered, pos, items, loading])
+
   // If feedback changes elsewhere while the bubble is open, refresh it.
   React.useEffect(() => {
     if (hovered) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedbackRefresh])
+
+  // Close on any tap/click outside the bubble (mobile has no mouseleave).
+  React.useEffect(() => {
+    if (!hovered) return
+    const close = () => setHovered(false)
+    const id = window.setTimeout(() => {
+      document.addEventListener("click", close)
+      document.addEventListener("touchstart", close)
+    }, 0)
+    return () => {
+      window.clearTimeout(id)
+      document.removeEventListener("click", close)
+      document.removeEventListener("touchstart", close)
+    }
+  }, [hovered])
 
   if (isTranslator) {
     return (
@@ -118,25 +163,27 @@ export function FeedbackButton({
     <>
       <button
         ref={btnRef}
-        onClick={(e) => e.stopPropagation()}
+        onClick={openBubble}
         onMouseEnter={openBubble}
         onMouseLeave={closeBubble}
         title="View feedback"
-        className="relative flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A] cursor-default"
+        className="relative flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
       >
         {feedbackIcon}
         <CountBadge count={count} />
       </button>
 
       {hovered && pos && ReactDOM.createPortal(
-        // Outer wrapper owns the positioning transform (translateY(-100%));
-        // inner bubble owns the pop animation so the two transforms don't clash.
+        // Outer wrapper owns positioning; the layout-effect clamps its top into
+        // the viewport. Inner bubble owns the pop animation + internal scroll.
         <div
+          ref={wrapRef}
+          onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={closeBubble}
-          style={{ position: "fixed", top: pos.top, right: pos.right + 8, zIndex: 9999, transform: "translateY(-100%)" }}
+          style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
         >
-          <div className="animate-bubble-pop w-[320px] max-h-[360px] overflow-auto dark-scroll rounded-2xl border border-[#242424] bg-[#0E0E0E] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3">
+          <div style={{ maxHeight: pos.maxH }} className="animate-bubble-pop w-[320px] overflow-auto dark-scroll rounded-2xl border border-[#242424] bg-[#0E0E0E] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3">
             <p className="text-xs font-semibold tracking-[0.15em] uppercase text-gear-gradient w-fit mb-2">Feedback</p>
             {loading ? (
               <p className="text-sm text-zinc-500 py-2">Loading…</p>

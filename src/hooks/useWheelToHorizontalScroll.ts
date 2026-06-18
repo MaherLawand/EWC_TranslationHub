@@ -20,6 +20,14 @@ export function useWheelToHorizontalScroll<T extends HTMLElement>() {
       // Only intercept when there is overflow to scroll into
       if (el.scrollWidth <= el.clientWidth) return
 
+      // If we're already at the horizontal edge in the wheel's direction, don't
+      // capture the gesture — let it bubble so the page can keep scrolling
+      // vertically instead of locking the user inside the table.
+      const maxScroll = el.scrollWidth - el.clientWidth
+      const atStart = el.scrollLeft <= 0
+      const atEnd = el.scrollLeft >= maxScroll - 1
+      if ((e.deltaY < 0 && atStart) || (e.deltaY > 0 && atEnd)) return
+
       e.preventDefault()
       el.scrollLeft += e.deltaY
     }
