@@ -89,10 +89,14 @@ type Props = {
   onDuplicate?: (order: any) => void | Promise<void>
   /** Translator click → open the feedback panel for this order. */
   onOpenFeedback?: (order: any) => void
-  /** Fetch feedback for an order (used by the manager hover bubble). */
+  /** Fetch feedback for an order (used by the hover preview bubble). */
   fetchOrderFeedback?: (orderId: string) => Promise<Feedback[]>
   /** Bumped when any feedback changes so open bubbles refresh. */
   feedbackRefresh?: number
+  /** Mark feedback messages read (called when they scroll into view). */
+  markFeedbackRead?: (ids: string[]) => Promise<void> | void
+  /** Called after messages are marked read so the unread badges refresh. */
+  onFeedbackRead?: () => void
 }
 
 export default function BroadcastOrdersTable({
@@ -129,6 +133,8 @@ export default function BroadcastOrdersTable({
   onOpenFeedback,
   fetchOrderFeedback,
   feedbackRefresh,
+  markFeedbackRead,
+  onFeedbackRead,
 }: Props) {
 
 const canUpdateStatus =
@@ -183,9 +189,11 @@ const [statusPortal, setStatusPortal] = React.useState<{
   left: number
 } | null>(null)
 const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+const statusPortalRef = React.useRef<HTMLDivElement>(null)
 
-// Opens (idempotent) and clamps the dropdown fully on-screen — flips above the
-// badge when there's no room below, and keeps it within the left/right edges.
+// Opens (idempotent) anchored just below the badge; the layout-effect below
+// then measures the rendered menu and clamps it on-screen (same approach as the
+// feedback bubble) so it never floats detached above the badge.
 // Called by BOTH hover (desktop) and click/tap (mobile); always opens, never
 // toggles, so a tap's mouseenter+click pair can't cancel out.
 function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) {
@@ -193,14 +201,11 @@ function openStatusPortal(e: React.MouseEvent, orderId: string, status: string) 
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   const MENU_W = 192
-  const MENU_H = 180
   const PAD = 8
   let left = rect.right - MENU_W
   if (left + MENU_W > window.innerWidth - PAD) left = window.innerWidth - MENU_W - PAD
   if (left < PAD) left = PAD
-  let top = rect.bottom + 6
-  if (top + MENU_H > window.innerHeight - PAD) top = Math.max(PAD, rect.top - MENU_H - 6)
-  setStatusPortal({ orderId, status, top, left })
+  setStatusPortal({ orderId, status, top: rect.bottom + 6, left })
 }
 function closeStatusPortal() {
   statusPortalTimer.current = setTimeout(() => setStatusPortal(null), 120)
@@ -208,6 +213,20 @@ function closeStatusPortal() {
 function keepStatusPortal() {
   if (statusPortalTimer.current) clearTimeout(statusPortalTimer.current)
 }
+
+// After the menu renders, clamp its top using its real height so it stays fully
+// on-screen (shifts up only by the actual overflow, never a guessed amount).
+React.useLayoutEffect(() => {
+  if (!statusPortal) return
+  const el = statusPortalRef.current
+  if (!el) return
+  const PAD = 8
+  const h = el.offsetHeight
+  let top = statusPortal.top
+  if (top + h > window.innerHeight - PAD) top = window.innerHeight - h - PAD
+  if (top < PAD) top = PAD
+  el.style.top = `${top}px`
+}, [statusPortal])
 
 // Close on any tap/click outside the dropdown (mobile has no mouseleave).
 React.useEffect(() => {
@@ -608,6 +627,8 @@ function renderRow(order: any, isSub: boolean) {
               onOpen={onOpenFeedback}
               fetchOrderFeedback={fetchOrderFeedback}
               feedbackRefresh={feedbackRefresh}
+              markFeedbackRead={markFeedbackRead}
+              onRead={onFeedbackRead}
             />
           </div>
         )}
@@ -888,6 +909,7 @@ function renderRow(order: any, isSub: boolean) {
     {/* STATUS PORTAL — rendered in document.body to escape overflow clipping */}
     {statusPortal && ReactDOM.createPortal(
       <div
+        ref={statusPortalRef}
         style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999, transformOrigin: "top left" }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
@@ -895,34 +917,24 @@ function renderRow(order: any, isSub: boolean) {
         onMouseLeave={closeStatusPortal}
         className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"
       >
-        {canUpdateStatus && statusPortal.status === "PENDING" && (
-          <>
-            <button
-              disabled={updatingOrderId === statusPortal.orderId}
-              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "IN_PROGRESS"); setStatusPortal(null) }}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Start Progress
-            </button>
-            <button
-              disabled={updatingOrderId === statusPortal.orderId}
-              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Mark Completed
-            </button>
-          </>
-        )}
-        {canUpdateStatus && statusPortal.status === "IN_PROGRESS" && (
-          <button
-            disabled={updatingOrderId === statusPortal.orderId}
-            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, "COMPLETED"); setStatusPortal(null) }}
-            className="w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm text-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Mark Completed
-          </button>
-        )}
-        {(!canUpdateStatus || statusPortal.status === "COMPLETED") && (
+        {canUpdateStatus ? (
+          ([
+            { value: "PENDING", label: "Set Pending", cls: "text-yellow-400" },
+            { value: "IN_PROGRESS", label: "Start Progress", cls: "text-blue-400" },
+            { value: "COMPLETED", label: "Mark Completed", cls: "text-green-400" },
+          ] as const)
+            .filter((s) => s.value !== statusPortal.status)
+            .map((s) => (
+              <button
+                key={s.value}
+                disabled={updatingOrderId === statusPortal.orderId}
+                onClick={(e) => { e.stopPropagation(); handleUpdateStatus(statusPortal.orderId, s.value); setStatusPortal(null) }}
+                className={`w-full text-left px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm ${s.cls} transition disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {s.label}
+              </button>
+            ))
+        ) : (
           <div className="px-3 py-2 text-xs text-zinc-400">No actions available</div>
         )}
       </div>,

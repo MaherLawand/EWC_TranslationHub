@@ -348,6 +348,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     createOrderFeedback,
     updateOrderFeedback,
     deleteOrderFeedback,
+    markFeedbackRead,
+    fetchUnreadFeedbackCounts,
   } = useOrders({
     activePage,
     search,
@@ -641,6 +643,22 @@ React.useEffect(() => {
   // never unmounts it or clears the translator's draft.
   const [feedbackOrder, setFeedbackOrder] = React.useState<{ id: string; title: string } | null>(null)
   const [feedbackRefresh, setFeedbackRefresh] = React.useState(0)
+
+  // Per-order unread feedback counts (messages not authored/read by me) → badges.
+  const [feedbackUnread, setFeedbackUnread] = React.useState<Record<string, number>>({})
+
+  // Recompute unread counts for whatever orders are currently loaded.
+  const refreshUnreadCounts = React.useCallback(() => {
+    const ids = [...broadcastOrders, ...marketingOrders].map((o: any) => o.id).filter(Boolean)
+    if (ids.length === 0) { setFeedbackUnread({}); return }
+    fetchUnreadFeedbackCounts(ids).then(setFeedbackUnread).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [broadcastOrders, marketingOrders])
+
+  // Refresh whenever the loaded orders change or any feedback event fires.
+  React.useEffect(() => {
+    refreshUnreadCounts()
+  }, [refreshUnreadCounts, feedbackRefresh])
 
   const selectedOrderDetailRef = React.useRef(selectedOrderDetail)
   selectedOrderDetailRef.current = selectedOrderDetail
@@ -1298,7 +1316,7 @@ React.useEffect(() => {
                 <BroadcastOrdersTable
                   isLoading={isLoadingBroadcast}
                   currentUser={currentUser}
-                  orders={orderIdFilter ? broadcastOrders.filter(o => o.id === orderIdFilter) : broadcastOrders}
+                  orders={(orderIdFilter ? broadcastOrders.filter(o => o.id === orderIdFilter) : broadcastOrders).map((o: any) => ({ ...o, unreadFeedbackCount: feedbackUnread[o.id] ?? 0 }))}
                   page={broadcastPage}
                   totalPages={broadcastTotalPages}
                   onPageChange={(p) => fetchBroadcastOrders(p)}
@@ -1329,6 +1347,8 @@ React.useEffect(() => {
                   onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
                   fetchOrderFeedback={fetchOrderFeedback}
                   feedbackRefresh={feedbackRefresh}
+                  markFeedbackRead={markFeedbackRead}
+                  onFeedbackRead={refreshUnreadCounts}
                 />
               )}
 
@@ -1344,7 +1364,7 @@ React.useEffect(() => {
               {(activePage === "dashboard" || activePage === "marketing" || activePage === "my-orders") && (
                 <MarketingOrdersTable
                   isLoading={isLoadingMarketing}
-                  orders={orderIdFilter ? marketingOrders.filter(o => o.id === orderIdFilter) : marketingOrders}
+                  orders={(orderIdFilter ? marketingOrders.filter(o => o.id === orderIdFilter) : marketingOrders).map((o: any) => ({ ...o, unreadFeedbackCount: feedbackUnread[o.id] ?? 0 }))}
                   currentUser={currentUser}
                   page={marketingPage}
                   totalPages={marketingTotalPages}
@@ -1373,6 +1393,8 @@ React.useEffect(() => {
                   onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
                   fetchOrderFeedback={fetchOrderFeedback}
                   feedbackRefresh={feedbackRefresh}
+                  markFeedbackRead={markFeedbackRead}
+                  onFeedbackRead={refreshUnreadCounts}
                 />
               )}
             </>
@@ -1494,6 +1516,8 @@ React.useEffect(() => {
           updateOrderFeedback={updateOrderFeedback}
           deleteOrderFeedback={deleteOrderFeedback}
           feedbackRefresh={feedbackRefresh}
+          markFeedbackRead={markFeedbackRead}
+          onRead={refreshUnreadCounts}
         />
 
         {/* USER MODAL */}

@@ -678,6 +678,39 @@ export function useOrders({
     return data
   }
 
+  // Mark a batch of feedback messages as read for the current user (fire-and-forget).
+  async function markFeedbackRead(feedbackIds: string[]) {
+    if (!feedbackIds.length) return
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/orders/feedback/read`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedbackIds }),
+      })
+    } catch (e) {
+      console.error("Mark feedback read error:", e)
+    }
+  }
+
+  // Unread feedback counts (messages not authored/read by me) for given orders.
+  async function fetchUnreadFeedbackCounts(orderIds: string[]): Promise<Record<string, number>> {
+    if (!orderIds.length) return {}
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/orders/feedback/unread-counts`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderIds }),
+      })
+      if (!res.ok) return {}
+      return await res.json()
+    } catch (e) {
+      console.error("Unread feedback counts error:", e)
+      return {}
+    }
+  }
+
   // ─── Trigger fetches when page/filters change ─────────────────────────────
   const prevSelectedEventRef = React.useRef(selectedEvent)
   React.useEffect(() => {
@@ -783,5 +816,7 @@ export function useOrders({
     createOrderFeedback,
     updateOrderFeedback,
     deleteOrderFeedback,
+    markFeedbackRead,
+    fetchUnreadFeedbackCounts,
   }
 }

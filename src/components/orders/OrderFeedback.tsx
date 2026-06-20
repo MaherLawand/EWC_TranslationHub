@@ -8,6 +8,7 @@ export type Feedback = {
   updatedAt: string
   authorId: string
   author?: { id: string; firstName: string; lastName: string; position?: string }
+  readByMe?: boolean
 }
 
 function authorName(f: Feedback) {
@@ -17,13 +18,27 @@ function fmt(d: string) {
   try { return new Date(d).toLocaleString() } catch { return "" }
 }
 
+// How long a message must stay in view before it counts as "read".
+const SEEN_DELAY_MS = 1500
+
+// Translators AND the order's managers (Producers / PPMs / Admin) can open the
+// panel and post. Everyone else gets the read-only hover preview.
+function canPostFeedback(user: any): boolean {
+  return (
+    user?.role === "ADMIN" ||
+    user?.position === "TRANSLATOR" ||
+    user?.position === "PRODUCER" ||
+    user?.position === "POST_PRODUCTION_MANAGER"
+  )
+}
+
 const feedbackIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 )
 
-// Small count badge shown at the top-right of the feedback button.
+// Unread badge — counts messages the viewer didn't author and hasn't read.
 function CountBadge({ count }: { count: number }) {
   if (!count) return null
   return (
@@ -33,10 +48,69 @@ function CountBadge({ count }: { count: number }) {
   )
 }
 
+/* Wraps a feedback message and, when it's unread, fires `onSeen(id)` once it has
+   stayed in view (inside the scroll container `rootRef`) for 4 continuous
+   seconds — so reading a message marks it read. */
+function FeedbackEntry({
+  id,
+  unread,
+  onSeen,
+  rootRef,
+  className,
+  style,
+  children,
+}: {
+  id: string
+  unread: boolean
+  onSeen: (id: string) => void
+  rootRef: React.RefObject<HTMLElement | null>
+  className?: string
+  style?: React.CSSProperties
+  children: React.ReactNode
+}) {
+  const ref = React.useRef<HTMLDivElement>(null)
+  const firedRef = React.useRef(false)
+
+  React.useEffect(() => {
+    if (!unread || firedRef.current) return
+    const el = ref.current
+    if (!el) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+          if (!timer && !firedRef.current) {
+            timer = setTimeout(() => {
+              firedRef.current = true
+              onSeen(id)
+            }, SEEN_DELAY_MS)
+          }
+        } else if (timer) {
+          clearTimeout(timer)
+          timer = null
+        }
+      },
+      { root: rootRef.current ?? null, threshold: [0, 0.6, 1] }
+    )
+    obs.observe(el)
+    return () => {
+      if (timer) clearTimeout(timer)
+      obs.disconnect()
+    }
+  }, [id, unread, onSeen, rootRef])
+
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  )
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
    Row button.
-   • Translators  → clickable; opens the persistent panel (onOpen).
-   • Everyone else → not clickable; hover shows a read-only bubble of feedback.
+   • Everyone → hover shows a preview bubble of the thread.
+   • Translators + Producers/PPMs/Admin → clicking opens the full panel to reply.
+   • Badge = unread messages (not authored by the viewer).
    ────────────────────────────────────────────────────────────────────────── */
 export function FeedbackButton({
   order,
@@ -44,24 +118,31 @@ export function FeedbackButton({
   onOpen,
   fetchOrderFeedback,
   feedbackRefresh,
+  markFeedbackRead,
+  onRead,
 }: {
   order: any
   currentUser: any
   onOpen: (order: any) => void
   fetchOrderFeedback: (orderId: string) => Promise<Feedback[]>
   feedbackRefresh?: number
+  markFeedbackRead?: (ids: string[]) => Promise<void> | void
+  onRead?: () => void
 }) {
-  const isTranslator = currentUser?.position === "TRANSLATOR"
-  // List rows arrive raw from the server (carry _count.feedback); mapped rows
-  // carry feedbackCount. Support both.
-  const count = order?.feedbackCount ?? order?._count?.feedback ?? 0
+  const canPost = canPostFeedback(currentUser)
+  // Unread badge — server provides unreadFeedbackCount per row.
+  const unread = order?.unreadFeedbackCount ?? 0
+  // Whether the order has ANY feedback (total) — used to fill the icon so you
+  // can tell from the outside without hovering, even when nothing is unread.
+  const totalFeedback = order?.feedbackCount ?? order?._count?.feedback ?? 0
+  const hasFeedback = totalFeedback > 0
 
-  // Manager hover bubble state
   const [hovered, setHovered] = React.useState(false)
   const [items, setItems] = React.useState<Feedback[] | null>(null)
   const [loading, setLoading] = React.useState(false)
   const btnRef = React.useRef<HTMLButtonElement>(null)
   const wrapRef = React.useRef<HTMLDivElement>(null)
+  const scrollRef = React.useRef<HTMLDivElement>(null)
   const [pos, setPos] = React.useState<{ top: number; left: number; maxH: number } | null>(null)
   const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -72,11 +153,26 @@ export function FeedbackButton({
     setLoading(false)
   }
 
-  // Opens (idempotent). Prefers to drop below the button and caps the bubble
-  // height to the viewport; the layout-effect below then clamps the final top so
-  // a tall bubble anchors from the bottom instead of clipping off the top.
-  // Called by BOTH hover (desktop) and click/tap (mobile); always opens so a
-  // tap's mouseenter+click pair can't cancel out.
+  // Batch messages seen in quick succession, then commit the read receipts
+  // and ONLY refresh the unread counts after the write resolves (so the badge
+  // doesn't refetch stale unread state mid-write and get stuck).
+  const pendingSeen = React.useRef<Set<string>>(new Set())
+  const flushTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleSeen = React.useCallback(
+    (id: string) => {
+      setItems((prev) => (prev ? prev.map((f) => (f.id === id ? { ...f, readByMe: true } : f)) : prev))
+      pendingSeen.current.add(id)
+      if (flushTimer.current) clearTimeout(flushTimer.current)
+      flushTimer.current = setTimeout(async () => {
+        const ids = [...pendingSeen.current]
+        pendingSeen.current.clear()
+        if (ids.length && markFeedbackRead) await markFeedbackRead(ids)
+        onRead?.()
+      }, 400)
+    },
+    [markFeedbackRead, onRead]
+  )
+
   function openBubble(e: React.MouseEvent) {
     e.stopPropagation()
     if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -86,11 +182,7 @@ export function FeedbackButton({
     let left = r.right - BUB_W
     if (left + BUB_W > window.innerWidth - PAD) left = window.innerWidth - BUB_W - PAD
     if (left < PAD) left = PAD
-    setPos({
-      top: r.bottom + 6,
-      left,
-      maxH: Math.min(360, window.innerHeight - 2 * PAD),
-    })
+    setPos({ top: r.bottom + 6, left, maxH: Math.min(360, window.innerHeight - 2 * PAD) })
     setHovered(true)
     load()
   }
@@ -98,9 +190,6 @@ export function FeedbackButton({
     hideTimer.current = setTimeout(() => setHovered(false), 120)
   }
 
-  // After the bubble renders (or its content changes height), clamp its top so
-  // the whole bubble stays within the viewport — if it's too tall/low it shifts
-  // up to sit against the bottom edge; never clips the top.
   React.useLayoutEffect(() => {
     if (!hovered || !pos) return
     const el = wrapRef.current
@@ -113,13 +202,11 @@ export function FeedbackButton({
     el.style.top = `${top}px`
   }, [hovered, pos, items, loading])
 
-  // If feedback changes elsewhere while the bubble is open, refresh it.
   React.useEffect(() => {
     if (hovered) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedbackRefresh])
 
-  // Close on any tap/click outside the bubble (mobile has no mouseleave).
   React.useEffect(() => {
     if (!hovered) return
     const close = () => setHovered(false)
@@ -134,48 +221,52 @@ export function FeedbackButton({
     }
   }, [hovered])
 
-  if (isTranslator) {
-    return (
-      <button
-        onClick={(e) => { e.stopPropagation(); onOpen(order) }}
-        title="Feedback"
-        className="relative flex-shrink-0 p-1.5 rounded-lg transition-all hover:bg-[#1A1A1A] hover:scale-110"
-      >
-        {/* Gradient icon → signals it's interactive for translators */}
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#fbGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <defs>
-            <linearGradient id="fbGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#F0C75E" />
-              <stop offset="35%" stopColor="#E89B3A" />
-              <stop offset="65%" stopColor="#D9692A" />
-              <stop offset="100%" stopColor="#BE3F1E" />
-            </linearGradient>
-          </defs>
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <CountBadge count={count} />
-      </button>
-    )
-  }
-
-  // Manager / admin: view-only on hover.
   return (
     <>
       <button
         ref={btnRef}
-        onClick={openBubble}
         onMouseEnter={openBubble}
         onMouseLeave={closeBubble}
-        title="View feedback"
-        className="relative flex-shrink-0 p-1 rounded-md transition-all text-zinc-500 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+        onClick={(e) => {
+          e.stopPropagation()
+          if (canPost) onOpen(order)
+          else openBubble(e)
+        }}
+        title={hasFeedback ? `Feedback (${totalFeedback})` : canPost ? "Add feedback" : "No feedback"}
+        className={`relative flex-shrink-0 rounded-lg transition-all p-1.5 hover:scale-110 ${
+          hasFeedback
+            ? "text-[#D6B36A] hover:bg-[#1A1A1A]"
+            : "text-zinc-600 hover:text-[#D6B36A] hover:bg-[#1A1A1A]"
+        }`}
       >
-        {feedbackIcon}
-        <CountBadge count={count} />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          stroke={canPost ? "url(#fbGrad)" : hasFeedback ? "#D6B36A" : "currentColor"}
+          fill={hasFeedback ? (canPost ? "url(#fbGrad)" : "#D6B36A") : "none"}
+          fillOpacity={hasFeedback ? 0.95 : 0}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {canPost && (
+            <defs>
+              <linearGradient id="fbGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#F0C75E" />
+                <stop offset="35%" stopColor="#E89B3A" />
+                <stop offset="65%" stopColor="#D9692A" />
+                <stop offset="100%" stopColor="#BE3F1E" />
+              </linearGradient>
+            </defs>
+          )}
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <CountBadge count={unread} />
       </button>
 
       {hovered && pos && ReactDOM.createPortal(
-        // Outer wrapper owns positioning; the layout-effect clamps its top into
-        // the viewport. Inner bubble owns the pop animation + internal scroll.
         <div
           ref={wrapRef}
           onClick={(e) => e.stopPropagation()}
@@ -184,7 +275,11 @@ export function FeedbackButton({
           onMouseLeave={closeBubble}
           style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
         >
-          <div style={{ maxHeight: pos.maxH }} className="animate-bubble-pop w-[320px] overflow-auto dark-scroll rounded-2xl border border-[#242424] bg-[#0E0E0E] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3">
+          <div
+            ref={scrollRef}
+            style={{ maxHeight: pos.maxH }}
+            className="animate-bubble-pop w-[320px] overflow-auto dark-scroll rounded-2xl border border-[#242424] bg-[#0E0E0E] shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-3"
+          >
             <p className="text-xs font-semibold tracking-[0.15em] uppercase text-gear-gradient w-fit mb-2">Feedback</p>
             {loading ? (
               <p className="text-sm text-zinc-500 py-2">Loading…</p>
@@ -192,19 +287,33 @@ export function FeedbackButton({
               <p className="text-sm text-zinc-600 py-2">No feedback yet.</p>
             ) : (
               <div className="space-y-2">
-                {items.map((f, i) => (
-                  <div
-                    key={f.id}
-                    className="animate-fb-item bg-[#141414] border border-[#222] rounded-xl px-3 py-2"
-                    style={{ animationDelay: `${120 + i * 80}ms` }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[#F5F1E8] text-xs font-semibold">{authorName(f)}</span>
-                      <span className="text-[10px] text-zinc-600">{fmt(f.createdAt)}</span>
-                    </div>
-                    <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap break-words">{f.message}</p>
-                  </div>
-                ))}
+                {items.map((f) => {
+                  const mine = f.authorId === currentUser?.id
+                  const isUnread = !mine && !f.readByMe
+                  return (
+                    <FeedbackEntry
+                      key={f.id}
+                      id={f.id}
+                      unread={isUnread}
+                      onSeen={handleSeen}
+                      rootRef={scrollRef}
+                      className={`rounded-xl px-3 py-2 border ${
+                        isUnread
+                          ? "border-[#D6B36A]/50 bg-[#D6B36A]/[0.08]"
+                          : "border-[#222] bg-[#141414]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[#F5F1E8] text-xs font-semibold flex items-center gap-1.5">
+                          {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-[#D6B36A]" />}
+                          {authorName(f)}
+                        </span>
+                        <span className="text-[10px] text-zinc-600">{fmt(f.createdAt)}</span>
+                      </div>
+                      <p className="text-sm text-zinc-300 mt-1 whitespace-pre-wrap break-words">{f.message}</p>
+                    </FeedbackEntry>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -216,8 +325,8 @@ export function FeedbackButton({
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Persistent panel (rendered at the page level, NOT inside a table row) so a
-   list refresh never unmounts it or clears the translator's draft.
+   Persistent panel (page-level) — full thread + composer. Highlights unread
+   messages and marks them read after they stay in view for 4 seconds.
    ────────────────────────────────────────────────────────────────────────── */
 export function FeedbackPanel({
   order,
@@ -228,6 +337,8 @@ export function FeedbackPanel({
   updateOrderFeedback,
   deleteOrderFeedback,
   feedbackRefresh,
+  markFeedbackRead,
+  onRead,
 }: {
   order: { id: string; title: string } | null
   currentUser: any
@@ -237,6 +348,8 @@ export function FeedbackPanel({
   updateOrderFeedback: (feedbackId: string, message: string) => Promise<Feedback>
   deleteOrderFeedback: (feedbackId: string) => Promise<any>
   feedbackRefresh?: number
+  markFeedbackRead?: (ids: string[]) => Promise<void> | void
+  onRead?: () => void
 }) {
   const [items, setItems] = React.useState<Feedback[]>([])
   const [loading, setLoading] = React.useState(false)
@@ -246,8 +359,10 @@ export function FeedbackPanel({
   const [editDraft, setEditDraft] = React.useState("")
   const [savingEdit, setSavingEdit] = React.useState(false)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
+  const threadRef = React.useRef<HTMLDivElement>(null)
 
   const orderId = order?.id
+  const canPost = canPostFeedback(currentUser)
 
   async function load() {
     if (!orderId) return
@@ -257,7 +372,25 @@ export function FeedbackPanel({
     setLoading(false)
   }
 
-  // Load when the panel opens for a (new) order. Reset draft only on order change.
+  // Batch seen messages, commit read receipts, then refresh counts only after
+  // the write resolves (prevents the unread badge from sticking on stale state).
+  const pendingSeen = React.useRef<Set<string>>(new Set())
+  const flushTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleSeen = React.useCallback(
+    (id: string) => {
+      setItems((prev) => prev.map((f) => (f.id === id ? { ...f, readByMe: true } : f)))
+      pendingSeen.current.add(id)
+      if (flushTimer.current) clearTimeout(flushTimer.current)
+      flushTimer.current = setTimeout(async () => {
+        const ids = [...pendingSeen.current]
+        pendingSeen.current.clear()
+        if (ids.length && markFeedbackRead) await markFeedbackRead(ids)
+        onRead?.()
+      }, 400)
+    },
+    [markFeedbackRead, onRead]
+  )
+
   React.useEffect(() => {
     if (!orderId) return
     setDraft("")
@@ -266,7 +399,6 @@ export function FeedbackPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId])
 
-  // Live refresh from socket — re-fetch the thread but DON'T touch the draft.
   React.useEffect(() => {
     if (orderId) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -332,7 +464,7 @@ export function FeedbackPanel({
         </div>
 
         {/* THREAD */}
-        <div className="flex-1 overflow-auto dark-scroll px-6 py-4 space-y-3">
+        <div ref={threadRef} className="flex-1 overflow-auto dark-scroll px-6 py-4 space-y-3">
           {loading && items.length === 0 ? (
             <p className="text-sm text-zinc-500">Loading…</p>
           ) : items.length === 0 ? (
@@ -341,10 +473,25 @@ export function FeedbackPanel({
             items.map((f) => {
               const mine = f.authorId === currentUser?.id
               const isEditing = editingId === f.id
+              const isUnread = !mine && !f.readByMe
               return (
-                <div key={f.id} className="bg-[#111111] border border-[#242424] rounded-2xl px-4 py-3">
+                <FeedbackEntry
+                  key={f.id}
+                  id={f.id}
+                  unread={isUnread}
+                  onSeen={handleSeen}
+                  rootRef={threadRef}
+                  className={`rounded-2xl px-4 py-3 border ${
+                    isUnread
+                      ? "border-[#D6B36A]/50 bg-[#D6B36A]/[0.07]"
+                      : "border-[#242424] bg-[#111111]"
+                  }`}
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[#F5F1E8] text-sm font-semibold">{authorName(f)}</span>
+                    <span className="text-[#F5F1E8] text-sm font-semibold flex items-center gap-1.5">
+                      {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-[#D6B36A]" />}
+                      {authorName(f)}
+                    </span>
                     <span className="text-[11px] text-zinc-600">
                       {fmt(f.createdAt)}{f.updatedAt !== f.createdAt ? " (edited)" : ""}
                     </span>
@@ -406,31 +553,33 @@ export function FeedbackPanel({
                       )}
                     </>
                   )}
-                </div>
+                </FeedbackEntry>
               )
             })
           )}
         </div>
 
         {/* COMPOSER */}
-        <div className="border-t border-white/10 bg-white/[0.02] p-4 flex-shrink-0">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Write feedback…"
-            rows={3}
-            className="w-full bg-[#1A1A1A] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F5F1E8] outline-none focus:border-[#D6B36A] resize-none placeholder:text-zinc-600"
-          />
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={submit}
-              disabled={!draft.trim() || submitting}
-              className="px-5 py-2.5 rounded-xl font-semibold text-sm gear-fill text-black disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {submitting ? "Adding…" : "Add feedback"}
-            </button>
+        {canPost && (
+          <div className="border-t border-white/10 bg-white/[0.02] p-4 flex-shrink-0">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Write feedback…"
+              rows={3}
+              className="w-full bg-[#1A1A1A] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F5F1E8] outline-none focus:border-[#D6B36A] resize-none placeholder:text-zinc-600"
+            />
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={submit}
+                disabled={!draft.trim() || submitting}
+                className="px-5 py-2.5 rounded-xl font-semibold text-sm gear-fill text-black disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Adding…" : "Add feedback"}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>,
     document.body
