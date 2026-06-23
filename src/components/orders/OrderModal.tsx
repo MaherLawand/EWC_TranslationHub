@@ -889,7 +889,7 @@ today.setHours(0, 0, 0, 0)
 
   <Select
     styles={darkSelectStyles}
-    isSearchable={false}
+    isSearchable
     placeholder="Select content"
     options={CONTENT_TITLES.map((t) => ({ value: t, label: t }))}
     value={newOrder.contentTitle ? { value: newOrder.contentTitle, label: newOrder.contentTitle } : null}
