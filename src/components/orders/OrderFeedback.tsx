@@ -28,7 +28,8 @@ function canPostFeedback(user: any): boolean {
     user?.role === "ADMIN" ||
     user?.position === "TRANSLATOR" ||
     user?.position === "PRODUCER" ||
-    user?.position === "POST_PRODUCTION_MANAGER"
+    user?.position === "POST_PRODUCTION_MANAGER" ||
+    user?.position === "EDITOR"
   )
 }
 
