@@ -401,7 +401,7 @@ today.setHours(0, 0, 0, 0)
   }`}
 >
       {/* HEADER */}
-      <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-white/10 bg-[radial-gradient(ellipse_80%_60%_at_top,rgba(214,179,106,0.08),transparent_70%)] rounded-t-3xl flex-shrink-0">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[#D6B36A]/70 mb-1">
             {isEditing ? "Editing" : hasSubOrders ? "New Big Order" : "New Order"}

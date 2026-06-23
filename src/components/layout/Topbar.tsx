@@ -106,8 +106,12 @@ return (
       flex
       flex-col
       justify-center
-      gap-6
-      h-[100px]
+      gap-3
+      sm:gap-6
+      py-3
+      sm:py-0
+      min-h-[80px]
+      sm:h-[100px]
       flex-shrink-0
     "
   >
@@ -159,7 +163,8 @@ return (
 
     <h2
       className="
-        text-[30px]
+        text-2xl
+        sm:text-[30px]
         font-bold
         tracking-tight
         text-gear-gradient
@@ -281,13 +286,40 @@ return (
           shadow-[0_0_25px_rgba(214,179,106,0.18)]
           active:scale-[0.99]
           flex-shrink-0
+          whitespace-nowrap
         "
       >
-        + New Order
+        <span className="sm:hidden">+ New</span>
+        <span className="hidden sm:inline">+ New Order</span>
       </button>
     )}
 
 </div>
+
+  {/* COMPACT STATS — MOBILE/TABLET (status filter, horizontally scrollable) */}
+  {showStats && (
+    <div className="lg:hidden flex gap-2 overflow-x-auto dark-scroll -mx-1 px-1">
+      {([
+        { label: "Total", value: "All Statuses", count: orderCounts.total, active: "border-[#3A3A3A] bg-[#1A1A1A]", idle: "border-[#242424] bg-[#111111] opacity-60", text: "text-zinc-400" },
+        { label: "Pending", value: "Pending", count: pendingCount, active: "bg-yellow-500/20 border-yellow-500/50", idle: "bg-yellow-500/10 border-yellow-500/20 opacity-60", text: "text-yellow-400" },
+        { label: "In Progress", value: "In Progress", count: inProgressCount, active: "bg-blue-500/20 border-blue-500/50", idle: "bg-blue-500/[0.06] border-blue-500/10 opacity-60", text: "text-blue-400" },
+        { label: "Completed", value: "Completed", count: completedCount, active: "bg-green-500/20 border-green-500/50", idle: "bg-green-500/[0.06] border-green-500/10 opacity-60", text: "text-green-400" },
+      ] as const).map((s) => {
+        const isActive = statusFilter === s.value
+        return (
+          <button
+            key={s.value}
+            onClick={() => setStatusFilter(isActive && s.value !== "All Statuses" ? "All Statuses" : s.value)}
+            className={`flex-shrink-0 flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all duration-200 ${isActive ? s.active : s.idle}`}
+          >
+            <span className={`text-[10px] uppercase tracking-[0.12em] ${s.text}`}>{s.label}</span>
+            <span className="text-sm font-bold text-white">{s.count}</span>
+          </button>
+        )
+      })}
+    </div>
+  )}
+
 
 
   </header>
