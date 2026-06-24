@@ -850,8 +850,12 @@ function renderRow(order: any, isSub: boolean) {
           ordered.push(o)
           seen.add(o.id)
           const kids = childrenByParent.get(o.id)
-          if (kids) for (const k of kids) {
-            if (!seen.has(k.id)) { ordered.push(k); seen.add(k.id) }
+          if (kids) {
+            // Natural (numeric-aware) order so "Day 2" precedes "Day 10".
+            kids.sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: "base" }))
+            for (const k of kids) {
+              if (!seen.has(k.id)) { ordered.push(k); seen.add(k.id) }
+            }
           }
         }
         return ordered.map((order) => renderRow(order, false))
@@ -863,7 +867,9 @@ function renderRow(order: any, isSub: boolean) {
             if (order.isParent && expandedIds.has(order.id)) {
               const entry = subCache.get(order.id)
               if (entry) {
-                entry.rows.forEach((sub: any) => rows.push(renderRow(sub, true)))
+                [...entry.rows]
+                  .sort((a: any, b: any) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: "base" }))
+                  .forEach((sub: any) => rows.push(renderRow(sub, true)))
               }
               if (entry?.loading) {
                 rows.push(
