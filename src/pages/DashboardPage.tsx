@@ -679,6 +679,21 @@ React.useEffect(() => {
   const marketingPageRef = React.useRef(marketingPage)
   marketingPageRef.current = marketingPage
 
+  // Refresh the top-bar counts scoped to the CURRENT page (same type/assignedOnly
+  // mapping the hook uses on page load). Called from socket events via a live ref
+  // so it always uses the current activePage/event/filters — calling the bare
+  // fetchOrderCounts() omitted the type filter, which let other-department orders
+  // (e.g. a completed marketing order) leak into the broadcast page's counts.
+  function refreshOrderCounts() {
+    if (activePage === "Broadcast") fetchOrderCounts("BROADCAST")
+    else if (activePage === "my-games") fetchOrderCounts("BROADCAST", true)
+    else if (activePage === "marketing") fetchOrderCounts("MARKETING")
+    else if (activePage === "my-orders") fetchOrderCounts("MARKETING", true)
+    else fetchOrderCounts()
+  }
+  const refreshOrderCountsRef = React.useRef(refreshOrderCounts)
+  refreshOrderCountsRef.current = refreshOrderCounts
+
   React.useEffect(() => {
     if (!currentUser) return
 
@@ -697,8 +712,8 @@ React.useEffect(() => {
     socket.on("order-created", ({ type }: { type: string }) => {
       if (createdTimer) clearTimeout(createdTimer)
       createdTimer = setTimeout(() => {
-        if (type === "BROADCAST") { fetchBroadcastOrdersRef.current(1); fetchOrderCounts() }
-        else if (type === "MARKETING") { fetchMarketingOrdersRef.current(1); fetchOrderCounts() }
+        if (type === "BROADCAST") { fetchBroadcastOrdersRef.current(1); refreshOrderCountsRef.current() }
+        else if (type === "MARKETING") { fetchMarketingOrdersRef.current(1); refreshOrderCountsRef.current() }
         // A new sub-order may belong to an expanded parent → refresh its rows.
         setSubRefresh((n) => n + 1)
       }, 2000)
@@ -730,6 +745,8 @@ React.useEffect(() => {
         // Push the patch into the tables so a sub-order row inside an expanded
         // parent's subCache (which isn't in the top-level state) also updates.
         setStatusPatch({ id, status, nonce: Date.now() })
+        // A status change moves an order between buckets → refresh the top-bar counts.
+        refreshOrderCountsRef.current()
         // Patch the open sidebar in-place so the user never sees a stale badge.
         // Case 1: the sidebar is showing the order whose status just changed.
         // selectedOrder drives the header badge; selectedOrderDetail drives the
@@ -770,7 +787,7 @@ React.useEffect(() => {
       } else if (type === "MARKETING") {
         setMarketingOrders((prev: any[]) => prev.filter((o) => o.id !== id))
       }
-      fetchOrderCounts()
+      refreshOrderCountsRef.current()
       // A deleted sub-order may still be cached under an expanded parent → refresh.
       setSubRefresh((n) => n + 1)
     })
