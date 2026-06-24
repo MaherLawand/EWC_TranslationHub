@@ -120,6 +120,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [newOrder, setNewOrder] = React.useState({
     title: "",
     contentTitle: "",
+    aspectRatios: [] as string[],
     notes: "",
     game: "",
     type: "BROADCAST",
@@ -973,6 +974,7 @@ React.useEffect(() => {
     setNewOrder({
       title: src.title || "",
       contentTitle: src.marketing?.contentTitle || "",
+      aspectRatios: detailSide?.aspectRatios || [],
       notes: src.notes || "",
       game: src.broadcast?.gameId || "",
       type: src.type || "BROADCAST",
@@ -1004,6 +1006,7 @@ React.useEffect(() => {
     setNewOrder({
       title: "",
       contentTitle: "",
+      aspectRatios: [],
       notes: "",
       game: "",
       type: "BROADCAST",

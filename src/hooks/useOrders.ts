@@ -97,6 +97,7 @@ export function useOrders({
       marketing: full.marketing ? {
         id: full.marketing.id,
         contentTitle: full.marketing.contentTitle,
+        aspectRatios: full.marketing.aspectRatios,
         sourceLanguage: full.marketing.sourceLanguage,
         targetLanguages: full.marketing.targetLanguages,
         deadlineDate: full.marketing.deadlineDate,

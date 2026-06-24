@@ -8,6 +8,7 @@ export const DELIVERY_FORMAT_LABELS: Record<string, string> = {
   ON_SCREEN_TEXT: "On Screen Text",
   GRAPHIC_TEXT: "Graphic Text",
   VO_TRANSLATIONS: "VO Translations",
+  GOOGLE_SHEET: "Google Sheet",
 }
 
 export function formatLabel(value: string): string {
@@ -27,4 +28,8 @@ export const MARKETING_FORMAT_OPTIONS = [
   { value: "ON_SCREEN_TEXT", label: "On Screen Text" },
   { value: "GRAPHIC_TEXT", label: "Graphic Text" },
   { value: "VO_TRANSLATIONS", label: "VO Translations" },
+  { value: "GOOGLE_SHEET", label: "Google Sheet" },
 ]
+
+// Aspect ratios / sizes for MARKETING orders (multi-select pills).
+export const MARKETING_ASPECT_RATIOS = ["1x1", "4x5", "9x16", "16x9"]

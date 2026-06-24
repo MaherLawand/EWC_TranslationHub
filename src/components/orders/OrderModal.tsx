@@ -7,6 +7,7 @@ import Select from "react-select"
 import {
   BROADCAST_FORMAT_OPTIONS,
   MARKETING_FORMAT_OPTIONS,
+  MARKETING_ASPECT_RATIOS,
   formatLabel,
 } from "../../constants/deliveryFormats"
 import { CONTENT_TITLES } from "../../constants/contentTitles"
@@ -897,6 +898,39 @@ today.setHours(0, 0, 0, 0)
   />
 
 </div>
+
+      {/* SIZE / RATIO */}
+      <div className="col-span-full">
+        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
+          Size / Ratio
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {MARKETING_ASPECT_RATIOS.map((r) => {
+            const active = (newOrder.aspectRatios || []).includes(r)
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() =>
+                  setNewOrder({
+                    ...newOrder,
+                    aspectRatios: active
+                      ? (newOrder.aspectRatios || []).filter((x: string) => x !== r)
+                      : [...(newOrder.aspectRatios || []), r],
+                  })
+                }
+                className={`px-4 py-2 rounded-xl border text-sm font-semibold transition ${
+                  active
+                    ? "gear-fill border-transparent text-black"
+                    : "bg-white/10 border-white/20 text-zinc-300 hover:border-[#D6B36A]/60 hover:text-white"
+                }`}
+              >
+                {r}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       {/* FORMAT */}
       <div>

@@ -252,6 +252,9 @@ export default function OrderDetailsSidebar({
                   {marketing.contentTitle && (
                     <Row label="Content Title">{marketing.contentTitle}</Row>
                   )}
+                  {marketing.aspectRatios?.length > 0 && (
+                    <Row label="Size / Ratio">{marketing.aspectRatios.join(", ")}</Row>
+                  )}
                   {marketing.deadlineDate ? (
                     <Row label="Deadline">
                       <span>
@@ -646,6 +649,7 @@ export default function OrderDetailsSidebar({
                 setNewOrder({
                   title: orderDetail.title,
                   contentTitle: orderDetail.marketing?.contentTitle || "",
+                  aspectRatios: orderDetail.marketing?.aspectRatios || [],
                   game: orderDetail.broadcast?.gameId || "",
                   type: orderDetail.type,
                   event: orderDetail.event || "EWC",
