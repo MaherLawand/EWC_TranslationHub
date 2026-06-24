@@ -17,6 +17,20 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import "../../../src/styling/datepicker-dark.css"
 
+// Date <-> "YYYY-MM-DD" helpers that use LOCAL date parts. Using toISOString()
+// (UTC) shifted the day by one for users ahead of UTC; parsing "YYYY-MM-DD" with
+// new Date() also treats it as UTC midnight. These keep the picker in local time.
+function toYMD(d: Date | null): string {
+  if (!d) return ""
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+function fromYMD(s: string | null | undefined): Date | null {
+  if (!s) return null
+  const [y, m, d] = s.split("-").map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d) // local midnight
+}
+
 type Props = {
   showModal: boolean
 
@@ -199,6 +213,10 @@ export default function OrderModal({
     }
     if (newOrder.type === "MARKETING") {
       if (!newOrder.deadline) e.deadline = "Deadline is required"
+    }
+    // Delivery format is required for both broadcast and marketing.
+    if (!newOrder.deliveryFormats || newOrder.deliveryFormats.length === 0) {
+      e.deliveryFormats = "At least one delivery format is required"
     }
     setErrors(e)
     return Object.keys(e).length === 0
@@ -514,6 +532,8 @@ today.setHours(0, 0, 0, 0)
                 estimatedMinutes: "",
                 deliveryDate: "",
                 contentTitle: "",
+                // No default delivery format for either type — user must choose.
+                deliveryFormats: [],
               })
               setSelectedUserIds([])
               setAllUsers([])
@@ -748,7 +768,7 @@ today.setHours(0, 0, 0, 0)
         {/* FORMAT */}
 <div>
   <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
-    Delivery Format
+    Delivery Format <span className="text-red-400">*</span>
   </label>
 
 <Select
@@ -785,8 +805,10 @@ today.setHours(0, 0, 0, 0)
       ...newOrder,
       deliveryFormats: updated,
     })
+    clearError("deliveryFormats")
   }}
 />
+{errors.deliveryFormats && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryFormats}</p>}
 </div>
 
           {/* SOURCE FILE */}
@@ -837,8 +859,8 @@ today.setHours(0, 0, 0, 0)
               Delivery Date (Shoot Date)<span className="text-red-400">*</span>
             </label>
             <DatePicker
-              selected={newOrder.deliveryDate ? new Date(newOrder.deliveryDate) : null}
-              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deliveryDate: date?.toISOString().split("T")[0] || "" }); clearError("deliveryDate") }}
+              selected={fromYMD(newOrder.deliveryDate)}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deliveryDate: toYMD(date) }); clearError("deliveryDate") }}
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select delivery date"
@@ -854,8 +876,8 @@ today.setHours(0, 0, 0, 0)
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
-              selected={newOrder.deadline ? new Date(newOrder.deadline) : null}
-              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: date?.toISOString().split("T")[0] || "" }); clearError("deadline") }}
+              selected={fromYMD(newOrder.deadline)}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: toYMD(date) }); clearError("deadline") }}
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
@@ -935,7 +957,7 @@ today.setHours(0, 0, 0, 0)
       {/* FORMAT */}
       <div>
         <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
-          Delivery Format
+          Delivery Format <span className="text-red-400">*</span>
         </label>
 
       <Select
@@ -972,8 +994,10 @@ today.setHours(0, 0, 0, 0)
       ...newOrder,
       deliveryFormats: updated,
     })
+    clearError("deliveryFormats")
   }}
 />
+{errors.deliveryFormats && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryFormats}</p>}
       </div>
       {/* SOURCE LANGUAGES */}
 <div className="col-span-full">
@@ -1147,8 +1171,8 @@ today.setHours(0, 0, 0, 0)
               Deadline <span className="text-red-400">*</span>
             </label>
             <DatePicker
-              selected={newOrder.deadline ? new Date(newOrder.deadline) : null}
-              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: date?.toISOString().split("T")[0] || "" }); clearError("deadline") }}
+              selected={fromYMD(newOrder.deadline)}
+              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: toYMD(date) }); clearError("deadline") }}
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select deadline"
@@ -1393,8 +1417,8 @@ transition={{
           <div className="flex-shrink-0 w-[150px]">
             <label className="block text-[11px] font-medium text-zinc-400 mb-1">Deadline date</label>
             <DatePicker
-              selected={item.deadline ? new Date(item.deadline) : null}
-              onChange={(date: Date | null) => updateSubOrderDeadline(index, date?.toISOString().split("T")[0] || "")}
+              selected={fromYMD(item.deadline)}
+              onChange={(date: Date | null) => updateSubOrderDeadline(index, toYMD(date))}
               minDate={today}
               dateFormat="yyyy-MM-dd"
               placeholderText="Deadline"
