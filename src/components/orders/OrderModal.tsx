@@ -143,26 +143,27 @@ export default function OrderModal({
   const canAddSubOrdersWhileEditing =
     isEditing && !selectedOrder?.isParent && !selectedOrder?.parentId
 
-  // Parse a trailing integer and increment it: "Teaser 1" → "Teaser 2";
-  // "Teaser" → "Teaser 2"; "" → "Sub-order 1".
-  function nextTitle(prev: string): string {
-    const base = (prev || "").trim()
-    if (!base) return "Sub-order 1"
-    const match = base.match(/^(.*?)(\d+)\s*$/)
-    if (match) {
-      const prefix = match[1]
-      const num = parseInt(match[2], 10) + 1
-      return `${prefix}${num}`
-    }
-    return `${base} 2`
+  // Re-sequence sub-order titles so the trailing number matches the 1-based
+  // position, preserving each item's text prefix. Keeps numbering contiguous:
+  // add 5 → 1,2,3,4,5; delete the 3rd → 1,2,3,4 (not 1,2,4,5).
+  function renumberSubOrders(items: SubOrderItem[]): SubOrderItem[] {
+    return items.map((item, i) => {
+      const n = i + 1
+      const match = item.title.match(/^(.*?)(\d+)\s*$/)
+      let prefix = (match ? match[1] : item.title).trim()
+      if (!prefix) prefix = (newOrder.title || "").trim() || "Sub-order"
+      return { ...item, title: `${prefix} ${n}` }
+    })
   }
 
   function addSubOrder() {
-    setSubOrderItems((prev) => {
-      const last = prev.length > 0 ? prev[prev.length - 1].title : newOrder.title
-      // New sub-orders default their deadline to the parent's deadline.
-      return [...prev, { title: nextTitle(last), deadline: newOrder.deadline || "" }]
-    })
+    setSubOrderItems((prev) =>
+      renumberSubOrders([
+        ...prev,
+        // New sub-orders default their deadline to the parent's deadline.
+        { title: (newOrder.title || "").trim() || "Sub-order", deadline: newOrder.deadline || "" },
+      ])
+    )
   }
 
   function updateSubOrderTitle(index: number, value: string) {
@@ -174,7 +175,7 @@ export default function OrderModal({
   }
 
   function removeSubOrder(index: number) {
-    setSubOrderItems((prev) => prev.filter((_, i) => i !== index))
+    setSubOrderItems((prev) => renumberSubOrders(prev.filter((_, i) => i !== index)))
   }
 
   const clearError = useCallback((field: string) => {
