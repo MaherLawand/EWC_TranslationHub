@@ -238,9 +238,11 @@ export default function OrderDetailsSidebar({
                     <Row label="Deadline">
                       <span>
                         {new Date(broadcast.deadlineDate).toLocaleDateString()}
-                        <span className="text-gear-gradient ml-1.5">
-                          {getDeadlineInfo(broadcast.deadlineDate).text}
-                        </span>
+                        {orderDetail?.status !== "COMPLETED" && (
+                          <span className="text-gear-gradient ml-1.5">
+                            {getDeadlineInfo(broadcast.deadlineDate).text}
+                          </span>
+                        )}
                       </span>
                     </Row>
                   ) : null}
@@ -259,9 +261,11 @@ export default function OrderDetailsSidebar({
                     <Row label="Deadline">
                       <span>
                         {new Date(marketing.deadlineDate).toLocaleDateString()}
-                        <span className="text-gear-gradient ml-1.5">
-                          {getDeadlineInfo(marketing.deadlineDate).text}
-                        </span>
+                        {orderDetail?.status !== "COMPLETED" && (
+                          <span className="text-gear-gradient ml-1.5">
+                            {getDeadlineInfo(marketing.deadlineDate).text}
+                          </span>
+                        )}
                       </span>
                     </Row>
                   ) : null}

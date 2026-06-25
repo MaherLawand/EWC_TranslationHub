@@ -567,7 +567,8 @@ function renderRow(order: any, isSub: boolean) {
             <span>
               {new Date(broadcast.deadlineDate).toLocaleDateString()}
             </span>
-            {(() => {
+            {/* Days-left / overdue is meaningless once the order is completed. */}
+            {order.status !== "COMPLETED" && (() => {
               const info = getDeadlineInfo(broadcast.deadlineDate)
               return (
                 <span className={`text-xs ${info.color}`}>

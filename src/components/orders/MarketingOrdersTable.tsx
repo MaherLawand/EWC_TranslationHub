@@ -655,7 +655,8 @@ function renderRow(order: any, isSub: boolean) {
         {marketing?.deadlineDate ? (
           <div className="flex flex-col leading-tight whitespace-nowrap">
             <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
-            {(() => {
+            {/* Days-left / overdue is meaningless once the order is completed. */}
+            {order.status !== "COMPLETED" && (() => {
               const info = getDeadlineInfo(marketing.deadlineDate)
               return <span className={`text-xs ${info.color}`}>{info.text}</span>
             })()}
