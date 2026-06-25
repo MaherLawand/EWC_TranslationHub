@@ -23,7 +23,9 @@ const languageCodes = [
   "mg", "mh", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my",
   "na", "nb", "nd", "ne", "ng", "nl", "nn", "no", "nr", "nv", "ny",
   "oc", "oj", "om", "or", "os",
-  "pa", "pi", "pl", "ps", "pt",
+  // Portuguese is offered only as locale-differentiated Brazil & Portugal variants
+  // (no generic "pt") so the locale is always explicit.
+  "pa", "pi", "pl", "ps", "pt-BR", "pt-PT",
   "qu",
   "rm", "rn", "ro", "ru", "rw",
   "sa", "sc", "sd", "se", "sg", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "ss", "st", "su", "sv", "sw",
@@ -38,8 +40,16 @@ const languageCodes = [
 
 const displayNames = new Intl.DisplayNames(["en"], { type: "language" })
 
+// Explicit, unambiguous display names for locale-differentiated variants
+// (overrides Intl's "Brazilian Portuguese" / "European Portuguese").
+const NAME_OVERRIDES: Record<string, string> = {
+  "pt-BR": "Portuguese (Brazil)",
+  "pt-PT": "Portuguese (Portugal)",
+}
+
 export const LANGUAGES: Language[] = languageCodes
   .map((code) => {
+    if (NAME_OVERRIDES[code]) return { code, name: NAME_OVERRIDES[code] }
     let name = code
     try {
       name = displayNames.of(code) || code
