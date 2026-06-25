@@ -76,6 +76,7 @@ export function useOrders({
       status: full.status,
       priority: full.priority,
       dateAdded: full.dateAdded,
+      sourceChangedAt: full.sourceChangedAt ?? null,
       isParent: full.isParent ?? false,
       parentId: full.parentId ?? null,
       // Count badge (grouped mode). Falls back to nested array length if present.

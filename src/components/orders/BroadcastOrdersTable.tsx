@@ -457,6 +457,21 @@ function renderRow(order: any, isSub: boolean) {
             <span className="flex-shrink-0 text-gear-gradient text-xs">↳</span>
           )}
 
+          {/* SOURCE CHANGED — caution flag before the title for visibility.
+              Hidden once the order is completed (no longer being worked on). */}
+          {order.sourceChangedAt && order.status !== "COMPLETED" && (
+            <span
+              title="Source file was changed — review the updated source"
+              className="flex-shrink-0 text-amber-300 animate-pulse drop-shadow-[0_0_6px_rgba(252,211,77,0.6)]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </span>
+          )}
+
           <p title={order.title} className="font-normal text-[#F5F1E8] max-w-[320px] truncate">
             {order.title}
           </p>

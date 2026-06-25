@@ -729,17 +729,20 @@ React.useEffect(() => {
         // Status-only — patch in-place, no re-fetch.
         // Bail out early if the order already has this status in local state
         // (deduplicates concurrent socket events for the same change).
+        // Completing an order also clears its "source changed" flag (server does
+        // the same), so it won't reappear when the order is later reopened.
+        const patch = (o: any) => ({ ...o, status, ...(status === "COMPLETED" ? { sourceChangedAt: null } : {}) })
         if (type === "BROADCAST") {
           setBroadcastOrders((prev: any[]) => {
             const target = prev.find((o) => o.id === id)
             if (target && target.status === status) return prev
-            return prev.map((o) => o.id === id ? { ...o, status } : o)
+            return prev.map((o) => o.id === id ? patch(o) : o)
           })
         } else if (type === "MARKETING") {
           setMarketingOrders((prev: any[]) => {
             const target = prev.find((o) => o.id === id)
             if (target && target.status === status) return prev
-            return prev.map((o) => o.id === id ? { ...o, status } : o)
+            return prev.map((o) => o.id === id ? patch(o) : o)
           })
         }
         // Push the patch into the tables so a sub-order row inside an expanded
@@ -975,6 +978,13 @@ React.useEffect(() => {
   function onRowClick(order: any) {
     setSelectedOrder(order)
     fetchOrderDetail(order.id)
+    // A translator opening the order clears the "source changed" caution (mirrors
+    // the server, which only clears for translators). Managers must NOT clear it.
+    if (order?.sourceChangedAt && currentUser?.position === "TRANSLATOR") {
+      const clear = (prev: any[]) => prev.map((o) => o.id === order.id ? { ...o, sourceChangedAt: null } : o)
+      setBroadcastOrders(clear)
+      setMarketingOrders(clear)
+    }
   }
 
   // Duplicate flow: open the order modal in CREATE mode, pre-filled with every
