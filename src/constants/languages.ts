@@ -47,16 +47,22 @@ const NAME_OVERRIDES: Record<string, string> = {
   "pt-PT": "Portuguese (Portugal)",
 }
 
+// Override the displayed abbreviation (pill code) for specific languages. The
+// name still resolves from the ISO code; only the short code shown changes.
+const CODE_OVERRIDES: Record<string, string> = {
+  zh: "cn", // Chinese → "CN" instead of "ZH"
+}
+
 export const LANGUAGES: Language[] = languageCodes
   .map((code) => {
-    if (NAME_OVERRIDES[code]) return { code, name: NAME_OVERRIDES[code] }
+    if (NAME_OVERRIDES[code]) return { code: CODE_OVERRIDES[code] ?? code, name: NAME_OVERRIDES[code] }
     let name = code
     try {
       name = displayNames.of(code) || code
     } catch {
       /* keep code as fallback */
     }
-    return { code, name }
+    return { code: CODE_OVERRIDES[code] ?? code, name }
   })
   // Drop any entry whose name didn't resolve to something human-readable
   // (i.e. it's still just the raw 2-letter code).
