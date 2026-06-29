@@ -13,6 +13,7 @@ import GamesPage from "../components/pages/GamesPage"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
 import { CONTENT_TITLES } from "../constants/contentTitles"
+import { deadlineToFormParts } from "../lib/deadline"
 import { toast, ToastContainer } from "react-toastify"
 import { useOrders } from "../hooks/useOrders"
 import { useUsers } from "../hooks/useUsers"
@@ -131,6 +132,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     targetLanguages: [] as string[],
     deliveryFormats: [],
     deadline: "",
+    deadlineTime: "",
     sourceFileLink: "",
     srtAvailableLink: "",
     estimatedMinutes: "",
@@ -1015,7 +1017,8 @@ React.useEffect(() => {
           format: f.format,
           deliveryLink: f.deliveryLink || "",
         })) || [],
-      deadline: detailSide?.deadlineDate?.split("T")[0] || "",
+      deadline: deadlineToFormParts(detailSide?.deadlineDate, src.type === "MARKETING" && detailSide?.deadlineHasTime).date,
+      deadlineTime: deadlineToFormParts(detailSide?.deadlineDate, src.type === "MARKETING" && detailSide?.deadlineHasTime).time,
       sourceFileLink: detailSide?.sourceFileLink || "",
       srtAvailableLink: detailSide?.srtAvailableLink || "",
       estimatedMinutes: String(src.broadcast?.estimatedMinutes || ""),
@@ -1044,6 +1047,7 @@ React.useEffect(() => {
       targetLanguages: [],
       deliveryFormats: [],
       deadline: "",
+      deadlineTime: "",
       sourceFileLink: "",
       srtAvailableLink: "",
       estimatedMinutes: "",
@@ -1095,14 +1099,30 @@ React.useEffect(() => {
     })
   }
 
-  function getDeadlineInfo(deadlineDate: string) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+  function getDeadlineInfo(deadlineDate: string, hasTime = false) {
+    const now = new Date()
     const deadline = new Date(deadlineDate)
-    deadline.setHours(0, 0, 0, 0)
-    const diffDays = Math.ceil(
-      (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+
+    const startToday = new Date()
+    startToday.setHours(0, 0, 0, 0)
+    const startDeadline = new Date(deadline)
+    startDeadline.setHours(0, 0, 0, 0)
+    const diffDays = Math.round(
+      (startDeadline.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24)
     )
+
+    // Same calendar day AND a real time-of-day → show precise hours/minutes
+    // instead of the vague "Due today".
+    if (diffDays === 0 && hasTime) {
+      const diffMin = Math.round((deadline.getTime() - now.getTime()) / 60000)
+      const fmt = (mins: number) => {
+        const h = Math.floor(mins / 60)
+        const m = mins % 60
+        return h > 0 ? `${h}h ${m}m` : `${m}m`
+      }
+      if (diffMin <= 0) return { text: `${fmt(Math.max(1, -diffMin))} overdue`, color: "text-red-400" }
+      return { text: `${fmt(diffMin)} left`, color: "text-red-400" }
+    }
 
     if (diffDays === 0) return { text: "Due today", color: "text-red-400" }
     if (diffDays < 0) return { text: `${Math.abs(diffDays)} days overdue`, color: "text-red-400" }

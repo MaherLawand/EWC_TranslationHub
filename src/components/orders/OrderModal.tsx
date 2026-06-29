@@ -11,6 +11,7 @@ import {
   formatLabel,
 } from "../../constants/deliveryFormats"
 import { CONTENT_TITLES } from "../../constants/contentTitles"
+import { buildTimeOptions } from "../../lib/deadline"
 import { motion, AnimatePresence } from "framer-motion"
 import { gearWarp } from "../../lib/gearHover"
 import DatePicker from "react-datepicker"
@@ -1166,20 +1167,44 @@ today.setHours(0, 0, 0, 0)
         />
       </div>
 
-       {/* DEADLINE */}
+       {/* DEADLINE — marketing supports an optional time-of-day */}
           <div>
             <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
+              <span className="text-zinc-600 ml-1">(time optional — shown in each viewer's timezone)</span>
             </label>
-            <DatePicker
-              selected={fromYMD(newOrder.deadline)}
-              onChange={(date: Date | null) => { setNewOrder({ ...newOrder, deadline: toYMD(date) }); clearError("deadline") }}
-              minDate={today}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Select deadline"
-              wrapperClassName="w-full"
-              className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
-            />
+            <div className="flex gap-2">
+              <DatePicker
+                selected={fromYMD(newOrder.deadline)}
+                onChange={(date: Date | null) => {
+                  const newDeadline = toYMD(date)
+                  // If the chosen time is no longer valid for the new date (e.g.
+                  // switching to today where it's already passed), reset it.
+                  const timeStillValid =
+                    !!newOrder.deadlineTime &&
+                    buildTimeOptions(newDeadline).some((o) => o.value === newOrder.deadlineTime)
+                  setNewOrder({ ...newOrder, deadline: newDeadline, deadlineTime: timeStillValid ? newOrder.deadlineTime : "" })
+                  clearError("deadline")
+                }}
+                minDate={today}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Select date"
+                wrapperClassName="flex-1"
+                className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50 ${errors.deadline ? "border-red-500/60" : "border-white/20"}`}
+              />
+              <div className="w-[140px] flex-shrink-0">
+                <Select
+                  value={newOrder.deadlineTime ? { value: newOrder.deadlineTime, label: newOrder.deadlineTime } : null}
+                  onChange={(opt: any) => setNewOrder({ ...newOrder, deadlineTime: opt?.value || "" })}
+                  options={buildTimeOptions(newOrder.deadline)}
+                  styles={darkSelectStyles}
+                  isClearable
+                  menuPlacement="auto"
+                  placeholder="Time"
+                  className="text-sm"
+                />
+              </div>
+            </div>
             {errors.deadline && <p className="text-red-400 text-xs mt-1.5">{errors.deadline}</p>}
           </div>
 

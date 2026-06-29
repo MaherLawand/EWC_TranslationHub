@@ -2,6 +2,7 @@ import React from "react"
 import StatusBadge from "../shared/StatusBadge"
 import { LANGUAGES } from "../../constants/languages"
 import { gearWarp } from "../../lib/gearHover"
+import { deadlineToFormParts, formatDeadline } from "../../lib/deadline"
 
 type Props = {
   selectedOrder: any
@@ -20,7 +21,7 @@ type Props = {
   setDeletingOrderId: (id: string) => void
   deleteOrder: () => void
   canManageOrders: boolean
-  getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
+  getDeadlineInfo: (deadlineDate: string, hasTime?: boolean) => { text: string; color: string }
   onSelectOrder?: (order: any) => void
   createSubOrders?: (parentId: string, items: any[]) => void
 }
@@ -260,10 +261,10 @@ export default function OrderDetailsSidebar({
                   {marketing.deadlineDate ? (
                     <Row label="Deadline">
                       <span>
-                        {new Date(marketing.deadlineDate).toLocaleDateString()}
+                        {formatDeadline(marketing.deadlineDate, marketing.deadlineHasTime)}
                         {orderDetail?.status !== "COMPLETED" && (
                           <span className="text-gear-gradient ml-1.5">
-                            {getDeadlineInfo(marketing.deadlineDate).text}
+                            {getDeadlineInfo(marketing.deadlineDate, marketing.deadlineHasTime).text}
                           </span>
                         )}
                       </span>
@@ -673,8 +674,12 @@ export default function OrderDetailsSidebar({
                       : orderDetail.broadcast?.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format, deliveryLink: f.deliveryLink || "" })) || [],
                   deadline:
                     orderDetail.type === "MARKETING"
-                      ? orderDetail.marketing?.deadlineDate?.split("T")[0] || ""
+                      ? deadlineToFormParts(orderDetail.marketing?.deadlineDate, orderDetail.marketing?.deadlineHasTime).date
                       : orderDetail.broadcast?.deadlineDate?.split("T")[0] || "",
+                  deadlineTime:
+                    orderDetail.type === "MARKETING"
+                      ? deadlineToFormParts(orderDetail.marketing?.deadlineDate, orderDetail.marketing?.deadlineHasTime).time
+                      : "",
                   deliveryDate: orderDetail.broadcast?.deliveryDate?.split("T")[0] || "",
                   sourceFileLink:
                     orderDetail.type === "MARKETING"

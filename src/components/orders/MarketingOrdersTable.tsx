@@ -7,6 +7,7 @@ import LanguagesCell from "./LanguagesCell"
 import FormatsCell from "./FormatsCell"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
+import { formatDeadline } from "../../lib/deadline"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -26,7 +27,7 @@ type Props = {
   onPageChange: (page: number) => void
   onRowClick: (order: any) => void
   updateOrderStatus: (orderId: string, status: string) => void
-  getDeadlineInfo: (deadlineDate: string) => { text: string; color: string }
+  getDeadlineInfo: (deadlineDate: string, hasTime?: boolean) => { text: string; color: string }
   onAssignUsers: (orderId: string, userIds: string[]) => Promise<void>
   deadlineSort: string
   setDeadlineSort: (v: string) => void
@@ -654,10 +655,10 @@ function renderRow(order: any, isSub: boolean) {
       <td className="px-6 py-2.5 text-zinc-300 align-center">
         {marketing?.deadlineDate ? (
           <div className="flex flex-col leading-tight whitespace-nowrap">
-            <span>{new Date(marketing.deadlineDate).toLocaleDateString()}</span>
+            <span>{formatDeadline(marketing.deadlineDate, marketing.deadlineHasTime)}</span>
             {/* Days-left / overdue is meaningless once the order is completed. */}
             {order.status !== "COMPLETED" && (() => {
-              const info = getDeadlineInfo(marketing.deadlineDate)
+              const info = getDeadlineInfo(marketing.deadlineDate, marketing.deadlineHasTime)
               return <span className={`text-xs ${info.color}`}>{info.text}</span>
             })()}
           </div>

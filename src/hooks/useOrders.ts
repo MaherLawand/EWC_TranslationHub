@@ -1,6 +1,7 @@
 import React from "react"
 
 import { toast } from "react-toastify"
+import { formPartsToDeadline } from "../lib/deadline"
 export function useOrders({
   activePage,
   search,
@@ -102,6 +103,7 @@ export function useOrders({
         sourceLanguage: full.marketing.sourceLanguage,
         targetLanguages: full.marketing.targetLanguages,
         deadlineDate: full.marketing.deadlineDate,
+        deadlineHasTime: full.marketing.deadlineHasTime,
         deliveryFormats: full.marketing.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
         assignments: full.marketing.assignments?.map((a: any) => ({
           id: a.id,
@@ -300,6 +302,8 @@ export function useOrders({
             event: selectedEvent,
             estimatedMinutes: Number(newOrder.estimatedMinutes),
             game: newOrder.type === "Marketing" ? "-" : newOrder.game,
+            // Marketing: fold an optional time into the deadline as a real instant.
+            deadline: formPartsToDeadline(newOrder.deadline, newOrder.type === "MARKETING" ? newOrder.deadlineTime : ""),
           }),
         }
       )
@@ -505,6 +509,8 @@ export function useOrders({
             ...newOrder,
             estimatedMinutes: Number(newOrder.estimatedMinutes),
             deliveries: newOrder.deliveries || [],
+            // Marketing: fold an optional time into the deadline as a real instant.
+            deadline: formPartsToDeadline(newOrder.deadline, newOrder.type === "MARKETING" ? newOrder.deadlineTime : ""),
           }),
         }
       )
