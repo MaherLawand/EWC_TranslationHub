@@ -1105,8 +1105,12 @@ React.useEffect(() => {
 
     const startToday = new Date()
     startToday.setHours(0, 0, 0, 0)
-    const startDeadline = new Date(deadline)
-    startDeadline.setHours(0, 0, 0, 0)
+    // Timed deadlines are real instants → use local midnight of that instant.
+    // Date-only deadlines are floating calendar dates stored at UTC midnight →
+    // read them in UTC so "days left" matches the date everyone sees.
+    const startDeadline = hasTime
+      ? new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
+      : new Date(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate())
     const diffDays = Math.round(
       (startDeadline.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24)
     )

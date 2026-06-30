@@ -9,6 +9,7 @@ import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScro
 import { gearWarp } from "../../lib/gearHover"
 
 import { LANGUAGES } from "../../constants/languages"
+import { formatDateOnly } from "../../lib/deadline"
 
 // Pre-built O(1) lookup — avoids a linear .find() scan on every render per pill
 const LANG_CODE_MAP = new Map(
@@ -565,7 +566,7 @@ function renderRow(order: any, isSub: boolean) {
         {broadcast?.deadlineDate ? (
           <div className="flex flex-col leading-tight whitespace-nowrap">
             <span>
-              {new Date(broadcast.deadlineDate).toLocaleDateString()}
+              {formatDateOnly(broadcast.deadlineDate)}
             </span>
             {/* Days-left / overdue is meaningless once the order is completed. */}
             {order.status !== "COMPLETED" && (() => {

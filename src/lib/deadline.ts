@@ -59,15 +59,22 @@ export function buildTimeOptions(
   return opts
 }
 
-// Format a deadline for display in the viewer's local timezone. Timed deadlines
-// include the time + timezone abbreviation (e.g. "6/26/2026, 5:00 PM GMT+2").
+// A date-only deadline is a floating CALENDAR DATE (stored at UTC midnight), not
+// a moment in time. Format it in UTC so every timezone shows the same day the
+// manager picked — otherwise behind-UTC viewers (e.g. the US) see the prior day.
+export function formatDateOnly(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString(undefined, { timeZone: "UTC" })
+}
+
+// Format a deadline. Timed deadlines are real instants → shown in the viewer's
+// local timezone with the zone abbreviation (e.g. "6/26/2026, 5:00 PM GMT+2").
+// Date-only deadlines are shown as the picked calendar date (UTC), same for all.
 export function formatDeadline(
   deadlineDate: string,
   hasTime: boolean | undefined
 ): string {
-  const d = new Date(deadlineDate)
   if (hasTime) {
-    return d.toLocaleString(undefined, {
+    return new Date(deadlineDate).toLocaleString(undefined, {
       year: "numeric",
       month: "numeric",
       day: "numeric",
@@ -76,5 +83,5 @@ export function formatDeadline(
       timeZoneName: "short",
     })
   }
-  return d.toLocaleDateString()
+  return formatDateOnly(deadlineDate)
 }

@@ -232,13 +232,13 @@ export default function OrderDetailsSidebar({
                   ) : null}
                   {broadcast.deliveryDate && (
                     <Row label="Source Added On">
-                      {new Date(broadcast.deliveryDate).toLocaleDateString()}
+                      {formatDateOnly(broadcast.deliveryDate)}
                     </Row>
                   )}
                   {broadcast.deadlineDate ? (
                     <Row label="Deadline">
                       <span>
-                        {new Date(broadcast.deadlineDate).toLocaleDateString()}
+                        {formatDateOnly(broadcast.deadlineDate)}
                         {orderDetail?.status !== "COMPLETED" && (
                           <span className="text-gear-gradient ml-1.5">
                             {getDeadlineInfo(broadcast.deadlineDate).text}
