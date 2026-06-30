@@ -2,7 +2,7 @@ import React from "react"
 import StatusBadge from "../shared/StatusBadge"
 import { LANGUAGES } from "../../constants/languages"
 import { gearWarp } from "../../lib/gearHover"
-import { deadlineToFormParts, formatDeadline } from "../../lib/deadline"
+import { deadlineToFormParts, formatDeadline, formatDateOnly } from "../../lib/deadline"
 
 type Props = {
   selectedOrder: any
