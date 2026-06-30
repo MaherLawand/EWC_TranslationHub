@@ -93,6 +93,7 @@ export function useOrders({
         sourceLanguage: full.broadcast.sourceLanguage,
         targetLanguages: full.broadcast.targetLanguages,
         deadlineDate: full.broadcast.deadlineDate,
+        deadlineHasTime: full.broadcast.deadlineHasTime,
         deliveryFormats: full.broadcast.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
         game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null } : null,
       } : null,
@@ -302,8 +303,8 @@ export function useOrders({
             event: selectedEvent,
             estimatedMinutes: Number(newOrder.estimatedMinutes),
             game: newOrder.type === "Marketing" ? "-" : newOrder.game,
-            // Marketing: fold an optional time into the deadline as a real instant.
-            deadline: formPartsToDeadline(newOrder.deadline, newOrder.type === "MARKETING" ? newOrder.deadlineTime : ""),
+            // Fold an optional time into the deadline as a real instant (both types).
+            deadline: formPartsToDeadline(newOrder.deadline, newOrder.deadlineTime),
           }),
         }
       )
@@ -509,8 +510,8 @@ export function useOrders({
             ...newOrder,
             estimatedMinutes: Number(newOrder.estimatedMinutes),
             deliveries: newOrder.deliveries || [],
-            // Marketing: fold an optional time into the deadline as a real instant.
-            deadline: formPartsToDeadline(newOrder.deadline, newOrder.type === "MARKETING" ? newOrder.deadlineTime : ""),
+            // Fold an optional time into the deadline as a real instant (both types).
+            deadline: formPartsToDeadline(newOrder.deadline, newOrder.deadlineTime),
           }),
         }
       )

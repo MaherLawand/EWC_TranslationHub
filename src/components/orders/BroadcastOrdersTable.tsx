@@ -9,7 +9,7 @@ import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScro
 import { gearWarp } from "../../lib/gearHover"
 
 import { LANGUAGES } from "../../constants/languages"
-import { formatDateOnly } from "../../lib/deadline"
+import { formatDeadline } from "../../lib/deadline"
 
 // Pre-built O(1) lookup — avoids a linear .find() scan on every render per pill
 const LANG_CODE_MAP = new Map(
@@ -49,7 +49,8 @@ type Props = {
     status: string
   ) => void
   getDeadlineInfo: (
-    deadlineDate: string
+    deadlineDate: string,
+    hasTime?: boolean
   ) => {
     text: string
     color: string
@@ -566,11 +567,11 @@ function renderRow(order: any, isSub: boolean) {
         {broadcast?.deadlineDate ? (
           <div className="flex flex-col leading-tight whitespace-nowrap">
             <span>
-              {formatDateOnly(broadcast.deadlineDate)}
+              {formatDeadline(broadcast.deadlineDate, broadcast.deadlineHasTime)}
             </span>
             {/* Days-left / overdue is meaningless once the order is completed. */}
             {order.status !== "COMPLETED" && (() => {
-              const info = getDeadlineInfo(broadcast.deadlineDate)
+              const info = getDeadlineInfo(broadcast.deadlineDate, broadcast.deadlineHasTime)
               return (
                 <span className={`text-xs ${info.color}`}>
                   {info.text}

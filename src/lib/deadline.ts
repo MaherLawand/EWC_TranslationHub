@@ -66,6 +66,19 @@ export function formatDateOnly(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { timeZone: "UTC" })
 }
 
+// Format a real timestamp (e.g. when an order was created) as date + time in
+// the viewer's local timezone, with the zone abbreviation.
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  })
+}
+
 // Format a deadline. Timed deadlines are real instants → shown in the viewer's
 // local timezone with the zone abbreviation (e.g. "6/26/2026, 5:00 PM GMT+2").
 // Date-only deadlines are shown as the picked calendar date (UTC), same for all.
