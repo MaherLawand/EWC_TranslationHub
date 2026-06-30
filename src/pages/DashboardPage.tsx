@@ -10,6 +10,7 @@ import { FeedbackPanel } from "../components/orders/OrderFeedback"
 import UserModal from "../components/users/UserModal"
 import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
+import WeeklyGameFilters from "../components/orders/WeeklyGameFilters"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import { api } from "../lib/api"
 import { CONTENT_TITLES } from "../constants/contentTitles"
@@ -1265,20 +1266,28 @@ React.useEffect(() => {
                   </div>
                 )}
 
-                {/* GAMES */}
-                {(activePage === "Broadcast" || activePage === "my-games") && (
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                {/* GAMES — Broadcast: weekly grouped filter */}
+                {activePage === "Broadcast" && (
+                  <WeeklyGameFilters
+                    event={selectedEvent}
+                    games={filteredGames}
+                    selectedGameFilter={selectedGameFilter}
+                    setSelectedGameFilter={setSelectedGameFilter}
+                  />
+                )}
+
+                {/* GAMES — My Games: assigned games (flat list) */}
+                {activePage === "my-games" && (
+                  <div className="flex flex-wrap items-start gap-3 pt-1">
 
                     {(() => {
-                      const gameList = activePage === "my-games"
-                        ? (currentUser?.assignedGames || [])
-                            .map((assignment: any) =>
-                              filteredGames.find((g) => g.id === assignment.gameId) ?? assignment.game
-                            )
-                            .filter(Boolean)
-                        : filteredGames
+                      const gameList = (currentUser?.assignedGames || [])
+                        .map((assignment: any) =>
+                          filteredGames.find((g) => g.id === assignment.gameId) ?? assignment.game
+                        )
+                        .filter(Boolean)
 
-                      if (activePage === "my-games" && gameList.length === 0) {
+                      if (gameList.length === 0) {
                         return (
                           <p className="text-sm text-zinc-500 py-1">
                             You're not assigned to any game. Please contact your lead.
@@ -1316,7 +1325,7 @@ React.useEffect(() => {
                             </div>
                             <span
                               className={`
-                                w-full text-center text-[10px] leading-tight truncate
+                                w-full text-center text-[10px] leading-tight break-words whitespace-normal
                                 ${active ? "text-[#D6B36A] font-semibold" : "text-zinc-200"}
                               `}
                             >
