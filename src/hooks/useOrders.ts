@@ -80,6 +80,9 @@ export function useOrders({
       sourceChangedAt: full.sourceChangedAt ?? null,
       isParent: full.isParent ?? false,
       parentId: full.parentId ?? null,
+      // Soonest non-completed sub-order deadline (parents, grouped mode) so the
+      // collapsed parent row reflects its most urgent sub-order.
+      nearestSubDeadline: full.nearestSubDeadline ?? null,
       // Count badge (grouped mode). Falls back to nested array length if present.
       subOrderCount: full._count?.subOrders ?? (Array.isArray(full.subOrders) ? full.subOrders.length : 0),
       feedbackCount: full._count?.feedback ?? 0,

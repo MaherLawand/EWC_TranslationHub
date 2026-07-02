@@ -561,27 +561,25 @@ function renderRow(order: any, isSub: boolean) {
         />
       </td>
 
-      {/* DEADLINE */}
+      {/* DEADLINE — a collapsed parent shows its NEAREST non-completed sub-order deadline. */}
       <td className="px-6 py-2.5 text-zinc-300 align-center">
 
-        {broadcast?.deadlineDate ? (
-          <div className="flex flex-col leading-tight whitespace-nowrap">
-            <span>
-              {formatDeadline(broadcast.deadlineDate, broadcast.deadlineHasTime)}
-            </span>
-            {/* Days-left / overdue is meaningless once the order is completed. */}
-            {order.status !== "COMPLETED" && (() => {
-              const info = getDeadlineInfo(broadcast.deadlineDate, broadcast.deadlineHasTime)
-              return (
-                <span className={`text-xs ${info.color}`}>
-                  {info.text}
-                </span>
-              )
-            })()}
-          </div>
-        ) : (
-          <span className="text-zinc-600">—</span>
-        )}
+        {(() => {
+          const nsd = order.isParent ? order.nearestSubDeadline : null
+          const deadlineDate = nsd?.deadlineDate ?? broadcast?.deadlineDate
+          const hasTime = nsd ? nsd.deadlineHasTime : broadcast?.deadlineHasTime
+          if (!deadlineDate) return <span className="text-zinc-600">—</span>
+          const info = getDeadlineInfo(deadlineDate, hasTime)
+          return (
+            <div className="flex flex-col leading-tight whitespace-nowrap">
+              <span>{formatDeadline(deadlineDate, hasTime)}</span>
+              {/* Days-left / overdue is meaningless once the order is completed. */}
+              {order.status !== "COMPLETED" && (
+                <span className={`text-xs ${info.color}`}>{info.text}</span>
+              )}
+            </div>
+          )
+        })()}
 
       </td>
 

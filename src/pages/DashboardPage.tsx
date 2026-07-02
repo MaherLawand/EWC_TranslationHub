@@ -727,24 +727,32 @@ React.useEffect(() => {
     //   • without status → full edit: debounce re-fetch staying on current page
     //                      + immediately refresh sidebar if that order is open
     let patchedTimer: ReturnType<typeof setTimeout> | null = null
-    socket.on("order-patched", ({ id, type, status }: { id: string; type: string; status?: string }) => {
+    socket.on("order-patched", ({ id, type, status, nearestSubDeadline }: { id: string; type: string; status?: string; nearestSubDeadline?: any }) => {
       if (status) {
         // Status-only — patch in-place, no re-fetch.
-        // Bail out early if the order already has this status in local state
-        // (deduplicates concurrent socket events for the same change).
         // Completing an order also clears its "source changed" flag (server does
         // the same), so it won't reappear when the order is later reopened.
-        const patch = (o: any) => ({ ...o, status, ...(status === "COMPLETED" ? { sourceChangedAt: null } : {}) })
+        // Parent emits also carry a refreshed nearestSubDeadline so a collapsed
+        // parent's shown deadline follows its soonest non-completed sub-order.
+        const patch = (o: any) => ({
+          ...o,
+          status,
+          ...(status === "COMPLETED" ? { sourceChangedAt: null } : {}),
+          ...(nearestSubDeadline !== undefined ? { nearestSubDeadline } : {}),
+        })
+        // Bail out only when nothing would change (same status AND no deadline
+        // refresh) — dedups concurrent socket events for the same change.
+        const noChange = (o: any) => o.status === status && nearestSubDeadline === undefined
         if (type === "BROADCAST") {
           setBroadcastOrders((prev: any[]) => {
             const target = prev.find((o) => o.id === id)
-            if (target && target.status === status) return prev
+            if (target && noChange(target)) return prev
             return prev.map((o) => o.id === id ? patch(o) : o)
           })
         } else if (type === "MARKETING") {
           setMarketingOrders((prev: any[]) => {
             const target = prev.find((o) => o.id === id)
-            if (target && target.status === status) return prev
+            if (target && noChange(target)) return prev
             return prev.map((o) => o.id === id ? patch(o) : o)
           })
         }
