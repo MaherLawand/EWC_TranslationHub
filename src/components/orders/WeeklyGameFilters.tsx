@@ -32,12 +32,21 @@ export default function WeeklyGameFilters({
     return undefined
   }
 
+  // Fixed-column grid keeps rows balanced while cards fill their cells (no big
+  // gaps): 1 col on phone, 2 on small, 4 on desktop. EWC (8 weeks) also goes to
+  // 8 columns on very wide screens so it's one clean row instead of 4 wide cards;
+  // ENC (4 weeks) caps at 4 columns to avoid empty trailing space.
+  const gridCols =
+    weeks.length > 4
+      ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-4 2xl:grid-cols-8"
+      : "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
+
   return (
-    <div className="flex flex-wrap justify-center gap-3 pb-2 pt-1">
+    <div className={`grid ${gridCols} gap-3 pb-2 pt-1`}>
       {weeks.map((wk) => (
         <div
           key={wk.week}
-          className="flex-1 min-w-[170px] max-w-[230px] bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"
+          className="min-w-0 bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"
         >
           <div className="text-[11px] font-bold tracking-[0.18em] text-[#D6B36A] mb-2 px-1">
             WEEK {wk.week}

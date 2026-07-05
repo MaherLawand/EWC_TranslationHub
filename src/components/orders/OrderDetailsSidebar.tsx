@@ -230,6 +230,11 @@ export default function OrderDetailsSidebar({
                   {broadcast.estimatedMinutes ? (
                     <Row label="Est. Length">{broadcast.estimatedMinutes} min</Row>
                   ) : null}
+                  {broadcast.deliveryType && (
+                    <Row label="Delivery Type">
+                      {broadcast.deliveryType === "RAW" ? "Raw" : "Finished"}
+                    </Row>
+                  )}
                   {broadcast.deliveryDate && (
                     <Row label="Source Added On">
                       {formatDateOnly(broadcast.deliveryDate)}
@@ -672,6 +677,11 @@ export default function OrderDetailsSidebar({
                     orderDetail.type === "MARKETING"
                       ? orderDetail.marketing?.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format, deliveryLink: f.deliveryLink || "" })) || []
                       : orderDetail.broadcast?.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format, deliveryLink: f.deliveryLink || "" })) || [],
+                  deliveryType:
+                    orderDetail.type === "MARKETING"
+                      ? ""
+                      : orderDetail.broadcast?.deliveryType
+                      || ((orderDetail.broadcast?.deliveryFormats?.length ? "FINISHED" : "")),
                   deadline:
                     orderDetail.type === "MARKETING"
                       ? deadlineToFormParts(orderDetail.marketing?.deadlineDate, orderDetail.marketing?.deadlineHasTime).date

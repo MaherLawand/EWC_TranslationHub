@@ -59,6 +59,12 @@ type Props = {
   canManageOrders?: boolean
   /** Open the create modal pre-filled with this order's data (duplicate). */
   onDuplicate?: (order: any) => void | Promise<void>
+  /** Duplicate a big order together with all of its sub-orders. */
+  onDuplicateBig?: (order: any) => void | Promise<void>
+  /** Instantly duplicate a sub-order into the same parent. */
+  onDuplicateSubOrder?: (order: any) => void | Promise<void>
+  /** Id of the order whose sidebar is currently open (highlights that row). */
+  selectedOrderId?: string
   /** Translator click → open the feedback panel for this order. */
   onOpenFeedback?: (order: any) => void
   /** Fetch feedback for an order (used by the hover preview bubble). */
@@ -99,6 +105,9 @@ export default function MarketingOrdersTable({
   subRefresh,
   canManageOrders,
   onDuplicate,
+  onDuplicateBig,
+  onDuplicateSubOrder,
+  selectedOrderId,
   onOpenFeedback,
   fetchOrderFeedback,
   feedbackRefresh,
@@ -132,10 +141,13 @@ const [duplicatingId, setDuplicatingId] =
 
 async function handleDuplicate(e: React.MouseEvent, order: any) {
   e.stopPropagation()
-  if (!onDuplicate || duplicatingId) return
+  // Sub-orders duplicate instantly into their parent; big orders duplicate with
+  // their sub-orders; standalone orders use the plain (modal) flow.
+  const fn = order.parentId ? onDuplicateSubOrder : order.isParent ? onDuplicateBig : onDuplicate
+  if (!fn || duplicatingId) return
   setDuplicatingId(order.id)
   try {
-    await onDuplicate(order)
+    await fn(order)
   } finally {
     setDuplicatingId(null)
   }
@@ -521,7 +533,13 @@ function renderRow(order: any, isSub: boolean) {
         cursor-pointer
         transition-colors
         duration-150
-        ${isSub ? "bg-white/[0.015]" : ""}
+        ${
+          order.id === selectedOrderId
+            ? "bg-[rgba(214,179,106,0.12)] shadow-[inset_3px_0_0_0_#D6B36A]"
+            : isSub
+            ? "bg-white/[0.015]"
+            : ""
+        }
       `}
     >
 
@@ -592,13 +610,14 @@ function renderRow(order: any, isSub: boolean) {
             )}
           </button>
 
-          {/* DUPLICATE — only for standalone orders (no sub-orders), managers only.
+          {/* DUPLICATE — sub-orders (instant, into parent), standalone orders,
+              and big orders (with all sub-orders). Managers only.
               Uses the brand gradient to distinguish it from the grey Copy link. */}
-          {canManageOrders && onDuplicate && !isParent && !order.parentId && (
+          {canManageOrders && (order.parentId ? onDuplicateSubOrder : isParent ? onDuplicateBig : onDuplicate) && (
             <button
               onClick={(e) => handleDuplicate(e, order)}
               disabled={duplicatingId === order.id}
-              title="Duplicate order"
+              title={order.parentId ? "Duplicate sub-order" : isParent ? "Duplicate big order (with sub-orders)" : "Duplicate order"}
               className="flex-shrink-0 p-1 rounded-md transition-all hover:bg-[#1A1A1A] disabled:cursor-wait"
             >
               {duplicatingId === order.id ? (

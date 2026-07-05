@@ -97,6 +97,7 @@ export function useOrders({
         targetLanguages: full.broadcast.targetLanguages,
         deadlineDate: full.broadcast.deadlineDate,
         deadlineHasTime: full.broadcast.deadlineHasTime,
+        deliveryType: full.broadcast.deliveryType ?? null,
         deliveryFormats: full.broadcast.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
         game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null } : null,
       } : null,

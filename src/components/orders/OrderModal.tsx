@@ -74,7 +74,12 @@ type Props = {
   canAssignUsers?: boolean
   setIsEditing: (value: boolean) => void
   setEditingOrderId: (id: string) => void
+  /** Pre-seed the sub-order panel (used when duplicating a big order). */
+  initialSubOrders?: { title: string; deadline: string }[]
 }
+
+// Escape a string so it can be used literally inside a RegExp.
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 
 export default function OrderModal({
@@ -99,6 +104,7 @@ export default function OrderModal({
   canAssignUsers,
   setIsEditing,
   setEditingOrderId,
+  initialSubOrders,
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [languageSearch, setLanguageSearch] = useState("")
@@ -128,13 +134,30 @@ export default function OrderModal({
   // inherited from the parent form (newOrder).
   type SubOrderItem = { title: string; deadline: string }
   const [subOrderItems, setSubOrderItems] = useState<SubOrderItem[]>([])
+  // The order title as it was when the title field gained focus — used to detect
+  // a rename so sub-orders auto-named after the old title can follow the new one.
+  const titleBeforeEditRef = useRef<string>("")
+
+  // Rename sub-orders that were named "<oldTitle> <n>" to "<newTitle> <n>",
+  // leaving custom-named sub-orders untouched.
+  function remapSubOrdersForTitle(oldTitle: string, newTitle: string) {
+    if (!oldTitle.trim() || oldTitle === newTitle) return
+    const re = new RegExp(`^${escapeRegExp(oldTitle)}\\s+(\\d+)$`)
+    setSubOrderItems((prev) =>
+      prev.map((item) => {
+        const m = item.title.match(re)
+        return m ? { ...item, title: `${newTitle} ${m[1]}` } : item
+      })
+    )
+  }
   // True once the user actually has sub-orders → create as a big order.
   const hasSubOrders = subOrderItems.some((s) => s.title.trim())
 
-  // Reset the sub-orders flow whenever the modal (re)opens.
+  // Reset the sub-orders flow whenever the modal (re)opens. When duplicating a
+  // big order, seed the panel with the copied sub-orders instead of empty.
   useEffect(() => {
     if (showModal) {
-      setSubOrderItems([])
+      setSubOrderItems(initialSubOrders && initialSubOrders.length ? initialSubOrders : [])
     }
   }, [showModal, isEditing, editingOrderId])
 
@@ -210,6 +233,7 @@ export default function OrderModal({
     if (newOrder.type === "BROADCAST") {
       if (!newOrder.game) e.game = "Game is required"
       if (!newOrder.estimatedMinutes || Number(newOrder.estimatedMinutes) <= 0) e.estimatedMinutes = "Estimated minutes is required"
+      if (!newOrder.deliveryType) e.deliveryType = "Delivery type is required"
       if (!newOrder.deliveryDate) e.deliveryDate = "Delivery date is required"
       if (!newOrder.deadline) e.deadline = "Deadline is required"
     }
@@ -469,7 +493,9 @@ today.setHours(0, 0, 0, 0)
           </label>
           <input
             value={newOrder.title}
+            onFocus={() => { titleBeforeEditRef.current = newOrder.title }}
             onChange={(e) => { setNewOrder({ ...newOrder, title: e.target.value }); clearError("title") }}
+            onBlur={() => remapSubOrdersForTitle(titleBeforeEditRef.current, newOrder.title)}
             placeholder="Enter title"
             className={`w-full bg-white/10 border rounded-2xl px-4 py-3 text-white outline-none transition placeholder:text-white/50 focus:bg-white/15 ${errors.title ? "border-red-500/60 focus:border-red-500" : "border-white/20 focus:border-[#D6B36A]"}`}
           />
@@ -767,14 +793,43 @@ today.setHours(0, 0, 0, 0)
             />
           </div>
 
+        {/* DELIVERY TYPE (broadcast only) — gates the delivery format below.
+            Finished → SRT or Burned In; Raw → locked to SRT. */}
+<div>
+  <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
+    Delivery Type <span className="text-red-400">*</span>
+  </label>
+  <Select
+    styles={darkSelectStyles}
+    options={[{ value: "RAW", label: "Raw" }, { value: "FINISHED", label: "Finished" }]}
+    value={newOrder.deliveryType ? { value: newOrder.deliveryType, label: newOrder.deliveryType === "RAW" ? "Raw" : "Finished" } : null}
+    placeholder="Select delivery type"
+    onChange={(opt: any) => {
+      const dt = opt?.value || ""
+      if (dt === "RAW") {
+        // Raw → SRT only; the format field is locked below.
+        const srtLink = newOrder.deliveryFormats?.find((f: any) => f.format === "SRT")?.deliveryLink || ""
+        setNewOrder({ ...newOrder, deliveryType: dt, deliveryFormats: [{ format: "SRT", deliveryLink: srtLink }] })
+      } else {
+        setNewOrder({ ...newOrder, deliveryType: dt, deliveryFormats: [{format:"SRT", deliveryLink: "srtLink"},{format:"BURNED_IN"}] })
+      }
+      clearError("deliveryType")
+      clearError("deliveryFormats")
+    }}
+  />
+  {errors.deliveryType && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryType}</p>}
+</div>
+
         {/* FORMAT */}
 <div>
   <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
     Delivery Format <span className="text-red-400">*</span>
   </label>
 
+<div className={(!newOrder.deliveryType || (newOrder.deliveryType === "RAW" || newOrder.deliveryType === "FINISHED")) ? "opacity-50 cursor-not-allowed" : ""}>
 <Select
   isMulti
+  isDisabled={!newOrder.deliveryType || (newOrder.deliveryType === "RAW" || newOrder.deliveryType === "FINISHED")}
   styles={darkSelectStyles}
   options={BROADCAST_FORMAT_OPTIONS}
   value={
@@ -810,6 +865,7 @@ today.setHours(0, 0, 0, 0)
     clearError("deliveryFormats")
   }}
 />
+</div>
 {errors.deliveryFormats && <p className="text-red-400 text-xs mt-1.5">{errors.deliveryFormats}</p>}
 </div>
 
@@ -876,7 +932,7 @@ today.setHours(0, 0, 0, 0)
           <div>
             <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
               Deadline <span className="text-red-400">*</span>
-              <span className="text-zinc-600 ml-1">(time optional — shown in each viewer's timezone)</span>
+              {/*<span className="text-zinc-600 ml-1">(time optional — shown in each viewer's timezone)</span>*/}
             </label>
             <div className="flex gap-2">
               <DatePicker

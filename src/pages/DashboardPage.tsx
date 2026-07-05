@@ -81,6 +81,16 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   const [showModal, setShowModal] =
     React.useState(false)
 
+  // Sub-orders to pre-seed the modal with when duplicating a big order.
+  const [duplicateSubOrders, setDuplicateSubOrders] =
+    React.useState<{ title: string; deadline: string }[]>([])
+
+  // Clear the seeded sub-orders whenever the modal closes, so a later normal
+  // create/edit/duplicate doesn't inherit them.
+  React.useEffect(() => {
+    if (!showModal) setDuplicateSubOrders([])
+  }, [showModal])
+
   const [selectedOrder, setSelectedOrder] =
     React.useState<any>(null)
 
@@ -132,6 +142,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     sourceLanguage: [],
     targetLanguages: [] as string[],
     deliveryFormats: [],
+    deliveryType: "",
     deadline: "",
     deadlineTime: "",
     sourceFileLink: "",
@@ -998,18 +1009,44 @@ React.useEffect(() => {
     }
   }
 
-  // Duplicate flow: open the order modal in CREATE mode, pre-filled with every
-  // field of the selected order, so the user reviews and creates it manually.
-  async function openDuplicateOrder(order: any) {
-    // Pull the full detail so every field (links, deliveries, languages) is present.
-    const detail = await fetchOrderDetail(order.id)
-    const src = detail || order
+  // Build the create-modal state from a source order (its shared fields). Shared
+  // by the standalone and big-order duplicate flows.
+  function buildDuplicateOrderState(src: any) {
     const isMarketing = src.type === "MARKETING"
     const detailSide = isMarketing ? src.marketing : src.broadcast
 
-    setIsEditing(false)
-    setEditingOrderId("")
-    setNewOrder({
+    let deliveryFormats =
+      detailSide?.deliveryFormats?.map((f: any) => ({
+        format: f.format,
+        deliveryLink: f.deliveryLink || "",
+      })) || []
+    let deliveryType = ""
+    if (!isMarketing) {
+      const srtItem = deliveryFormats.find((f: any) => f.format === "SRT") || { format: "SRT", deliveryLink: "" }
+      const burnedItem = deliveryFormats.find((f: any) => f.format === "BURNED_IN") || { format: "BURNED_IN", deliveryLink: "" }
+      const hasSRT = deliveryFormats.some((f: any) => f.format === "SRT")
+      const hasBurned = deliveryFormats.some((f: any) => f.format === "BURNED_IN")
+
+      if (src.broadcast?.deliveryType) {
+        // Already has an explicit type — keep it (Raw stays locked to SRT).
+        deliveryType = src.broadcast.deliveryType
+        if (deliveryType === "RAW") deliveryFormats = [srtItem]
+      } else if (hasBurned) {
+        // Legacy with Burned In (with or without SRT) → Finished, ensure SRT too.
+        deliveryType = "FINISHED"
+        deliveryFormats = [burnedItem, srtItem]
+      } else if (hasSRT) {
+        // Legacy with only SRT → Raw.
+        deliveryType = "RAW"
+        deliveryFormats = [srtItem]
+      } else {
+        // Legacy with no recognized format → Finished + SRT.
+        deliveryType = "FINISHED"
+        deliveryFormats = [srtItem]
+      }
+    }
+
+    return {
       title: src.title || "",
       contentTitle: src.marketing?.contentTitle || "",
       aspectRatios: detailSide?.aspectRatios || [],
@@ -1021,11 +1058,8 @@ React.useEffect(() => {
       priority: src.priority || "MEDIUM",
       sourceLanguage: detailSide?.sourceLanguage || [],
       targetLanguages: detailSide?.targetLanguages || [],
-      deliveryFormats:
-        detailSide?.deliveryFormats?.map((f: any) => ({
-          format: f.format,
-          deliveryLink: f.deliveryLink || "",
-        })) || [],
+      deliveryFormats,
+      deliveryType,
       deadline: deadlineToFormParts(detailSide?.deadlineDate, detailSide?.deadlineHasTime).date,
       deadlineTime: deadlineToFormParts(detailSide?.deadlineDate, detailSide?.deadlineHasTime).time,
       sourceFileLink: detailSide?.sourceFileLink || "",
@@ -1037,8 +1071,69 @@ React.useEffect(() => {
           language: d.language,
           deliveryLink: d.deliveryLink || "",
         })) || [],
-    })
+    }
+  }
+
+  // Duplicate flow: open the order modal in CREATE mode, pre-filled with every
+  // field of the selected order, so the user reviews and creates it manually.
+  async function openDuplicateOrder(order: any) {
+    // Pull the full detail so every field (links, deliveries, languages) is present.
+    const detail = await fetchOrderDetail(order.id)
+    const src = detail || order
+
+    setIsEditing(false)
+    setEditingOrderId("")
+    setDuplicateSubOrders([])
+    setNewOrder(buildDuplicateOrderState(src))
     setShowModal(true)
+  }
+
+  // Duplicate a big order: copy the parent's shared fields AND every one of its
+  // sub-orders (title + deadline) into the modal's sub-order panel, so creating
+  // it reproduces the whole big order.
+  async function openDuplicateBigOrder(order: any) {
+    const detail = await fetchOrderDetail(order.id)
+    const src = detail || order
+
+    // Pull all sub-orders across pages.
+    const subs: any[] = []
+    let page = 1
+    let totalPages = 1
+    do {
+      const res = await fetchSubOrders(order.id, page)
+      subs.push(...res.subOrders)
+      totalPages = res.totalPages || 1
+      page++
+    } while (page <= totalPages)
+
+    const dupSubs = subs.map((s: any) => {
+      const det = s.broadcast ?? s.marketing
+      return {
+        title: s.title || "",
+        deadline: deadlineToFormParts(det?.deadlineDate, det?.deadlineHasTime).date,
+      }
+    })
+
+    setIsEditing(false)
+    setEditingOrderId("")
+    setDuplicateSubOrders(dupSubs)
+    setNewOrder(buildDuplicateOrderState(src))
+    setShowModal(true)
+  }
+
+  // Instantly duplicate a sub-order into the same parent (server auto-increments
+  // the name); then reload the expanded parent's sub-orders so it appears.
+  async function duplicateSubOrder(order: any) {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/orders/${order.id}/duplicate`, {
+        method: "POST",
+        credentials: "include",
+      })
+      if (!res.ok) throw new Error("Duplicate failed")
+      setSubRefresh((n) => n + 1)
+    } catch (e) {
+      console.error("Duplicate sub-order failed", e)
+    }
   }
 
   function resetOrderState() {
@@ -1055,6 +1150,7 @@ React.useEffect(() => {
       sourceLanguage: [],
       targetLanguages: [],
       deliveryFormats: [],
+      deliveryType: "",
       deadline: "",
       deadlineTime: "",
       sourceFileLink: "",
@@ -1415,6 +1511,9 @@ React.useEffect(() => {
                   subRefresh={subRefresh}
                   canManageOrders={canManageOrders}
                   onDuplicate={openDuplicateOrder}
+                  onDuplicateBig={openDuplicateBigOrder}
+                  onDuplicateSubOrder={duplicateSubOrder}
+                  selectedOrderId={selectedOrder?.id}
                   onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
                   fetchOrderFeedback={fetchOrderFeedback}
                   feedbackRefresh={feedbackRefresh}
@@ -1461,6 +1560,9 @@ React.useEffect(() => {
                   subRefresh={subRefresh}
                   canManageOrders={canManageOrders}
                   onDuplicate={openDuplicateOrder}
+                  onDuplicateBig={openDuplicateBigOrder}
+                  onDuplicateSubOrder={duplicateSubOrder}
+                  selectedOrderId={selectedOrder?.id}
                   onOpenFeedback={(o: any) => setFeedbackOrder({ id: o.id, title: o.title })}
                   fetchOrderFeedback={fetchOrderFeedback}
                   feedbackRefresh={feedbackRefresh}
@@ -1575,6 +1677,7 @@ React.useEffect(() => {
           canAssignUsers={canManageOrders}
           setIsEditing={setIsEditing}
           setEditingOrderId={setEditingOrderId}
+          initialSubOrders={duplicateSubOrders}
         />
 
         {/* FEEDBACK PANEL — page-level so list refreshes never disrupt the draft */}
