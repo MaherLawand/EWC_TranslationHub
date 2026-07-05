@@ -1066,6 +1066,7 @@ function renderRow(order: any, isSub: boolean) {
         {canUpdateStatus ? (
           ([
             { value: "PENDING", label: "Set Pending", cls: "text-yellow-400" },
+            { value: "READY_FOR_TRANSLATION", label: "Ready for Translation", cls: "text-cyan-400" },
             { value: "IN_PROGRESS", label: "Start Progress", cls: "text-blue-400" },
             { value: "COMPLETED", label: "Mark Completed", cls: "text-green-400" },
           ] as const)

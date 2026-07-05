@@ -7,6 +7,9 @@ export default function StatusBadge({
     PENDING:
       "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
 
+    READY_FOR_TRANSLATION:
+      "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20",
+
     IN_PROGRESS:
       "bg-blue-500/10 text-blue-400 border border-blue-500/20",
 
@@ -24,7 +27,7 @@ export default function StatusBadge({
         ]
       }`}
     >
-      {status.replace("_", " ")}
+      {status.replace(/_/g, " ")}
     </span>
   )
 }

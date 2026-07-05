@@ -3,6 +3,7 @@ import { gearWarp } from "../../lib/gearHover"
 
 type OrderCounts = {
   PENDING: number
+  READY_FOR_TRANSLATION: number
   IN_PROGRESS: number
   COMPLETED: number
   total: number
@@ -91,6 +92,7 @@ function Topbar({
     activePage === "Broadcast"
 
   const pendingCount    = orderCounts.PENDING
+  const readyCount      = orderCounts.READY_FOR_TRANSLATION
   const inProgressCount = orderCounts.IN_PROGRESS
   const completedCount  = orderCounts.COMPLETED
 
@@ -207,7 +209,7 @@ return (
       <button
         onClick={() => setStatusFilter("All Statuses")}
         className={`
-          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
           ${statusFilter === "All Statuses"
             ? "border-[#3A3A3A] bg-[#1A1A1A]"
             : "border-[#242424] bg-[#111111] opacity-50 hover:opacity-80"}
@@ -221,7 +223,7 @@ return (
       <button
         onClick={() => setStatusFilter(statusFilter === "Pending" ? "All Statuses" : "Pending")}
         className={`
-          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
           ${statusFilter === "Pending"
             ? "bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
             : "bg-yellow-500/10 border-yellow-500/20 opacity-50 hover:opacity-80"}
@@ -231,11 +233,25 @@ return (
         <h3 className="text-2xl font-bold text-white mt-1">{pendingCount}</h3>
       </button>
 
+      {/* READY FOR TRANSLATION */}
+      <button
+        onClick={() => setStatusFilter(statusFilter === "Ready for Translation" ? "All Statuses" : "Ready for Translation")}
+        className={`
+          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          ${statusFilter === "Ready for Translation"
+            ? "bg-cyan-500/20 border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+            : "bg-cyan-500/[0.06] border-cyan-500/10 opacity-50 hover:opacity-80"}
+        `}
+      >
+        <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-400">Ready</p>
+        <h3 className="text-2xl font-bold text-white mt-1">{readyCount}</h3>
+      </button>
+
       {/* IN PROGRESS */}
       <button
         onClick={() => setStatusFilter(statusFilter === "In Progress" ? "All Statuses" : "In Progress")}
         className={`
-          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
           ${statusFilter === "In Progress"
             ? "bg-blue-500/20 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
             : "bg-blue-500/[0.06] border-blue-500/10 opacity-50 hover:opacity-80"}
@@ -249,7 +265,7 @@ return (
       <button
         onClick={() => setStatusFilter(statusFilter === "Completed" ? "All Statuses" : "Completed")}
         className={`
-          min-w-[120px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
           ${statusFilter === "Completed"
             ? "bg-green-500/20 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.15)]"
             : "bg-green-500/[0.06] border-green-500/10 opacity-50 hover:opacity-80"}
@@ -302,6 +318,7 @@ return (
       {([
         { label: "Total", value: "All Statuses", count: orderCounts.total, active: "border-[#3A3A3A] bg-[#1A1A1A]", idle: "border-[#242424] bg-[#111111] opacity-60", text: "text-zinc-400" },
         { label: "Pending", value: "Pending", count: pendingCount, active: "bg-yellow-500/20 border-yellow-500/50", idle: "bg-yellow-500/10 border-yellow-500/20 opacity-60", text: "text-yellow-400" },
+        { label: "Ready", value: "Ready for Translation", count: readyCount, active: "bg-cyan-500/20 border-cyan-500/50", idle: "bg-cyan-500/[0.06] border-cyan-500/10 opacity-60", text: "text-cyan-400" },
         { label: "In Progress", value: "In Progress", count: inProgressCount, active: "bg-blue-500/20 border-blue-500/50", idle: "bg-blue-500/[0.06] border-blue-500/10 opacity-60", text: "text-blue-400" },
         { label: "Completed", value: "Completed", count: completedCount, active: "bg-green-500/20 border-green-500/50", idle: "bg-green-500/[0.06] border-green-500/10 opacity-60", text: "text-green-400" },
       ] as const).map((s) => {

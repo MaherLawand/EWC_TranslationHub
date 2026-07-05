@@ -581,12 +581,14 @@ today.setHours(0, 0, 0, 0)
             isSearchable={false}
             options={[
               { value: "PENDING", label: "Pending" },
+              { value: "READY_FOR_TRANSLATION", label: "Ready for Translation" },
               { value: "IN_PROGRESS", label: "In Progress" },
               { value: "COMPLETED", label: "Completed" },
             ]}
             value={(() => {
               const s = newOrder.status || "PENDING"
-              return { value: s, label: s === "PENDING" ? "Pending" : s === "IN_PROGRESS" ? "In Progress" : "Completed" }
+              const label = s === "PENDING" ? "Pending" : s === "READY_FOR_TRANSLATION" ? "Ready for Translation" : s === "IN_PROGRESS" ? "In Progress" : "Completed"
+              return { value: s, label }
             })()}
             onChange={(selected) => setNewOrder({ ...newOrder, status: selected?.value || "PENDING" })}
           />
