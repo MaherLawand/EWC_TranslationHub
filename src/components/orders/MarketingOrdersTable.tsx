@@ -558,7 +558,10 @@ function renderRow(order: any, isSub: boolean) {
             </button>
           )}
 
-          {(isSub || showBreadcrumb) && (
+          {/* Only show the nesting arrow for expanded sub-rows sitting under a
+              visible parent — not for flat breadcrumb rows (search/status filter),
+              where the parent isn't shown and the "part of …" pill says it all. */}
+          {isSub && (
             <span className="flex-shrink-0 text-gear-gradient text-xs">↳</span>
           )}
 
