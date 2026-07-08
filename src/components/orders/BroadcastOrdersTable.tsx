@@ -29,10 +29,21 @@ function TierBadge({ tier }: { tier: number }) {
       : "border-white/10 bg-white/[0.03] text-zinc-500"
   return (
     <span
-      title={`Tier ${tier}`}
-      className={`flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-md border text-[10px] font-bold ${cls}`}
+      className={`flex-shrink-0 inline-flex items-center justify-center h-5 px-2 rounded-md border text-[10px] font-bold whitespace-nowrap ${cls}`}
     >
-      {tier}
+      Tier {tier}
+    </span>
+  )
+}
+
+// Extra "Tier 1 CN" designation — distinct red pill so it stands out from the
+// normal Tier 1/2/3 labels.
+function Tier1CNBadge() {
+  return (
+    <span
+      className="flex-shrink-0 inline-flex items-center justify-center h-5 px-2 rounded-md border border-red-500/40 bg-red-500/15 text-red-300 text-[10px] font-bold whitespace-nowrap"
+    >
+      Tier 1 CN
     </span>
   )
 }
@@ -559,13 +570,22 @@ function renderRow(order: any, isSub: boolean) {
 
       </td>
 
-      {/* GAME */}
-      <td className="pl-3 pr-6 py-2.5 text-zinc-300 align-center">
-        {broadcast?.game?.name ? (
-          <div className="flex items-center gap-2 whitespace-nowrap">
+      {/* TIERS */}
+      <td className="pl-3 pr-4 py-2.5 align-center">
+        {broadcast?.game ? (
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             {broadcast.game.tier != null && <TierBadge tier={broadcast.game.tier} />}
-            <span>{broadcast.game.name}</span>
+            {broadcast.game.tier1CN && <Tier1CNBadge />}
           </div>
+        ) : (
+          <span className="text-zinc-600">—</span>
+        )}
+      </td>
+
+      {/* GAME */}
+      <td className="px-6 py-2.5 text-zinc-300 align-center">
+        {broadcast?.game?.name ? (
+          <span className="whitespace-nowrap">{broadcast.game.name}</span>
         ) : (
           <span className="text-zinc-600">—</span>
         )}
@@ -729,6 +749,7 @@ function renderRow(order: any, isSub: boolean) {
           >
             <option value="">All Tiers</option>
             <option value="1">Tier 1</option>
+            <option value="cn">Tier 1 CN</option>
             <option value="2">Tier 2</option>
             <option value="3">Tier 3</option>
           </select>
@@ -789,17 +810,21 @@ function renderRow(order: any, isSub: boolean) {
               Order
             </th>
 
-            <th className="pl-3 pr-6 py-3">
+            <th className="pl-3 pr-4 py-3">
               <button
                 onClick={() => setTierSort?.(tierSort === "ASC" ? "DESC" : tierSort === "DESC" ? "" : "ASC")}
                 title="Sort by game tier (1 = highest)"
                 className={`flex items-center gap-1.5 text-left cursor-pointer transition-colors ${tierSort ? "text-[#D6B36A]" : "hover:text-white"}`}
               >
-                Game
+                Tiers
                 <span className={`text-[10px] ${tierSort ? "opacity-100" : "opacity-60"}`}>
                   {tierSort === "ASC" ? "↓" : tierSort === "DESC" ? "↑" : "↕"}
                 </span>
               </button>
+            </th>
+
+            <th className="text-left px-6 py-3">
+              Game
             </th>
 
             <th className="text-left px-6 py-3">
@@ -844,7 +869,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={8}
+        colSpan={9}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -855,7 +880,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={8}
+        colSpan={9}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -912,7 +937,7 @@ function renderRow(order: any, isSub: boolean) {
               if (entry?.loading) {
                 rows.push(
                   <tr key={`${order.id}-loading`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={8} className="px-6 py-3" style={{ paddingLeft: 56 }}>
+                    <td colSpan={9} className="px-6 py-3" style={{ paddingLeft: 56 }}>
                       <div className="flex items-center gap-2 text-zinc-500 text-sm">
                         <div className="w-3.5 h-3.5 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
                         Loading sub-orders…
@@ -923,7 +948,7 @@ function renderRow(order: any, isSub: boolean) {
               } else if (entry && entry.page < entry.totalPages) {
                 rows.push(
                   <tr key={`${order.id}-more`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={8} className="px-6 py-2" style={{ paddingLeft: 56 }}>
+                    <td colSpan={9} className="px-6 py-2" style={{ paddingLeft: 56 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); loadSubOrders(order.id, entry.page + 1) }}
                         className="text-xs font-semibold text-[#E8C77E] hover:text-[#F5D98A] transition"

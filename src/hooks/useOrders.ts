@@ -99,7 +99,7 @@ export function useOrders({
         deadlineHasTime: full.broadcast.deadlineHasTime,
         deliveryType: full.broadcast.deliveryType ?? null,
         deliveryFormats: full.broadcast.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
-        game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null } : null,
+        game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null, tier: full.broadcast.game.tier, tier1CN: full.broadcast.game.tier1CN } : null,
       } : null,
       marketing: full.marketing ? {
         id: full.marketing.id,
