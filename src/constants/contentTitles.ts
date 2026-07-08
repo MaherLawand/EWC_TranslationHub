@@ -18,4 +18,5 @@ export const CONTENT_TITLES = [
   "TITLE DEFENDERS",
   "COMMERCIAL",
   "GENERIC CONTENT",
+  "SPOTLIGHT"
 ] as const
