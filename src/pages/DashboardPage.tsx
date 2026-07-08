@@ -274,6 +274,10 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     currentUser?.position === "PRODUCER" ||
     currentUser?.position === "POST_PRODUCTION_MANAGER"
 
+  // Video editors have viewer-level access + a restricted edit: they can open the
+  // order modal (all fields disabled) and change only the source file + delivery links.
+  const isVideoEditor = currentUser?.position === "VIDEO_EDITOR"
+
   /*
   ========================================
   HOOKS
@@ -1611,6 +1615,7 @@ React.useEffect(() => {
                 setDeletingOrderId={setDeletingOrderId}
                 deleteOrder={deleteOrder}
                 canManageOrders={canManageOrders}
+                isVideoEditor={isVideoEditor}
                 getDeadlineInfo={getDeadlineInfo}
                 activePage={activePage}
                 onSelectOrder={onRowClick}
@@ -1658,6 +1663,7 @@ React.useEffect(() => {
         <OrderModal
           showModal={showModal}
           setShowModal={setShowModal}
+          restricted={isVideoEditor}
           isEditing={isEditing}
           isSavingOrder={isSavingOrder}
           newOrder={newOrder}

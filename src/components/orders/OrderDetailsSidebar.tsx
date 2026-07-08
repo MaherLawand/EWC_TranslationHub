@@ -21,6 +21,8 @@ type Props = {
   setDeletingOrderId: (id: string) => void
   deleteOrder: () => void
   canManageOrders: boolean
+  /** Video editors: can open the (restricted) edit modal but cannot delete. */
+  isVideoEditor?: boolean
   getDeadlineInfo: (deadlineDate: string, hasTime?: boolean) => { text: string; color: string }
   onSelectOrder?: (order: any) => void
   createSubOrders?: (parentId: string, items: any[]) => void
@@ -64,6 +66,7 @@ export default function OrderDetailsSidebar({
   setShowModal,
   showDeleteModal,
   setShowDeleteModal,
+  isVideoEditor,
   setDeletingOrderId,
   deleteOrder,
   canManageOrders,
@@ -647,9 +650,9 @@ export default function OrderDetailsSidebar({
 
       {/* BOTTOM ACTIONS — flex-shrink-0 keeps it anchored at the very bottom
           regardless of how much content is in the body above */}
-      {canManageOrders && !isBroadcastReadOnly && (
+      {(canManageOrders || isVideoEditor) && !isBroadcastReadOnly && (
         <div className="flex-shrink-0 bg-[#0A0A0A] border-t border-[#1F1F1F] px-6 py-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${canManageOrders ? "grid-cols-2" : "grid-cols-1"}`}>
             <button
               disabled={isLoadingDetail || !orderDetail}
               onClick={() => {
@@ -717,16 +720,18 @@ export default function OrderDetailsSidebar({
               Edit Order
             </button>
 
-            <button
-              disabled={isLoadingDetail || !orderDetail}
-              onClick={() => {
-                setDeletingOrderId(selectedOrder.id)
-                setShowDeleteModal(true)
-              }}
-              className="bg-[#1A1212] border border-red-500/20 text-red-400 py-2.5 rounded-xl font-semibold text-sm hover:bg-red-500/10 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
-            >
-              Delete Order
-            </button>
+            {canManageOrders && (
+              <button
+                disabled={isLoadingDetail || !orderDetail}
+                onClick={() => {
+                  setDeletingOrderId(selectedOrder.id)
+                  setShowDeleteModal(true)
+                }}
+                className="bg-[#1A1212] border border-red-500/20 text-red-400 py-2.5 rounded-xl font-semibold text-sm hover:bg-red-500/10 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+              >
+                Delete Order
+              </button>
+            )}
           </div>
         </div>
       )}

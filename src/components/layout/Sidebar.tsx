@@ -27,7 +27,9 @@ export default function Sidebar({
   const unreadNotifications =
     currentUser?.notifications?.filter((n: any) => !n.isRead).length || 0
 
-  const isViewer = currentUser?.position === "VIEWER"
+  // Video editors have the same navigation access as viewers (plus a restricted
+  // edit handled in the order sidebar).
+  const isViewer = currentUser?.position === "VIEWER" || currentUser?.position === "VIDEO_EDITOR"
 
   const canViewBroadcastOrders =
     currentUser?.role === "ADMIN" ||

@@ -76,6 +76,8 @@ type Props = {
   setEditingOrderId: (id: string) => void
   /** Pre-seed the sub-order panel (used when duplicating a big order). */
   initialSubOrders?: { title: string; deadline: string }[]
+  /** Video-editor mode: every field is disabled except the source file + delivery links. */
+  restricted?: boolean
 }
 
 // Escape a string so it can be used literally inside a RegExp.
@@ -105,6 +107,7 @@ export default function OrderModal({
   setIsEditing,
   setEditingOrderId,
   initialSubOrders,
+  restricted = false,
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [languageSearch, setLanguageSearch] = useState("")
@@ -462,7 +465,13 @@ today.setHours(0, 0, 0, 0)
           ✕
         </button>
       </div>
-<div className="flex-1 overflow-auto p-4 sm:p-8 dark-scroll">
+<div className={`flex-1 overflow-auto p-4 sm:p-8 dark-scroll ${restricted ? "[&_input:not([data-ve])]:opacity-50 [&_input:not([data-ve])]:pointer-events-none [&_textarea]:opacity-50 [&_textarea]:pointer-events-none [&_[class*='-control']]:opacity-50 [&_[class*='-control']]:pointer-events-none [&_[class*='-control']]:cursor-not-allowed" : ""}`}>
+
+      {/* {restricted && (
+        <div className="mb-5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+          As a Video Editor you can only edit the <strong>Source File</strong> and <strong>Delivery Links</strong>. All other fields are read-only.
+        </div>
+      )} */}
 
       {/* FORM */}
   {/* FORM */}
@@ -878,6 +887,7 @@ today.setHours(0, 0, 0, 0)
             </label>
 
             <input
+            data-ve
             type="url"
               value={
                 newOrder.sourceFileLink
@@ -900,6 +910,7 @@ today.setHours(0, 0, 0, 0)
               <span className="text-zinc-600 text-xs ml-1">(optional)</span>
             </label>
             <input
+              data-ve
               type="url"
               value={newOrder.srtAvailableLink || ""}
               onChange={(e) =>
@@ -1211,6 +1222,7 @@ today.setHours(0, 0, 0, 0)
         </label>
 
         <input
+        data-ve
         type="url"
           value={
             newOrder.sourceFileLink
@@ -1234,6 +1246,7 @@ today.setHours(0, 0, 0, 0)
           <span className="text-zinc-600 text-xs ml-1">(optional)</span>
         </label>
         <input
+          data-ve
           type="url"
           value={newOrder.srtAvailableLink || ""}
           onChange={(e) =>
@@ -1419,6 +1432,7 @@ transition={{
             </p>
 
             <input
+            data-ve
             type="url"
               value={
                 delivery.deliveryLink || ""
@@ -1492,7 +1506,7 @@ transition={{
 
 {/* SUB ORDERS PANEL — shown when creating, or when editing a standalone order
     (adding sub-orders here promotes it into a big order). */}
-{(!isEditing || canAddSubOrdersWhileEditing) && (
+{!restricted && (!isEditing || canAddSubOrdersWhileEditing) && (
   <div className="mt-6 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
     <div className="flex items-center justify-between mb-2">
       <div>

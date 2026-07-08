@@ -308,12 +308,13 @@ export default function UserModal({
                     { value: "PRODUCER", label: "Producer" },
                     { value: "POST_PRODUCTION_MANAGER", label: "Post Production Manager" },
                     { value: "TRANSLATOR", label: "Translator" },
-                    { value: "EDITOR", label: "Editor" },
+                   // { value: "EDITOR", label: "Editor" },
+                    { value: "VIDEO_EDITOR", label: "Video Editor" },
                     { value: "VIEWER", label: "Viewer" },
                   ]}
                   value={userForm.position ? {
                     value: userForm.position,
-                    label: { PRODUCER: "Producer", POST_PRODUCTION_MANAGER: "Post Production Manager", TRANSLATOR: "Translator", EDITOR: "Editor", VIEWER: "Viewer" }[userForm.position as string] || userForm.position,
+                    label: { PRODUCER: "Producer", POST_PRODUCTION_MANAGER: "Post Production Manager", TRANSLATOR: "Translator", EDITOR: "Editor", VIDEO_EDITOR: "Video Editor", VIEWER: "Viewer" }[userForm.position as string] || userForm.position,
                   } : null}
                   onChange={(selected) => { setUserForm({ ...userForm, position: selected?.value || "" }); clearError("position") }}
                 />
