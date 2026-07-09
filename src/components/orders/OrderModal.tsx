@@ -1401,14 +1401,37 @@ transition={{
   className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 flex flex-col h-fit sticky top-0 shadow-[0_8px_40px_rgba(0,0,0,0.35)]"
 >
 
-    <div className="mb-5">
-      <h3 className="text-lg font-semibold text-gear-gradient w-fit">
-        Delivery Assets
-      </h3>
+    <div className="mb-5 flex items-start justify-between gap-3">
+      <div>
+        <h3 className="text-lg font-semibold text-gear-gradient w-fit">
+          Delivery Assets
+        </h3>
 
-      <p className="text-sm text-zinc-500 mt-1">
-        Manage language and format links
-      </p>
+        <p className="text-sm text-zinc-500 mt-1">
+          Manage language and format links
+        </p>
+      </div>
+
+      {/* Clear all delivery link inputs at once. */}
+      {newOrder.deliveries?.length > 0 && (
+        <button
+          type="button"
+          data-ve
+          onClick={() =>
+            setNewOrder({
+              ...newOrder,
+              deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: "" })),
+            })
+          }
+          title="Clear all delivery links"
+          className="flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:text-red-400 hover:border-red-400/40 hover:bg-red-400/10 transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
     </div>
 
     <div className="space-y-4 max-h-[650px] overflow-auto pr-1 dark-scroll">
