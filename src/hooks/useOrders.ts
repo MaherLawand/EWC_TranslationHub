@@ -270,10 +270,16 @@ export function useOrders({
   }
 
   // ─── Lazy-fetch a parent's sub-orders (paginated) when its row is expanded ─
-  async function fetchSubOrders(parentId: string, page = 1) {
+  // applyStatusFilter (default true): when a status filter is active, only the
+  // matching sub-orders are returned — mirroring the grouped list. Callers that
+  // need EVERY sub-order (e.g. duplicating a big order) pass false.
+  async function fetchSubOrders(parentId: string, page = 1, applyStatusFilter = true) {
     try {
+      const params = new URLSearchParams({ page: String(page), limit: "50" })
+      if (applyStatusFilter && statusFilter !== "All Statuses")
+        params.append("status", statusFilter.toUpperCase().replace(/ /g, "_"))
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/orders/${parentId}/sub-orders?page=${page}&limit=50`,
+        `${import.meta.env.VITE_API_URL}/orders/${parentId}/sub-orders?${params.toString()}`,
         { credentials: "include" }
       )
       if (!res.ok) throw new Error("Failed to fetch sub-orders")

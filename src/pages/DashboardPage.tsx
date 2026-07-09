@@ -656,6 +656,18 @@ React.useEffect(() => {
   // statusPatch instead (lightweight in-place, no refetch).
   const [subRefresh, setSubRefresh] = React.useState(0)
 
+  // The status filter narrows each expanded big order to only its matching
+  // sub-orders (server-side). Bump subRefresh so already-open parents re-fetch
+  // their sub-orders whenever the status filter changes.
+  const didMountStatusRef = React.useRef(false)
+  React.useEffect(() => {
+    if (!didMountStatusRef.current) {
+      didMountStatusRef.current = true
+      return
+    }
+    setSubRefresh((n) => n + 1)
+  }, [statusFilter])
+
   // Feedback: which order's feedback panel is open (translator), and a nonce
   // bumped by the "order-feedback" socket event so open panels/bubbles refresh.
   // The panel lives at page level (not inside a table row) so a list refresh
@@ -1104,7 +1116,8 @@ React.useEffect(() => {
     let page = 1
     let totalPages = 1
     do {
-      const res = await fetchSubOrders(order.id, page)
+      // false → ignore the active status filter; a duplicate needs EVERY sub-order.
+      const res = await fetchSubOrders(order.id, page, false)
       subs.push(...res.subOrders)
       totalPages = res.totalPages || 1
       page++

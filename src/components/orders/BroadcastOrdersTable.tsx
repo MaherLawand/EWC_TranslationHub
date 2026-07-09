@@ -625,9 +625,18 @@ function renderRow(order: any, isSub: boolean) {
 
       </td>
 
-      {/* STATUS */}
+      {/* STATUS — big orders have no own status (it's a rollup of their sub-orders) */}
       <td className="px-6 py-2.5 align-center whitespace-nowrap">
 
+        {isParent ? (
+          <span
+            title="Status is tracked per sub-order — expand to view"
+            className="inline-flex items-center gap-1.5 text-[#6E6E6E] text-xs italic cursor-default select-none"
+          >
+            <span className={`text-[#6E6E6E] text-[11px] transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
+            Per sub-order
+          </span>
+        ) : (
         <div
           className="inline-flex flex-shrink-0"
           onMouseEnter={(e) => canEditThisStatus && openStatusPortal(e, order.id, order.status)}
@@ -655,6 +664,7 @@ function renderRow(order: any, isSub: boolean) {
             </div>
           )}
         </div>
+        )}
 
       </td>
 
