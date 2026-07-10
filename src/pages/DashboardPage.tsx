@@ -1070,7 +1070,12 @@ React.useEffect(() => {
       game: src.broadcast?.gameId || "",
       type: src.type || "BROADCAST",
       event: src.event || selectedEvent,
-      status: src.status || "PENDING",
+      // Never carry over the source order's status (it may be Completed). A
+      // duplicate starts fresh: Ready for Translation if it has a source file,
+      // otherwise Pending.
+      status: (detailSide?.sourceFileLink || "").trim()
+        ? "READY_FOR_TRANSLATION"
+        : "PENDING",
       priority: src.priority || "MEDIUM",
       sourceLanguage: detailSide?.sourceLanguage || [],
       targetLanguages: detailSide?.targetLanguages || [],
