@@ -111,6 +111,8 @@ export default function OrderModal({
 }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [languageSearch, setLanguageSearch] = useState("")
+  // "Apply to all" delivery link — pasting here fills every language's link.
+  const [globalDeliveryLink, setGlobalDeliveryLink] = useState("")
   const initialOrderRef = useRef(JSON.stringify(newOrder))
   const wasOpenRef = useRef(showModal)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
@@ -122,6 +124,12 @@ export default function OrderModal({
     initialOrderRef.current = JSON.stringify(newOrder)
   }
   wasOpenRef.current = showModal
+
+  // Clear the "apply to all" delivery link field whenever the modal closes so it
+  // never carries a stale value into the next order.
+  useEffect(() => {
+    if (!showModal) setGlobalDeliveryLink("")
+  }, [showModal])
 
   // Assign users state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
@@ -783,7 +791,8 @@ today.setHours(0, 0, 0, 0)
           ? existing
           : {
               language,
-              deliveryLink: "",
+              // A newly-added language inherits the "apply to all" link if one is set.
+              deliveryLink: globalDeliveryLink,
             }
       }
     )
@@ -1192,7 +1201,8 @@ today.setHours(0, 0, 0, 0)
               ? existing
               : {
                   language,
-                  deliveryLink: "",
+                  // A newly-added language inherits the "apply to all" link if one is set.
+                  deliveryLink: globalDeliveryLink,
                 }
           }
         )
@@ -1401,36 +1411,58 @@ transition={{
   className="bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 flex flex-col h-fit sticky top-0 shadow-[0_8px_40px_rgba(0,0,0,0.35)]"
 >
 
-    <div className="mb-5 flex items-start justify-between gap-3">
-      <div>
-        <h3 className="text-lg font-semibold text-gear-gradient w-fit">
-          Delivery Assets
-        </h3>
+    <div className="mb-5">
+      <h3 className="text-lg font-semibold text-gear-gradient w-fit">
+        Delivery Assets
+      </h3>
 
-        <p className="text-sm text-zinc-500 mt-1">
-          Manage language and format links
-        </p>
-      </div>
+      <p className="text-sm text-zinc-500 mt-1">
+        Manage language and format links
+      </p>
 
-      {/* Clear all delivery link inputs at once. */}
+      {/* APPLY-TO-ALL — a single link pasted here fills every language's link
+          (handy when all deliveries share the same link). The X clears them all. */}
       {newOrder.deliveries?.length > 0 && (
-        <button
-          type="button"
-          data-ve
-          onClick={() =>
-            setNewOrder({
-              ...newOrder,
-              deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: "" })),
-            })
-          }
-          title="Clear all delivery links"
-          className="flex-shrink-0 w-8 h-8 inline-flex items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:text-red-400 hover:border-red-400/40 hover:bg-red-400/10 transition"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+        <div className="mt-4">
+          <label className="block text-xs text-zinc-400 mb-1.5">
+            Apply one link to all languages
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              data-ve
+              type="url"
+              value={globalDeliveryLink}
+              onChange={(e) => {
+                const link = e.target.value
+                setGlobalDeliveryLink(link)
+                setNewOrder({
+                  ...newOrder,
+                  deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: link })),
+                })
+              }}
+              placeholder="Paste a link to fill every language..."
+              className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
+            />
+            <button
+              type="button"
+              data-ve
+              onClick={() => {
+                setGlobalDeliveryLink("")
+                setNewOrder({
+                  ...newOrder,
+                  deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: "" })),
+                })
+              }}
+              title="Clear all delivery links"
+              className="flex-shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:text-red-400 hover:border-red-400/40 hover:bg-red-400/10 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
     </div>
 
