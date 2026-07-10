@@ -650,7 +650,7 @@ function renderRow(order: any, isSub: boolean) {
                     Updating...
                   </div>
                 ) : (
-                  <StatusBadge status={order.status} />
+                  <StatusBadge status={order.status} showChevron />
                 )}
               </div>
             </button>

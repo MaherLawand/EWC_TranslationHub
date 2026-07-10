@@ -1,7 +1,10 @@
 export default function StatusBadge({
   status,
+  showChevron = false,
 }: {
   status: string | undefined
+  /** Renders a small chevron (in the status color) to hint the badge is clickable. */
+  showChevron?: boolean
 }) {
   const styles = {
     PENDING:
@@ -21,13 +24,19 @@ export default function StatusBadge({
 
   return (
     <span
-      className={`px-3 py-1 rounded-full text-sm font-medium ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
         styles[
           status as keyof typeof styles
         ]
       }`}
     >
       {status.replace(/_/g, " ")}
+      {showChevron && (
+        // Inherits the badge's status color via currentColor.
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 opacity-80">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      )}
     </span>
   )
 }
