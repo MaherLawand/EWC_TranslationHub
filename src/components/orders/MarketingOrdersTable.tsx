@@ -705,11 +705,7 @@ function renderRow(order: any, isSub: boolean) {
             Per sub-order
           </span>
         ) : (
-        <div
-          className="inline-flex flex-shrink-0"
-          onMouseEnter={(e) => canEditThisStatus && openStatusPortal(e, order.id, order.status)}
-          onMouseLeave={canEditThisStatus ? closeStatusPortal : undefined}
-        >
+        <div className="inline-flex flex-shrink-0">
           {canEditThisStatus ? (
             <button
               onClick={(e) => openStatusPortal(e, order.id, order.status)}
@@ -1072,8 +1068,6 @@ function renderRow(order: any, isSub: boolean) {
         style={{ position: "fixed", top: statusPortal.top, left: statusPortal.left, zIndex: 9999, transformOrigin: "top left" }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
-        onMouseEnter={keepStatusPortal}
-        onMouseLeave={closeStatusPortal}
         className="w-48 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"
       >
         {canUpdateStatus ? (
