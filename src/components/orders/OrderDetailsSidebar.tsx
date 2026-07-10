@@ -1,8 +1,61 @@
 import React from "react"
+import Select from "react-select"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import "../../styling/datepicker-dark.css"
 import StatusBadge from "../shared/StatusBadge"
 import { LANGUAGES } from "../../constants/languages"
 import { gearWarp } from "../../lib/gearHover"
-import { deadlineToFormParts, formatDeadline, formatDateOnly, formatDateTime } from "../../lib/deadline"
+import { deadlineToFormParts, formPartsToDeadline, buildTimeOptions, formatDeadline, formatDateOnly, formatDateTime } from "../../lib/deadline"
+
+// Date <-> "YYYY-MM-DD" helpers + dark react-select styling, mirrored from
+// OrderModal so the sub-order deadline picker matches the create/edit modal.
+function toYMD(d: Date | null): string {
+  if (!d) return ""
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+function fromYMD(s: string | null | undefined): Date | null {
+  if (!s) return null
+  const [y, m, d] = s.split("-").map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d) // local midnight
+}
+const today = new Date()
+const darkSelectStyles = {
+  control: (base: any) => ({
+    ...base,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.20)",
+    minHeight: 48,
+    borderRadius: 16,
+    boxShadow: "none",
+    ":hover": { borderColor: "#D6B36A" },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    backgroundColor: "#111111",
+    border: "1px solid #242424",
+    borderRadius: 16,
+    overflow: "hidden",
+    zIndex: 9999,
+    boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+  }),
+  menuList: (base: any) => ({ ...base, backgroundColor: "#111111", padding: 8 }),
+  // Portaled menu needs an explicit high z-index to sit above every section.
+  menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+  option: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: state.isFocused ? "#1A1A1A" : "transparent",
+    color: state.isFocused ? "#F5F1E8" : "#A1A1AA",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 14,
+    marginBottom: 2,
+  }),
+  input: (base: any) => ({ ...base, color: "#F5F1E8" }),
+  placeholder: (base: any) => ({ ...base, color: "#8b8b93" }),
+  singleValue: (base: any) => ({ ...base, color: "#F5F1E8" }),
+}
 
 type Props = {
   selectedOrder: any
@@ -81,6 +134,7 @@ export default function OrderDetailsSidebar({
   // Sub-order quick-add (parent only)
   const [newSubTitle, setNewSubTitle] = React.useState("")
   const [newSubDeadline, setNewSubDeadline] = React.useState("")
+  const [newSubDeadlineTime, setNewSubDeadlineTime] = React.useState("")
 
   const isAdmin = currentUser?.role === "ADMIN"
 
@@ -147,9 +201,13 @@ export default function OrderDetailsSidebar({
   function handleAddSubOrder() {
     const title = newSubTitle.trim()
     if (!title || !parentOrderId || !createSubOrders) return
-    createSubOrders(parentOrderId, [buildSubPayloadFromParent(title, newSubDeadline)])
+    // Combine the picked date + optional time into a timed (or date-only) deadline,
+    // exactly like OrderModal. Empty date falls back to the parent's deadline.
+    const deadline = formPartsToDeadline(newSubDeadline, newSubDeadlineTime)
+    createSubOrders(parentOrderId, [buildSubPayloadFromParent(title, deadline)])
     setNewSubTitle("")
     setNewSubDeadline("")
+    setNewSubDeadlineTime("")
   }
 
   return (
@@ -417,23 +475,52 @@ export default function OrderDetailsSidebar({
                           className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
                         />
                       </div>
-                      <div className="flex items-end gap-2">
-                        <div className="relative flex-1">
-                          <label className="block text-[11px] font-medium text-zinc-400 mb-1">Deadline date</label>
-                          <input
-                            type="date"
-                            value={newSubDeadline}
-                            onChange={(e) => setNewSubDeadline(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleAddSubOrder() }}
-                            title="Deadline (defaults to the main order's deadline)"
-                            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition [color-scheme:dark]"
+                      <div>
+                        <label className="block text-[11px] font-medium text-zinc-400 mb-1">Deadline</label>
+                        <div className="flex gap-2">
+                          <DatePicker
+                            selected={fromYMD(newSubDeadline)}
+                            onChange={(date: Date | null) => {
+                              const d = toYMD(date)
+                              // Drop a previously-picked time if it's no longer valid for the new date.
+                              const timeStillValid =
+                                !!newSubDeadlineTime &&
+                                buildTimeOptions(d).some((o) => o.value === newSubDeadlineTime)
+                              setNewSubDeadline(d)
+                              setNewSubDeadlineTime(timeStillValid ? newSubDeadlineTime : "")
+                            }}
+                            minDate={today}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText="Select date"
+                            // Portal the calendar to <body> so it escapes the sidebar's
+                            // (transformed) stacking context and never hides behind the
+                            // sections below it.
+                            portalId="rdp-sidebar-portal"
+                            popperProps={{ strategy: "fixed" }}
+                            wrapperClassName="flex-1"
+                            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
                           />
+                          <div className="w-[120px] flex-shrink-0">
+                            <Select
+                              value={newSubDeadlineTime ? { value: newSubDeadlineTime, label: newSubDeadlineTime } : null}
+                              onChange={(opt: any) => setNewSubDeadlineTime(opt?.value || "")}
+                              options={buildTimeOptions(newSubDeadline)}
+                              styles={darkSelectStyles}
+                              isClearable
+                              menuPlacement="auto"
+                              menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                              placeholder="Time"
+                              className="text-sm"
+                            />
+                          </div>
                         </div>
+                      </div>
+                      <div className="flex justify-end">
                         <button
                           onClick={handleAddSubOrder}
                           onMouseMove={gearWarp}
                           disabled={!newSubTitle.trim()}
-                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex-shrink-0 ${
+                          className={`px-5 py-2 rounded-xl text-sm font-semibold transition flex-shrink-0 ${
                             newSubTitle.trim()
                               ? "btn-gear"
                               : "bg-[#1A1A1A] text-zinc-600 cursor-not-allowed border border-[#2A2A2A]"
@@ -443,7 +530,7 @@ export default function OrderDetailsSidebar({
                         </button>
                       </div>
                       <p className="text-[11px] text-zinc-600">
-                        Leave the date empty to use the main order's deadline.
+                        Leave the date empty to use the main order's deadline. Time is optional.
                       </p>
                     </div>
                   )}
