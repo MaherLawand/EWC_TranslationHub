@@ -52,7 +52,9 @@ export function useGames({
 
     if (!shouldFetch) return
 
-    if (!selectedGameFilter) {
+    // A comma-joined value is a multi-game (whole-week) filter — there's no single
+    // game to load assignees for, so clear and skip.
+    if (!selectedGameFilter || selectedGameFilter.includes(",")) {
       setGameUsers({ producers: [], ppms: [], users: [] })
       return
     }

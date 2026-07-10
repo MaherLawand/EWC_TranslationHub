@@ -32,6 +32,19 @@ export default function WeeklyGameFilters({
     return undefined
   }
 
+  // The filter value can be a single game id or a comma-joined list (a whole
+  // week). Track the currently-selected ids so we can highlight games + weeks.
+  const selectedIds = selectedGameFilter ? selectedGameFilter.split(",") : []
+  const selectedSet = new Set(selectedIds)
+
+  // Every resolvable DB game id for a week (deduped), used for whole-week select.
+  const weekGameIds = (wk: { games: { game: string; aliases?: string[] }[] }) =>
+    Array.from(new Set(wk.games.map(resolve).filter(Boolean).map((g) => (g as Game).id)))
+
+  // A week is "active" when exactly its games are the current selection.
+  const isWeekActive = (ids: string[]) =>
+    ids.length > 0 && ids.length === selectedIds.length && ids.every((id) => selectedSet.has(id))
+
   // Fixed-column grid keeps rows balanced while cards fill their cells (no big
   // gaps): 1 col on phone, 2 on small, 4 on desktop. EWC (8 weeks) also goes to
   // 8 columns on very wide screens so it's one clean row instead of 4 wide cards;
@@ -43,34 +56,83 @@ export default function WeeklyGameFilters({
 
   return (
     <div className={`grid ${gridCols} gap-3 pb-2 pt-1`}>
-      {weeks.map((wk) => (
+      {weeks.map((wk) => {
+        const wkIds = weekGameIds(wk)
+        const weekActive = isWeekActive(wkIds)
+
+        return (
         <div
           key={wk.week}
-          className="min-w-0 bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"
+          className={`min-w-0 bg-white/[0.03] border rounded-2xl p-2.5 transition-colors ${
+            weekActive ? "border-[#E89B3A]/60" : "border-white/10"
+          }`}
         >
-          <div className="text-[11px] font-bold tracking-[0.18em] text-[#D6B36A] mb-2 px-1">
-            WEEK {wk.week}
-          </div>
+          {/* Clicking the header selects/deselects the whole week (all its games),
+              so the tables + Topbar counts reflect that week's total workload.
+              Styled as an obvious button (surface + hover + a pill) so it's clearly
+              tappable, not just a label. Accents use the EWC gear gradient. */}
+          <button
+            type="button"
+            disabled={wkIds.length === 0}
+            onClick={() => setSelectedGameFilter(weekActive ? "" : wkIds.join(","))}
+            title={wkIds.length ? `Filter all of Week ${wk.week}` : "No games this week"}
+            className={`group/wk w-full flex items-center justify-between gap-2 mb-2.5 pl-2 pr-1.5 py-1.5 rounded-lg border transition-colors ${
+              wkIds.length === 0
+                ? "border-white/5 cursor-not-allowed opacity-60"
+                : weekActive
+                ? "border-[#E89B3A]/50 bg-[#E89B3A]/[0.07] cursor-pointer"
+                : "border-white/10 bg-white/[0.04] hover:bg-[#E89B3A]/10 hover:border-[#E89B3A]/50 cursor-pointer"
+            }`}
+          >
+            <span className="text-[11px] font-bold tracking-[0.18em] text-gear-gradient">
+              WEEK {wk.week}
+            </span>
+            {wkIds.length > 0 && (
+              <span
+                className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-md border transition-colors ${
+                  weekActive
+                    ? "gear-fill border-transparent"
+                    : "border-[#E89B3A]/40 group-hover/wk:border-[#E89B3A]"
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={weekActive ? "" : "text-[#E89B3A]"}>
+                  {weekActive ? (
+                    <polyline points="20 6 9 17 4 12" />
+                  ) : (
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  )}
+                </svg>
+                <span className={weekActive ? "" : "text-gear-gradient"}>ALL</span>
+              </span>
+            )}
+          </button>
 
           <div className="space-y-0.5">
             {wk.games.map((entry, i) => {
               const dbGame = resolve(entry)
               const label = entry.display ?? dbGame?.name ?? entry.game
-              const active = !!dbGame && selectedGameFilter === dbGame.id
+              const active = !!dbGame && selectedSet.has(dbGame.id)
+              // Only ring an individual game when IT is the single selection. When
+              // the whole week is selected, the card border/header already show it,
+              // so skip the per-game ring to avoid a busy, over-bright look.
+              const gameActive = active && !weekActive
+              // Clicking a game narrows to just that game; clicking it again when
+              // it's the ONLY selection clears the filter.
+              const isSole = !!dbGame && selectedIds.length === 1 && selectedIds[0] === dbGame.id
 
               return (
                 <button
                   key={`${entry.game}-${i}`}
                   type="button"
                   disabled={!dbGame}
-                  onClick={() => dbGame && setSelectedGameFilter(active ? "" : dbGame.id)}
+                  onClick={() => dbGame && setSelectedGameFilter(isSole ? "" : dbGame.id)}
                   title={label}
                   className={`
                     w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left
                     transition-colors duration-150
                     ${
-                      active
-                        ? "bg-[#D6B36A]/15 ring-1 ring-[#D6B36A]"
+                      gameActive
+                        ? "gear-fill"
                         : dbGame
                         ? "hover:bg-white/[0.06]"
                         : "opacity-40 cursor-not-allowed"
@@ -93,7 +155,7 @@ export default function WeeklyGameFilters({
 
                   <span
                     className={`flex-1 min-w-0 text-[12px] leading-snug break-words whitespace-normal ${
-                      active ? "text-[#D6B36A] font-semibold" : "text-zinc-200"
+                      gameActive ? "text-[#1a0f06] font-semibold" : "text-zinc-200"
                     }`}
                   >
                     {label}
@@ -103,7 +165,8 @@ export default function WeeklyGameFilters({
             })}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
