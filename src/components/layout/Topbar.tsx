@@ -351,7 +351,7 @@ return (
         return (
           <button
             key={s.value}
-            onClick={() => setStatusFilter(isActive && s.value !== "All Statuses" ? "All Statuses" : s.value)}
+            onClick={() => setStatusFilter(isActive ? "All Statuses" : s.value)}
             className={`flex-shrink-0 flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all duration-200 ${isActive ? s.active : s.idle}`}
           >
             <span className={`text-[10px] uppercase tracking-[0.12em] ${s.text}`}>{s.label}</span>
