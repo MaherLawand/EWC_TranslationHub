@@ -65,7 +65,7 @@ export function useOrders({
 
 
   // ─── Order counts (for Topbar stat cards — counts ALL orders, not just page) ─
-  const [orderCounts, setOrderCounts] = React.useState({ PENDING: 0, READY_FOR_TRANSLATION: 0, IN_PROGRESS: 0, COMPLETED: 0, total: 0 })
+  const [orderCounts, setOrderCounts] = React.useState({ PENDING: 0, READY_FOR_TRANSLATION: 0, IN_PROGRESS: 0, COMPLETED: 0, total: 0, totalVideos: 0 })
   const countsAbortRef = React.useRef<AbortController | null>(null)
 
   // ─── toListOrder helper ───────────────────────────────────────────────────

@@ -810,6 +810,9 @@ React.useEffect(() => {
         patchedTimer = setTimeout(() => {
           if (type === "BROADCAST") fetchBroadcastOrdersRef.current(broadcastPageRef.current)
           else if (type === "MARKETING") fetchMarketingOrdersRef.current(marketingPageRef.current)
+          // An edit can change target languages → the Total Videos count must
+          // recompute (add/delete already refresh counts elsewhere).
+          refreshOrderCountsRef.current()
           // The edited order may be a sub-order inside an expanded parent (its row
           // lives in the table's subCache, not the top-level list) → refresh it.
           setSubRefresh((n) => n + 1)

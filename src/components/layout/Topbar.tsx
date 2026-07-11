@@ -7,6 +7,7 @@ type OrderCounts = {
   IN_PROGRESS: number
   COMPLETED: number
   total: number
+  totalVideos: number
 }
 
 type Props = {
@@ -205,18 +206,32 @@ return (
       "
     >
 
-      {/* TOTAL — resets filter */}
+      {/* TOTAL — resets filter. Shows both Orders and Videos in one box so the
+          videos figure reads as part of the same summary, not a separate
+          clickable stat. Videos = target languages across all work units
+          (standalone orders + sub-orders), big-order shells excluded. */}
       <button
         onClick={() => setStatusFilter("All Statuses")}
+        title="Total orders and total target-language videos (big orders excluded)"
         className={`
-          min-w-[104px] rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
+          rounded-2xl border px-4 py-3 text-left cursor-pointer transition-all duration-200
           ${statusFilter === "All Statuses"
             ? "border-[#3A3A3A] bg-[#1A1A1A]"
-            : "border-[#242424] bg-[#111111] opacity-50 hover:opacity-80"}
+            : "border-[#242424] bg-[#111111] opacity-80 hover:opacity-100"}
         `}
       >
         <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">Total</p>
-        <h3 className="text-2xl font-bold text-white mt-1">{orderCounts.total}</h3>
+        <div className="flex items-end gap-3 mt-1">
+          <div>
+            <h3 className="text-2xl font-bold text-white leading-none">{orderCounts.total}</h3>
+            <p className="text-[9px] uppercase tracking-[0.12em] text-zinc-300 mt-1">Orders</p>
+          </div>
+          <div className="w-px self-stretch bg-white/10" />
+          <div>
+            <h3 className="text-2xl font-bold text-white leading-none">{orderCounts.totalVideos}</h3>
+            <p className="text-[9px] uppercase tracking-[0.12em] text-[#F0C75E] mt-1">Videos</p>
+          </div>
+        </div>
       </button>
 
       {/* PENDING */}
@@ -315,8 +330,18 @@ return (
   {/* COMPACT STATS — MOBILE/TABLET (status filter, horizontally scrollable) */}
   {showStats && (
     <div className="lg:hidden flex gap-2 overflow-x-auto dark-scroll -mx-1 px-1">
+      {/* Total (status reset) — Orders + Videos combined into one chip */}
+      <button
+        onClick={() => setStatusFilter("All Statuses")}
+        className={`flex-shrink-0 flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all duration-200 ${statusFilter === "All Statuses" ? "border-[#3A3A3A] bg-[#1A1A1A]" : "border-[#242424] bg-[#111111] opacity-85"}`}
+      >
+        <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-300">Orders</span>
+        <span className="text-sm font-bold text-white">{orderCounts.total}</span>
+        <span className="w-px self-stretch bg-white/10 mx-0.5" />
+        <span className="text-[10px] uppercase tracking-[0.12em] text-[#F0C75E]">Videos</span>
+        <span className="text-sm font-bold text-white">{orderCounts.totalVideos}</span>
+      </button>
       {([
-        { label: "Total", value: "All Statuses", count: orderCounts.total, active: "border-[#3A3A3A] bg-[#1A1A1A]", idle: "border-[#242424] bg-[#111111] opacity-60", text: "text-zinc-400" },
         { label: "Pending", value: "Pending", count: pendingCount, active: "bg-yellow-500/20 border-yellow-500/50", idle: "bg-yellow-500/10 border-yellow-500/20 opacity-60", text: "text-yellow-400" },
         { label: "Ready", value: "Ready for Translation", count: readyCount, active: "bg-cyan-500/20 border-cyan-500/50", idle: "bg-cyan-500/[0.06] border-cyan-500/10 opacity-60", text: "text-cyan-400" },
         { label: "In Progress", value: "In Progress", count: inProgressCount, active: "bg-blue-500/20 border-blue-500/50", idle: "bg-blue-500/[0.06] border-blue-500/10 opacity-60", text: "text-blue-400" },
