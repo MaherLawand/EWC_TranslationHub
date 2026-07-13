@@ -55,7 +55,7 @@ export default function StickyScrollbar({
     <div
       ref={barRef}
       className="sticky-hscroll"
-      style={{ position: "sticky", bottom: 0, zIndex: 20, display: show ? "block" : "none" }}
+      style={{ position: "sticky", bottom: 0, zIndex: 30, display: show ? "block" : "none" }}
       aria-hidden
     >
       {/* Spacer matches the table's full width so the thumb size/position is correct. */}
