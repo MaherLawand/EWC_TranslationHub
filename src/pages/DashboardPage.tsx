@@ -652,6 +652,9 @@ React.useEffect(() => {
   // each table's local subCache (lazy-loaded on expand), not in the top-level
   // orders state — so an in-place status update must be pushed into the tables.
   const [statusPatch, setStatusPatch] = React.useState<{ id: string; status: string; nonce: number } | null>(null)
+  // Same idea for a content-category quick-edit — patches a sub-order row that
+  // lives only in the table's subCache (not the top-level list).
+  const [catPatch, setCatPatch] = React.useState<{ id: string; contentCategory: string; nonce: number } | null>(null)
 
   // Bumped on any structural change (create / edit / delete) so the order tables
   // refresh the sub-orders of currently-expanded parents. Pure status changes use
@@ -756,7 +759,7 @@ React.useEffect(() => {
     //   • without status → full edit: debounce re-fetch staying on current page
     //                      + immediately refresh sidebar if that order is open
     let patchedTimer: ReturnType<typeof setTimeout> | null = null
-    socket.on("order-patched", ({ id, type, status, nearestSubDeadline }: { id: string; type: string; status?: string; nearestSubDeadline?: any }) => {
+    socket.on("order-patched", ({ id, type, status, nearestSubDeadline, contentCategory }: { id: string; type: string; status?: string; nearestSubDeadline?: any; contentCategory?: string }) => {
       if (status) {
         // Status-only — patch in-place, no re-fetch.
         // Completing an order also clears its "source changed" flag (server does
@@ -804,6 +807,19 @@ React.useEffect(() => {
             prev
               ? { ...prev, subOrders: prev.subOrders.map((s: any) => s.id === id ? { ...s, status } : s) }
               : prev
+          )
+        }
+      } else if (contentCategory !== undefined) {
+        // Content-category quick-edit — patch just this row in place (no re-fetch).
+        setBroadcastOrders((prev: any[]) =>
+          prev.map((o) => (o.id === id && o.broadcast ? { ...o, broadcast: { ...o.broadcast, contentCategory } } : o))
+        )
+        // Sub-order rows live in the table's subCache → push the patch there.
+        setCatPatch({ id, contentCategory, nonce: Date.now() })
+        // Patch the open sidebar in-place if it's showing this order.
+        if (selectedOrderDetailRef.current?.id === id) {
+          setSelectedOrderDetail((prev: any) =>
+            prev?.broadcast ? { ...prev, broadcast: { ...prev.broadcast, contentCategory } } : prev
           )
         }
       } else {
@@ -1519,6 +1535,7 @@ React.useEffect(() => {
                   onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
                   onUpdateContentCategory={updateOrderContentCategory}
+                  catPatch={catPatch}
                   getDeadlineInfo={getDeadlineInfo}
                   deadlineSort={deadlineSort}
                   setDeadlineSort={changeDeadlineSort}

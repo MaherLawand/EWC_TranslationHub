@@ -617,13 +617,12 @@ export function useOrders({
     setBroadcastOrders((prev) => prev.map(patch))
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/orders/${orderId}`,
+        `${import.meta.env.VITE_API_URL}/orders/${orderId}/content-category`,
         {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          // A minimal partial edit — updateOrder only touches the fields present.
-          body: JSON.stringify({ type: "BROADCAST", contentCategory: category || null }),
+          body: JSON.stringify({ contentCategory: category }),
         }
       )
       if (!response.ok) throw new Error("Failed to update content category")

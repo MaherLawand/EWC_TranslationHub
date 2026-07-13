@@ -94,6 +94,8 @@ type Props = {
     totalPages: number
   }>
   statusPatch?: { id: string; status: string; nonce: number } | null
+  /** In-place content-category patch for a sub-order row in subCache. */
+  catPatch?: { id: string; contentCategory: string; nonce: number } | null
   /** Bumped whenever a structural change (create/edit/delete) occurs so all
    *  currently-expanded parents reload their sub-orders to show fresh data. */
   subRefresh?: number
@@ -149,6 +151,7 @@ export default function BroadcastOrdersTable({
   mode = "grouped",
   fetchSubOrders,
   statusPatch,
+  catPatch,
   subRefresh,
   canManageOrders,
   onUpdateContentCategory,
@@ -233,6 +236,26 @@ function openCatPortal(e: React.MouseEvent, orderId: string, current: string) {
   if (left + MENU_W > window.innerWidth - PAD) left = window.innerWidth - MENU_W - PAD
   if (left < PAD) left = PAD
   setCatPortal({ orderId, current, top: rect.bottom + 6, left })
+}
+// Optimistically patch a sub-order row in subCache (the acting user's own row);
+// top-level rows are patched by the hook. Socket confirms for everyone else.
+function patchCatLocal(orderId: string, category: string) {
+  setSubCache((prev) => {
+    let changed = false
+    const next = new Map(prev)
+    for (const [pid, entry] of next) {
+      if (entry.rows.some((r: any) => r.id === orderId && r.broadcast)) {
+        next.set(pid, {
+          ...entry,
+          rows: entry.rows.map((r: any) =>
+            r.id === orderId && r.broadcast ? { ...r, broadcast: { ...r.broadcast, contentCategory: category } } : r
+          ),
+        })
+        changed = true
+      }
+    }
+    return changed ? next : prev
+  })
 }
 // Close on any tap/click outside.
 React.useEffect(() => {
@@ -415,6 +438,30 @@ React.useEffect(() => {
   })
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [statusPatch?.nonce])
+
+// Apply an incoming in-place content-category patch to a cached sub-order row.
+React.useEffect(() => {
+  if (!catPatch) return
+  setSubCache((prev) => {
+    let changed = false
+    const next = new Map(prev)
+    for (const [pid, entry] of next) {
+      if (entry.rows.some((r: any) => r.id === catPatch.id && r.broadcast)) {
+        next.set(pid, {
+          ...entry,
+          rows: entry.rows.map((r: any) =>
+            r.id === catPatch.id && r.broadcast
+              ? { ...r, broadcast: { ...r.broadcast, contentCategory: catPatch.contentCategory } }
+              : r
+          ),
+        })
+        changed = true
+      }
+    }
+    return changed ? next : prev
+  })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [catPatch?.nonce])
 
 // When a structural change (create/edit/delete) is signalled, reload the
 // sub-orders for every currently-expanded parent so their rows stay fresh
@@ -1094,7 +1141,7 @@ function renderRow(order: any, isSub: boolean) {
         {CONTENT_CATEGORIES.filter((c) => c.value !== catPortal.current).map((c) => (
           <button
             key={c.value}
-            onClick={(e) => { e.stopPropagation(); onUpdateContentCategory?.(catPortal.orderId, c.value); setCatPortal(null) }}
+            onClick={(e) => { e.stopPropagation(); patchCatLocal(catPortal.orderId, c.value); onUpdateContentCategory?.(catPortal.orderId, c.value); setCatPortal(null) }}
             className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm transition"
           >
             <span className="text-[#E8C77E] font-medium">{c.label}</span>
