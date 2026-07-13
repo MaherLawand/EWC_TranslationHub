@@ -21,6 +21,8 @@ export default function StickyScrollbar({
     const bar = barRef.current
     if (!target || !bar) return
 
+    // Measure the bar's position/size only — must NOT touch scrollLeft, or it
+    // would fight the drag.
     const measure = () => {
       const r = target.getBoundingClientRect()
       const next = {
@@ -30,16 +32,14 @@ export default function StickyScrollbar({
         scrollWidth: target.scrollWidth,
       }
       const prev = lastRef.current
-      // Skip re-render when nothing that affects the bar changed (e.g. plain
-      // vertical scroll), so scroll handlers stay cheap.
       if (next.left !== prev.left || next.width !== prev.width || next.show !== prev.show || next.scrollWidth !== prev.scrollWidth) {
         lastRef.current = next
         setRect({ left: next.left, width: next.width, show: next.show })
         setScrollWidth(next.scrollWidth)
       }
-      bar.scrollLeft = target.scrollLeft
     }
     measure()
+    bar.scrollLeft = target.scrollLeft // one-time initial sync
 
     // Two-way horizontal scroll sync (re-entrancy guarded).
     let lock = false
@@ -48,19 +48,18 @@ export default function StickyScrollbar({
     target.addEventListener("scroll", onTarget, { passive: true })
     bar.addEventListener("scroll", onBar, { passive: true })
 
-    // Reposition/resize when the layout, table, or page scroll changes.
+    // Reposition/resize when the layout or table size changes. (No scroll
+    // listener — the bar is fixed, and vertical scroll doesn't move its x/width.)
     const ro = new ResizeObserver(measure)
     ro.observe(target)
     if (target.firstElementChild) ro.observe(target.firstElementChild)
     window.addEventListener("resize", measure)
-    window.addEventListener("scroll", measure, true) // capture: catches any ancestor scroll
 
     return () => {
       target.removeEventListener("scroll", onTarget)
       bar.removeEventListener("scroll", onBar)
       ro.disconnect()
       window.removeEventListener("resize", measure)
-      window.removeEventListener("scroll", measure, true)
     }
   }, [targetRef])
 
