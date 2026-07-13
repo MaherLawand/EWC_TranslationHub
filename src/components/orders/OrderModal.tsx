@@ -11,6 +11,7 @@ import {
   formatLabel,
 } from "../../constants/deliveryFormats"
 import { CONTENT_TITLES } from "../../constants/contentTitles"
+import { CONTENT_CATEGORIES, autoDeadlineFromNow } from "../../constants/contentCategories"
 import { buildTimeOptions } from "../../lib/deadline"
 import { motion, AnimatePresence } from "framer-motion"
 import { gearWarp } from "../../lib/gearHover"
@@ -243,6 +244,7 @@ export default function OrderModal({
     if (!newOrder.title?.trim()) e.title = "Order title is required"
     if (newOrder.type === "BROADCAST") {
       if (!newOrder.game) e.game = "Game is required"
+      if (!newOrder.contentCategory) e.contentCategory = "Content category is required"
       if (!newOrder.estimatedMinutes || Number(newOrder.estimatedMinutes) <= 0) e.estimatedMinutes = "Estimated minutes is required"
       if (!newOrder.deliveryType) e.deliveryType = "Delivery type is required"
       if (!newOrder.deliveryDate) e.deliveryDate = "Delivery date is required"
@@ -632,6 +634,45 @@ today.setHours(0, 0, 0, 0)
   />
 </div>
 
+{/* CONTENT CATEGORY (broadcast only) — the target turnaround per type. */}
+{newOrder.type === "BROADCAST" && (
+  <div>
+    <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
+      Content Category <span className="text-red-400">*</span>
+    </label>
+    <Select
+      styles={
+        errors.contentCategory
+          ? { ...darkSelectStyles, control: (b: any) => ({ ...darkSelectStyles.control(b), borderColor: "rgba(239,68,68,0.6)" }) }
+          : darkSelectStyles
+      }
+      isSearchable={false}
+      placeholder="Select category"
+      options={CONTENT_CATEGORIES.map((c) => ({ value: c.value, label: `${c.label} · ${c.hours}` }))}
+      value={(() => {
+        const c = CONTENT_CATEGORIES.find((x) => x.value === newOrder.contentCategory)
+        return c ? { value: c.value, label: `${c.label} · ${c.hours}` } : null
+      })()}
+      onChange={(selected: any) => {
+        const cat = selected?.value || ""
+        const next: any = { ...newOrder, contentCategory: cat }
+        // If a source file is already in, choosing the category computes the
+        // deadline time now + the category's hours (nearest 5 min); date kept.
+        if (cat && (newOrder.sourceFileLink || "").trim()) {
+          const auto = autoDeadlineFromNow(cat)
+          if (auto) {
+            next.deadlineTime = auto.time
+            if (!newOrder.deadline) next.deadline = auto.date
+          }
+        }
+        setNewOrder(next)
+        clearError("contentCategory")
+      }}
+    />
+    {errors.contentCategory && <p className="text-red-400 text-xs mt-1.5">{errors.contentCategory}</p>}
+  </div>
+)}
+
       </div>
 
     </div>
@@ -901,13 +942,23 @@ today.setHours(0, 0, 0, 0)
               value={
                 newOrder.sourceFileLink
               }
-              onChange={(e) =>
-                setNewOrder({
-                  ...newOrder,
-                  sourceFileLink:
-                    e.target.value,
-                })
-              }
+              onChange={(e) => {
+                const val = e.target.value
+                const next: any = { ...newOrder, sourceFileLink: val }
+                // Adding a source file (empty → set) auto-computes the deadline
+                // TIME from now + the content category's hours (nearest 5 min).
+                // The chosen deadline DATE is kept (filled with the computed date
+                // only if none was picked yet).
+                const becameSet = !(newOrder.sourceFileLink || "").trim() && val.trim() !== ""
+                if (becameSet && newOrder.contentCategory) {
+                  const auto = autoDeadlineFromNow(newOrder.contentCategory)
+                  if (auto) {
+                    next.deadlineTime = auto.time
+                    if (!newOrder.deadline) next.deadline = auto.date
+                  }
+                }
+                setNewOrder(next)
+              }}
               className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
             />
           </div>
@@ -961,10 +1012,19 @@ today.setHours(0, 0, 0, 0)
                 selected={fromYMD(newOrder.deadline)}
                 onChange={(date: Date | null) => {
                   const newDeadline = toYMD(date)
-                  const timeStillValid =
-                    !!newOrder.deadlineTime &&
-                    buildTimeOptions(newDeadline).some((o) => o.value === newOrder.deadlineTime)
-                  setNewOrder({ ...newOrder, deadline: newDeadline, deadlineTime: timeStillValid ? newOrder.deadlineTime : "" })
+                  // When both a source file and a content category are set, changing
+                  // the deadline date recalculates the time (now + category hours).
+                  const bothSet = !!(newOrder.sourceFileLink || "").trim() && !!newOrder.contentCategory
+                  let deadlineTime: string
+                  if (bothSet) {
+                    deadlineTime = autoDeadlineFromNow(newOrder.contentCategory)?.time || newOrder.deadlineTime
+                  } else {
+                    const timeStillValid =
+                      !!newOrder.deadlineTime &&
+                      buildTimeOptions(newDeadline).some((o) => o.value === newOrder.deadlineTime)
+                    deadlineTime = timeStillValid ? newOrder.deadlineTime : ""
+                  }
+                  setNewOrder({ ...newOrder, deadline: newDeadline, deadlineTime })
                   clearError("deadline")
                 }}
                 minDate={today}

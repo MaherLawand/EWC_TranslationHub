@@ -143,6 +143,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     targetLanguages: [] as string[],
     deliveryFormats: [],
     deliveryType: "",
+    contentCategory: "",
     deadline: "",
     deadlineTime: "",
     sourceFileLink: "",
@@ -355,6 +356,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     createBigOrder,
     updateOrder,
     updateOrderStatus,
+    updateOrderContentCategory,
     deleteOrder,
     orderCounts,
     selectedOrderDetail,
@@ -1084,6 +1086,7 @@ React.useEffect(() => {
       targetLanguages: detailSide?.targetLanguages || [],
       deliveryFormats,
       deliveryType,
+      contentCategory: src.broadcast?.contentCategory || "",
       deadline: deadlineToFormParts(detailSide?.deadlineDate, detailSide?.deadlineHasTime).date,
       deadlineTime: deadlineToFormParts(detailSide?.deadlineDate, detailSide?.deadlineHasTime).time,
       sourceFileLink: detailSide?.sourceFileLink || "",
@@ -1176,6 +1179,7 @@ React.useEffect(() => {
       targetLanguages: [],
       deliveryFormats: [],
       deliveryType: "",
+      contentCategory: "",
       deadline: "",
       deadlineTime: "",
       sourceFileLink: "",
@@ -1514,6 +1518,7 @@ React.useEffect(() => {
                   onPageChange={(p) => fetchBroadcastOrders(p)}
                   onRowClick={onRowClick}
                   updateOrderStatus={updateOrderStatus}
+                  onUpdateContentCategory={updateOrderContentCategory}
                   getDeadlineInfo={getDeadlineInfo}
                   deadlineSort={deadlineSort}
                   setDeadlineSort={changeDeadlineSort}

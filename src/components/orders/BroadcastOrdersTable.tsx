@@ -6,6 +6,7 @@ import { FeedbackButton, type Feedback } from "./OrderFeedback"
 import LanguagesCell from "./LanguagesCell"
 import FormatsCell from "./FormatsCell"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
+import { contentCategoryLabel, contentCategoryHours, CONTENT_CATEGORIES } from "../../constants/contentCategories"
 import { gearWarp } from "../../lib/gearHover"
 
 import { LANGUAGES } from "../../constants/languages"
@@ -98,6 +99,8 @@ type Props = {
   subRefresh?: number
   /** Whether the current user can create/manage orders (controls Duplicate). */
   canManageOrders?: boolean
+  /** Admin-only quick-edit of a broadcast order's content category from the table. */
+  onUpdateContentCategory?: (orderId: string, category: string) => void
   /** Open the create modal pre-filled with this order's data (duplicate). */
   onDuplicate?: (order: any) => void | Promise<void>
   /** Duplicate a big order together with all of its sub-orders. */
@@ -148,6 +151,7 @@ export default function BroadcastOrdersTable({
   statusPatch,
   subRefresh,
   canManageOrders,
+  onUpdateContentCategory,
   onDuplicate,
   onDuplicateBig,
   onDuplicateSubOrder,
@@ -215,6 +219,36 @@ const [statusPortal, setStatusPortal] = React.useState<{
 } | null>(null)
 const statusPortalTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 const statusPortalRef = React.useRef<HTMLDivElement>(null)
+
+// Admin-only content-category quick-edit portal (mirrors the status portal).
+const isAdmin = currentUser?.role === "ADMIN"
+const [catPortal, setCatPortal] = React.useState<{ orderId: string; current: string; top: number; left: number } | null>(null)
+const catPortalRef = React.useRef<HTMLDivElement>(null)
+function openCatPortal(e: React.MouseEvent, orderId: string, current: string) {
+  e.stopPropagation()
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const MENU_W = 200
+  const PAD = 8
+  let left = rect.left
+  if (left + MENU_W > window.innerWidth - PAD) left = window.innerWidth - MENU_W - PAD
+  if (left < PAD) left = PAD
+  setCatPortal({ orderId, current, top: rect.bottom + 6, left })
+}
+// Close on any tap/click outside.
+React.useEffect(() => {
+  if (!catPortal) return
+  const close = () => setCatPortal(null)
+  const id = window.setTimeout(() => {
+    document.addEventListener("click", close)
+    document.addEventListener("touchstart", close)
+  }, 0)
+  return () => {
+    window.clearTimeout(id)
+    document.removeEventListener("click", close)
+    document.removeEventListener("touchstart", close)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [catPortal?.orderId])
 
 // Opens (idempotent) anchored just below the badge; the layout-effect below
 // then measures the rendered menu and clamps it on-screen (same approach as the
@@ -570,6 +604,35 @@ function renderRow(order: any, isSub: boolean) {
 
       </td>
 
+      {/* CONTENT CATEGORY — admins can click to change it (like the status pill) */}
+      <td className="px-4 py-2.5 align-center">
+        {isAdmin && onUpdateContentCategory && broadcast ? (
+          <button
+            onClick={(e) => openCatPortal(e, order.id, broadcast.contentCategory || "")}
+            title={broadcast.contentCategory ? `Change content category (target: ${contentCategoryHours(broadcast.contentCategory)})` : "Set content category"}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-lg border border-[#2A2A2A] bg-[#141414] text-xs transition hover:border-[#D6B36A]/50 hover:bg-[#1A1A1A]"
+          >
+            {broadcast.contentCategory ? (
+              <span className="text-[#E8C77E] font-medium">{contentCategoryLabel(broadcast.contentCategory)}</span>
+            ) : (
+              <span className="text-zinc-500">Set category</span>
+            )}
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-[#8A8A8A]">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        ) : broadcast?.contentCategory ? (
+          <span
+            title={`Target turnaround: ${contentCategoryHours(broadcast.contentCategory)}`}
+            className="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-lg border border-[#2A2A2A] bg-[#141414] text-xs text-[#E8C77E] font-medium"
+          >
+            {contentCategoryLabel(broadcast.contentCategory)}
+          </span>
+        ) : (
+          <span className="text-zinc-600">—</span>
+        )}
+      </td>
+
       {/* TIERS */}
       <td className="pl-3 pr-4 py-2.5 align-center">
         {broadcast?.game ? (
@@ -816,6 +879,10 @@ function renderRow(order: any, isSub: boolean) {
               Order
             </th>
 
+            <th className="text-left px-4 py-3">
+              Content
+            </th>
+
             <th className="pl-3 pr-4 py-3">
               <button
                 onClick={() => setTierSort?.(tierSort === "ASC" ? "DESC" : tierSort === "DESC" ? "" : "ASC")}
@@ -875,7 +942,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={9}
+        colSpan={10}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -886,7 +953,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={9}
+        colSpan={10}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -943,7 +1010,7 @@ function renderRow(order: any, isSub: boolean) {
               if (entry?.loading) {
                 rows.push(
                   <tr key={`${order.id}-loading`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={9} className="px-6 py-3" style={{ paddingLeft: 56 }}>
+                    <td colSpan={10} className="px-6 py-3" style={{ paddingLeft: 56 }}>
                       <div className="flex items-center gap-2 text-zinc-500 text-sm">
                         <div className="w-3.5 h-3.5 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
                         Loading sub-orders…
@@ -954,7 +1021,7 @@ function renderRow(order: any, isSub: boolean) {
               } else if (entry && entry.page < entry.totalPages) {
                 rows.push(
                   <tr key={`${order.id}-more`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={9} className="px-6 py-2" style={{ paddingLeft: 56 }}>
+                    <td colSpan={10} className="px-6 py-2" style={{ paddingLeft: 56 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); loadSubOrders(order.id, entry.page + 1) }}
                         className="text-xs font-semibold text-[#E8C77E] hover:text-[#F5D98A] transition"
@@ -1011,6 +1078,29 @@ function renderRow(order: any, isSub: boolean) {
         ) : (
           <div className="px-3 py-2 text-xs text-zinc-400">No actions available</div>
         )}
+      </div>,
+      document.body
+    )}
+
+    {/* CONTENT CATEGORY PORTAL (admin quick-edit) */}
+    {catPortal && ReactDOM.createPortal(
+      <div
+        ref={catPortalRef}
+        style={{ position: "fixed", top: catPortal.top, left: catPortal.left, zIndex: 9999, transformOrigin: "top left" }}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        className="w-52 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"
+      >
+        {CONTENT_CATEGORIES.filter((c) => c.value !== catPortal.current).map((c) => (
+          <button
+            key={c.value}
+            onClick={(e) => { e.stopPropagation(); onUpdateContentCategory?.(catPortal.orderId, c.value); setCatPortal(null) }}
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-zinc-800 text-sm transition"
+          >
+            <span className="text-[#E8C77E] font-medium">{c.label}</span>
+            <span className="text-zinc-500 text-xs">{c.hours}</span>
+          </button>
+        ))}
       </div>,
       document.body
     )}

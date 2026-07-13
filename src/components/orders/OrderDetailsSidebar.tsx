@@ -7,6 +7,7 @@ import StatusBadge from "../shared/StatusBadge"
 import { LANGUAGES } from "../../constants/languages"
 import { gearWarp } from "../../lib/gearHover"
 import { deadlineToFormParts, formPartsToDeadline, buildTimeOptions, formatDeadline, formatDateOnly, formatDateTime } from "../../lib/deadline"
+import { contentCategoryLabel, contentCategoryHours } from "../../constants/contentCategories"
 
 // Date <-> "YYYY-MM-DD" helpers + dark react-select styling, mirrored from
 // OrderModal so the sub-order deadline picker matches the create/edit modal.
@@ -21,6 +22,23 @@ function fromYMD(s: string | null | undefined): Date | null {
   return new Date(y, m - 1, d) // local midnight
 }
 const today = new Date()
+
+// Human duration between two ISO instants, e.g. "5h 23m", "1d 4h", "12m".
+function fmtDuration(fromIso?: string | null, toIso?: string | null): string {
+  if (!fromIso || !toIso) return ""
+  const ms = new Date(toIso).getTime() - new Date(fromIso).getTime()
+  if (isNaN(ms) || ms < 0) return ""
+  const mins = Math.round(ms / 60000)
+  const d = Math.floor(mins / 1440)
+  const h = Math.floor((mins % 1440) / 60)
+  const m = mins % 60
+  const parts: string[] = []
+  if (d) parts.push(`${d}d`)
+  if (h) parts.push(`${h}h`)
+  if (m || parts.length === 0) parts.push(`${m}m`)
+  return parts.join(" ")
+}
+
 const darkSelectStyles = {
   control: (base: any) => ({
     ...base,
@@ -178,6 +196,7 @@ export default function OrderDetailsSidebar({
       base.sourceFileLink = broadcast.sourceFileLink || ""
       base.srtAvailableLink = broadcast.srtAvailableLink || ""
       base.deliveryDate = broadcast.deliveryDate || ""
+      base.contentCategory = broadcast.contentCategory || ""
       base.deadline = deadline || broadcast.deadlineDate || ""
       base.deliveryFormats = (broadcast.deliveryFormats || []).map((f: any) => ({
         format: f.format,
@@ -296,6 +315,14 @@ export default function OrderDetailsSidebar({
                       {broadcast.deliveryType === "RAW" ? "Raw" : "Finished"}
                     </Row>
                   )}
+                  {broadcast.contentCategory && (
+                    <Row label="Content Category">
+                      {contentCategoryLabel(broadcast.contentCategory)}
+                      {/* <span className="text-zinc-500 ml-1.5 text-sm">
+                        · {contentCategoryHours(broadcast.contentCategory)}
+                      </span> */}
+                    </Row>
+                  )}
                   {broadcast.deliveryDate && (
                     <Row label="Source Added On">
                       {formatDateOnly(broadcast.deliveryDate)}
@@ -354,6 +381,78 @@ export default function OrderDetailsSidebar({
                 </Row>
               )}
             </Card>
+
+            {/* STATUS TIMELINE — when each stage began + how long it took.
+                Ready → In Progress (for orders being worked on) and
+                In Progress → Completed (for finished orders). */}
+            {(orderDetail?.readyAt || orderDetail?.inProgressAt || orderDetail?.completedAt) && (() => {
+              const readyToInProgress = fmtDuration(orderDetail?.readyAt, orderDetail?.inProgressAt)
+              const inProgressToDone = fmtDuration(orderDetail?.inProgressAt, orderDetail?.completedAt)
+              // Overdue: completed AFTER the deadline. Timed deadline compares
+              // directly; a date-only deadline is due by end of that UTC day.
+              const dl = broadcast?.deadlineDate || marketing?.deadlineDate
+              const dlHasTime = broadcast?.deadlineHasTime ?? marketing?.deadlineHasTime
+              let overdueBy = ""
+              if (orderDetail?.completedAt && dl) {
+                const completedMs = new Date(orderDetail.completedAt).getTime()
+                const deadlineMs = dlHasTime
+                  ? new Date(dl).getTime()
+                  : new Date(dl).getTime() + 24 * 60 * 60 * 1000 - 1
+                if (completedMs > deadlineMs) {
+                  overdueBy = fmtDuration(new Date(deadlineMs).toISOString(), orderDetail.completedAt)
+                }
+              }
+              return (
+                <div>
+                  <SectionLabel title="Status Timeline" />
+                  <Card className="space-y-2">
+                    {orderDetail?.readyAt && (
+                      <Row label="Ready for Translation">{formatDateTime(orderDetail.readyAt)}</Row>
+                    )}
+                    {orderDetail?.inProgressAt && (
+                      <Row label="Started (In Progress)">{formatDateTime(orderDetail.inProgressAt)}</Row>
+                    )}
+                    {orderDetail?.completedAt && (
+                      <Row label="Completed">
+                        <span>
+                          {formatDateTime(orderDetail.completedAt)}
+                        </span>
+                      </Row>
+                    )}
+                    {orderDetail?.completedAt && orderDetail?.completedBy && (
+                      <Row label="Completed By">
+                            <span className="text-zinc-400 ml-1.5">
+                              {orderDetail.completedBy.firstName} {orderDetail.completedBy.lastName}
+                            </span>
+                      </Row>
+                    )}
+                    {readyToInProgress && (
+                      <Row label="Ready → In Progress">
+                        <span className="text-gear-gradient font-semibold">{readyToInProgress}</span>
+                      </Row>
+                    )}
+                    {inProgressToDone && (
+                      <Row label="In Progress → Completed">
+                        <span className="text-gear-gradient font-semibold">{inProgressToDone}</span>
+                      </Row>
+                    )}
+                    {overdueBy && (
+                      <div className="flex items-center justify-between gap-4 pt-2 mt-1 border-t border-red-500/20">
+                        <span className="inline-flex items-center gap-1.5 text-red-400 text-base font-semibold">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                          Completed Late
+                        </span>
+                        <span className="text-red-400 text-base font-bold text-right">Delayed by {overdueBy}</span>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              )
+            })()}
 
             {/* PARENT LINK — when viewing a sub-order */}
             {parentInfo && (
@@ -772,6 +871,7 @@ export default function OrderDetailsSidebar({
                       ? ""
                       : orderDetail.broadcast?.deliveryType
                       || ((orderDetail.broadcast?.deliveryFormats?.length ? "FINISHED" : "")),
+                  contentCategory: orderDetail.broadcast?.contentCategory || "",
                   deadline:
                     orderDetail.type === "MARKETING"
                       ? deadlineToFormParts(orderDetail.marketing?.deadlineDate, orderDetail.marketing?.deadlineHasTime).date

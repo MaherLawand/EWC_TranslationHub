@@ -65,7 +65,7 @@ export function useOrders({
 
 
   // ─── Order counts (for Topbar stat cards — counts ALL orders, not just page) ─
-  const [orderCounts, setOrderCounts] = React.useState({ PENDING: 0, READY_FOR_TRANSLATION: 0, IN_PROGRESS: 0, COMPLETED: 0, total: 0, totalVideos: 0 })
+  const [orderCounts, setOrderCounts] = React.useState({ PENDING: 0, READY_FOR_TRANSLATION: 0, IN_PROGRESS: 0, COMPLETED: 0, total: 0, totalVideos: 0, videos: { PENDING: 0, READY_FOR_TRANSLATION: 0, IN_PROGRESS: 0, COMPLETED: 0 } })
   const countsAbortRef = React.useRef<AbortController | null>(null)
 
   // ─── toListOrder helper ───────────────────────────────────────────────────
@@ -98,6 +98,7 @@ export function useOrders({
         deadlineDate: full.broadcast.deadlineDate,
         deadlineHasTime: full.broadcast.deadlineHasTime,
         deliveryType: full.broadcast.deliveryType ?? null,
+        contentCategory: full.broadcast.contentCategory ?? null,
         deliveryFormats: full.broadcast.deliveryFormats?.map((f: any) => ({ id: f.id, format: f.format })),
         game: full.broadcast.game ? { id: full.broadcast.game.id, name: full.broadcast.game.name, logo: full.broadcast.game.logo ?? null, tier: full.broadcast.game.tier, tier1CN: full.broadcast.game.tier1CN } : null,
       } : null,
@@ -606,6 +607,35 @@ export function useOrders({
     }
   }
 
+  // ─── Update content category (broadcast) — quick in-table edit ─────────────
+  async function updateOrderContentCategory(orderId: string, category: string) {
+    // Optimistic in-place patch so the cell updates instantly.
+    const patch = (o: any) =>
+      o.id === orderId && o.broadcast
+        ? { ...o, broadcast: { ...o.broadcast, contentCategory: category || null } }
+        : o
+    setBroadcastOrders((prev) => prev.map(patch))
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${orderId}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          // A minimal partial edit — updateOrder only touches the fields present.
+          body: JSON.stringify({ type: "BROADCAST", contentCategory: category || null }),
+        }
+      )
+      if (!response.ok) throw new Error("Failed to update content category")
+      if (selectedOrder?.id === orderId) fetchOrderDetail(orderId)
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to update content category")
+      // Roll back by refetching the current broadcast page.
+      fetchBroadcastOrders(broadcastPage)
+    }
+  }
+
   // ─── Delete order ─────────────────────────────────────────────────────────
   async function deleteOrder() {
     try {
@@ -826,6 +856,7 @@ export function useOrders({
     createBigOrder,
     updateOrder,
     updateOrderStatus,
+    updateOrderContentCategory,
     deleteOrder,
     toListOrder,
     orderCounts,
