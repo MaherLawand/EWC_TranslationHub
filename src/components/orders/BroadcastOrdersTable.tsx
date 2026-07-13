@@ -2,6 +2,7 @@ import React from "react"
 import ReactDOM from "react-dom"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
+import StickyScrollbar from "../shared/StickyScrollbar"
 import { FeedbackButton, type Feedback } from "./OrderFeedback"
 import LanguagesCell from "./LanguagesCell"
 import FormatsCell from "./FormatsCell"
@@ -399,6 +400,9 @@ React.useEffect(() => {
     setUpdatingOrderId(null)
   }
 }
+
+// Horizontal scroll container — driven by the sticky bottom scrollbar.
+const tableScrollRef = React.useRef<HTMLDivElement>(null)
 
 // Expandable parent ("big order") rows
 const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
@@ -941,7 +945,7 @@ function renderRow(order: any, isSub: boolean) {
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll">
+      <div className="table-scroll" ref={tableScrollRef}>
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -1130,6 +1134,9 @@ function renderRow(order: any, isSub: boolean) {
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
+
+    {/* Always-on-screen horizontal scrollbar for the (wide) table above. */}
+    <StickyScrollbar targetRef={tableScrollRef} />
 
     {/* STATUS PORTAL — rendered in document.body to escape overflow clipping */}
     {statusPortal && ReactDOM.createPortal(

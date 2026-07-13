@@ -7,6 +7,7 @@ import LanguagesCell from "./LanguagesCell"
 import FormatsCell from "./FormatsCell"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
+import StickyScrollbar from "../shared/StickyScrollbar"
 import { formatDeadline } from "../../lib/deadline"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -379,6 +380,7 @@ async function saveAssign() {
 }
 
 // Expandable parent ("big order") rows
+const tableScrollRef = React.useRef<HTMLDivElement>(null)
 const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
 
 // Lazy-loaded sub-orders per parent: { rows, loading, page, totalPages }
@@ -881,7 +883,7 @@ function renderRow(order: any, isSub: boolean) {
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll">
+      <div className="table-scroll" ref={tableScrollRef}>
       <table className="w-full border-separate border-spacing-0">
 
         <thead
@@ -1057,6 +1059,9 @@ function renderRow(order: any, isSub: boolean) {
       <PaginationBar page={page} totalPages={totalPages} onPageChange={onPageChange} />
 
     </div>
+
+    {/* Always-on-screen horizontal scrollbar for the (wide) table above. */}
+    <StickyScrollbar targetRef={tableScrollRef} />
 
     {/* STATUS PORTAL */}
     {statusPortal && ReactDOM.createPortal(

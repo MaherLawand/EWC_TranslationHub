@@ -195,13 +195,11 @@
 
 /* ── Dark horizontal scroll wrapper for tables ─────────────────────────── */
 .table-scroll {
-  /* `scroll` (not `auto`) forces a persistent classic bar on macOS — with
-     `auto`, macOS overlay scrollbars auto-hide even when custom-styled. */
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
-  /* Firefox: always-visible thin scrollbar with a grabbable thumb */
-  scrollbar-width: thin;
-  scrollbar-color: #4A4A4A #1A1A1A;
+  /* The visible/draggable bar is the sticky one below — hide this native bar so
+     there aren't two horizontal scrollbars. */
+  scrollbar-width: none;
   /* CSS scroll-shadow trick: cover layers scroll with content, shadow layers stay fixed */
   background:
     linear-gradient(to right,  #0E0E0E 20%, transparent) left   center / 48px 100% no-repeat local,
@@ -209,20 +207,28 @@
     radial-gradient(farthest-side at 0 50%,   rgba(0,0,0,0.55), transparent) left  center / 20px 100% no-repeat scroll,
     radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.55), transparent) right center / 20px 100% no-repeat scroll;
 }
+.table-scroll::-webkit-scrollbar { height: 0; width: 0; }
 
-/* Always-visible, chunky draggable handlebar (WebKit/Chrome/Safari).
-   Styling ::-webkit-scrollbar forces a classic (non-overlay) bar that stays
-   shown whenever the content overflows. */
-.table-scroll::-webkit-scrollbar        { height: 12px; }
-.table-scroll::-webkit-scrollbar-track  { background: #161616; border-top: 1px solid #242424; }
-.table-scroll::-webkit-scrollbar-thumb  {
+/* Sticky horizontal handlebar: pinned to the bottom of the viewport, synced with
+   .table-scroll, so a wide table can always be dragged left/right on screen.
+   `overflow-x: scroll` forces a persistent classic bar (macOS won't auto-hide it). */
+.sticky-hscroll {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  height: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: #4A4A4A #1A1A1A;
+}
+.sticky-hscroll::-webkit-scrollbar        { height: 12px; }
+.sticky-hscroll::-webkit-scrollbar-track  { background: #161616; border-top: 1px solid #242424; }
+.sticky-hscroll::-webkit-scrollbar-thumb  {
   background: #4A4A4A;
   border-radius: 9999px;
-  border: 3px solid #161616; /* inset padding so the thumb reads as a pill */
-  min-width: 60px;           /* keep a comfortably grabbable handle */
+  border: 3px solid #161616;
+  min-width: 60px;
 }
-.table-scroll::-webkit-scrollbar-thumb:hover  { background: #5E5E5E; }
-.table-scroll::-webkit-scrollbar-thumb:active { background: #D6B36A; }
+.sticky-hscroll::-webkit-scrollbar-thumb:hover  { background: #5E5E5E; }
+.sticky-hscroll::-webkit-scrollbar-thumb:active { background: #D6B36A; }
 
 /* Tooltip scale-in from top-right */
 @keyframes scaleIn {
