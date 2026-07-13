@@ -225,18 +225,57 @@ const statusPortalRef = React.useRef<HTMLDivElement>(null)
 
 // Admin-only content-category quick-edit portal (mirrors the status portal).
 const isAdmin = currentUser?.role === "ADMIN"
-const [catPortal, setCatPortal] = React.useState<{ orderId: string; current: string; top: number; left: number } | null>(null)
+const CAT_PORTAL_GAP = 6
+const VIEWPORT_PADDING = 8
+const [catPortal, setCatPortal] = React.useState<{
+  orderId: string
+  current: string
+  top: number
+  anchorTop: number
+  anchorBottom: number
+  left: number
+  placement: "top" | "bottom"
+} | null>(null)
 const catPortalRef = React.useRef<HTMLDivElement>(null)
 function openCatPortal(e: React.MouseEvent, orderId: string, current: string) {
   e.stopPropagation()
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   const MENU_W = 200
-  const PAD = 8
   let left = rect.left
-  if (left + MENU_W > window.innerWidth - PAD) left = window.innerWidth - MENU_W - PAD
-  if (left < PAD) left = PAD
-  setCatPortal({ orderId, current, top: rect.bottom + 6, left })
+  if (left + MENU_W > window.innerWidth - VIEWPORT_PADDING) left = window.innerWidth - MENU_W - VIEWPORT_PADDING
+  if (left < VIEWPORT_PADDING) left = VIEWPORT_PADDING
+  setCatPortal({
+    orderId,
+    current,
+    top: rect.bottom + CAT_PORTAL_GAP,
+    anchorTop: rect.top,
+    anchorBottom: rect.bottom,
+    left,
+    placement: "bottom",
+  })
 }
+// Measure the rendered menu so rows near the bottom open upward. Keeping the
+// calculated position in state means React won't overwrite it on a re-render.
+React.useLayoutEffect(() => {
+  if (!catPortal) return
+  const el = catPortalRef.current
+  if (!el) return
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+  const menuHeight = Math.min(el.getBoundingClientRect().height, viewportHeight - VIEWPORT_PADDING * 2)
+  const bottomTop = catPortal.anchorBottom + CAT_PORTAL_GAP
+  const opensUpward = bottomTop + menuHeight > viewportHeight - VIEWPORT_PADDING
+  const top = opensUpward
+    ? Math.max(VIEWPORT_PADDING, catPortal.anchorTop - menuHeight - CAT_PORTAL_GAP)
+    : Math.min(bottomTop, viewportHeight - menuHeight - VIEWPORT_PADDING)
+
+  if (top === catPortal.top && (opensUpward ? "top" : "bottom") === catPortal.placement) return
+
+  setCatPortal((portal) =>
+    portal?.orderId === catPortal.orderId
+      ? { ...portal, top, placement: opensUpward ? "top" : "bottom" }
+      : portal
+  )
+}, [catPortal])
 // Optimistically patch a sub-order row in subCache (the acting user's own row);
 // top-level rows are patched by the hook. Socket confirms for everyone else.
 function patchCatLocal(orderId: string, category: string) {
@@ -1133,7 +1172,15 @@ function renderRow(order: any, isSub: boolean) {
     {catPortal && ReactDOM.createPortal(
       <div
         ref={catPortalRef}
-        style={{ position: "fixed", top: catPortal.top, left: catPortal.left, zIndex: 9999, transformOrigin: "top left" }}
+        style={{
+          position: "fixed",
+          top: catPortal.top,
+          left: catPortal.left,
+          zIndex: 9999,
+          maxHeight: `calc(100dvh - ${VIEWPORT_PADDING * 2}px)`,
+          overflowY: "auto",
+          transformOrigin: catPortal.placement === "top" ? "bottom left" : "top left",
+        }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
         className="w-52 flex flex-col bg-[#101010]/95 backdrop-blur-xl border border-[#242424] rounded-2xl p-2 shadow-[0_0_40px_rgba(0,0,0,0.55)] animate-bubble-pop"
