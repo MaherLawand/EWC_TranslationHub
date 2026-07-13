@@ -5,7 +5,6 @@ import PaginationBar from "../shared/PaginationBar"
 import { FeedbackButton, type Feedback } from "./OrderFeedback"
 import LanguagesCell from "./LanguagesCell"
 import FormatsCell from "./FormatsCell"
-import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { contentCategoryLabel, contentCategoryHours, CONTENT_CATEGORIES } from "../../constants/contentCategories"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -400,8 +399,6 @@ React.useEffect(() => {
     setUpdatingOrderId(null)
   }
 }
-
-const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
 // Expandable parent ("big order") rows
 const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
@@ -944,7 +941,7 @@ function renderRow(order: any, isSub: boolean) {
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll" ref={scrollRef}>
+      <div className="table-scroll">
       <table className="w-full border-separate border-spacing-0">
 
         <thead

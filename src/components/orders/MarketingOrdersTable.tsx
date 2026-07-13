@@ -8,7 +8,6 @@ import FormatsCell from "./FormatsCell"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
 import { formatDeadline } from "../../lib/deadline"
-import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { gearWarp } from "../../lib/gearHover"
 
 // Pre-built O(1) lookup — avoids a linear .find() scan on every render per pill
@@ -378,8 +377,6 @@ async function saveAssign() {
     setUpdatingOrderId(null)
   }
 }
-
-const scrollRef = useWheelToHorizontalScroll<HTMLDivElement>()
 
 // Expandable parent ("big order") rows
 const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
@@ -884,7 +881,7 @@ function renderRow(order: any, isSub: boolean) {
       </div>
 
       {/* TABLE */}
-      <div className="table-scroll" ref={scrollRef}>
+      <div className="table-scroll">
       <table className="w-full border-separate border-spacing-0">
 
         <thead

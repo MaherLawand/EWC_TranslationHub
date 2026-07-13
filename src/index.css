@@ -195,7 +195,13 @@
 
 /* ── Dark horizontal scroll wrapper for tables ─────────────────────────── */
 .table-scroll {
-  overflow-x: auto;
+  /* `scroll` (not `auto`) forces a persistent classic bar on macOS — with
+     `auto`, macOS overlay scrollbars auto-hide even when custom-styled. */
+  overflow-x: scroll;
+  overflow-y: hidden;
+  /* Firefox: always-visible thin scrollbar with a grabbable thumb */
+  scrollbar-width: thin;
+  scrollbar-color: #4A4A4A #1A1A1A;
   /* CSS scroll-shadow trick: cover layers scroll with content, shadow layers stay fixed */
   background:
     linear-gradient(to right,  #0E0E0E 20%, transparent) left   center / 48px 100% no-repeat local,
@@ -204,11 +210,19 @@
     radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.55), transparent) right center / 20px 100% no-repeat scroll;
 }
 
-/* Slim dark scrollbar */
-.table-scroll::-webkit-scrollbar        { height: 4px; }
-.table-scroll::-webkit-scrollbar-track  { background: transparent; }
-.table-scroll::-webkit-scrollbar-thumb  { background: #2A2A2A; border-radius: 9999px; }
-.table-scroll::-webkit-scrollbar-thumb:hover { background: #404040; }
+/* Always-visible, chunky draggable handlebar (WebKit/Chrome/Safari).
+   Styling ::-webkit-scrollbar forces a classic (non-overlay) bar that stays
+   shown whenever the content overflows. */
+.table-scroll::-webkit-scrollbar        { height: 12px; }
+.table-scroll::-webkit-scrollbar-track  { background: #161616; border-top: 1px solid #242424; }
+.table-scroll::-webkit-scrollbar-thumb  {
+  background: #4A4A4A;
+  border-radius: 9999px;
+  border: 3px solid #161616; /* inset padding so the thumb reads as a pill */
+  min-width: 60px;           /* keep a comfortably grabbable handle */
+}
+.table-scroll::-webkit-scrollbar-thumb:hover  { background: #5E5E5E; }
+.table-scroll::-webkit-scrollbar-thumb:active { background: #D6B36A; }
 
 /* Tooltip scale-in from top-right */
 @keyframes scaleIn {
