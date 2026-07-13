@@ -759,7 +759,7 @@ React.useEffect(() => {
     //   • without status → full edit: debounce re-fetch staying on current page
     //                      + immediately refresh sidebar if that order is open
     let patchedTimer: ReturnType<typeof setTimeout> | null = null
-    socket.on("order-patched", ({ id, type, status, nearestSubDeadline, contentCategory }: { id: string; type: string; status?: string; nearestSubDeadline?: any; contentCategory?: string }) => {
+    socket.on("order-patched", ({ id, type, status, nearestSubDeadline, contentCategory, cascaded }: { id: string; type: string; status?: string; nearestSubDeadline?: any; contentCategory?: string; cascaded?: boolean }) => {
       if (status) {
         // Status-only — patch in-place, no re-fetch.
         // Completing an order also clears its "source changed" flag (server does
@@ -816,6 +816,9 @@ React.useEffect(() => {
         )
         // Sub-order rows live in the table's subCache → push the patch there.
         setCatPatch({ id, contentCategory, nonce: Date.now() })
+        // A big order cascades the category to all its sub-orders → reload the
+        // expanded parent's sub-order rows so they show the new value.
+        if (cascaded) setSubRefresh((n) => n + 1)
         // Patch the open sidebar in-place if it's showing this order.
         if (selectedOrderDetailRef.current?.id === id) {
           setSelectedOrderDetail((prev: any) =>
