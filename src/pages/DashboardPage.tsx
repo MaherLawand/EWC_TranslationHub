@@ -1261,17 +1261,24 @@ React.useEffect(() => {
     // (e.g. 01:00 AM) is still "hours left", not "1 day left".
     if (hasTime) {
       const diffMin = Math.round((deadline.getTime() - now.getTime()) / 60000)
+      // Break into days + hours + minutes; every 24h counts as one day.
       const fmt = (mins: number) => {
-        const h = Math.floor(mins / 60)
+        const d = Math.floor(mins / 1440)
+        const h = Math.floor((mins % 1440) / 60)
         const m = mins % 60
+        if (d > 0) {
+          const parts = [`${d} day${d > 1 ? "s" : ""}`]
+          if (h > 0) parts.push(`${h}h`)
+          if (m > 0) parts.push(`${m}m`)
+          return parts.join(" ")
+        }
         return h > 0 ? `${h}h ${m}m` : `${m}m`
       }
       if (diffMin <= 0) return { text: `${fmt(Math.max(1, -diffMin))} overdue`, color: "text-red-400" }
-      // Under a day away → show precise hours/minutes (red).
-      if (diffMin < 24 * 60) return { text: `${fmt(diffMin)} left`, color: "text-red-400" }
-      // A day or more away → whole days remaining, based on real elapsed time.
-      const days = Math.floor(diffMin / (24 * 60))
-      return { text: `${days} day${days > 1 ? "s" : ""} left`, color: days <= 3 ? "text-yellow-400" : "text-zinc-500" }
+      // Under a day → red; up to 3 days → yellow; beyond → grey.
+      const days = Math.floor(diffMin / 1440)
+      const color = diffMin < 1440 ? "text-red-400" : days <= 3 ? "text-yellow-400" : "text-zinc-500"
+      return { text: `${fmt(diffMin)} left`, color }
     }
 
     // Date-only deadlines are floating calendar dates stored at UTC midnight →
