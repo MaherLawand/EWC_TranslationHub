@@ -1256,21 +1256,10 @@ React.useEffect(() => {
     const now = new Date()
     const deadline = new Date(deadlineDate)
 
-    const startToday = new Date()
-    startToday.setHours(0, 0, 0, 0)
-    // Timed deadlines are real instants → use local midnight of that instant.
-    // Date-only deadlines are floating calendar dates stored at UTC midnight →
-    // read them in UTC so "days left" matches the date everyone sees.
-    const startDeadline = hasTime
-      ? new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate())
-      : new Date(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate())
-    const diffDays = Math.round(
-      (startDeadline.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24)
-    )
-
-    // Same calendar day AND a real time-of-day → show precise hours/minutes
-    // instead of the vague "Due today".
-    if (diffDays === 0 && hasTime) {
+    // Timed deadlines are real instants → judge by the actual time remaining, NOT
+    // the calendar-day gap. A deadline a few hours away that lands after midnight
+    // (e.g. 01:00 AM) is still "hours left", not "1 day left".
+    if (hasTime) {
       const diffMin = Math.round((deadline.getTime() - now.getTime()) / 60000)
       const fmt = (mins: number) => {
         const h = Math.floor(mins / 60)
@@ -1278,8 +1267,21 @@ React.useEffect(() => {
         return h > 0 ? `${h}h ${m}m` : `${m}m`
       }
       if (diffMin <= 0) return { text: `${fmt(Math.max(1, -diffMin))} overdue`, color: "text-red-400" }
-      return { text: `${fmt(diffMin)} left`, color: "text-red-400" }
+      // Under a day away → show precise hours/minutes (red).
+      if (diffMin < 24 * 60) return { text: `${fmt(diffMin)} left`, color: "text-red-400" }
+      // A day or more away → whole days remaining, based on real elapsed time.
+      const days = Math.floor(diffMin / (24 * 60))
+      return { text: `${days} day${days > 1 ? "s" : ""} left`, color: days <= 3 ? "text-yellow-400" : "text-zinc-500" }
     }
+
+    // Date-only deadlines are floating calendar dates stored at UTC midnight →
+    // read them in UTC so "days left" matches the date everyone sees.
+    const startToday = new Date()
+    startToday.setHours(0, 0, 0, 0)
+    const startDeadline = new Date(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate())
+    const diffDays = Math.round(
+      (startDeadline.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24)
+    )
 
     if (diffDays === 0) return { text: "Due today", color: "text-red-400" }
     if (diffDays < 0) return { text: `${Math.abs(diffDays)} days overdue`, color: "text-red-400" }
