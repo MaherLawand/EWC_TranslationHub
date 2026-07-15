@@ -13,6 +13,7 @@ import {
 import { CONTENT_TITLES } from "../../constants/contentTitles"
 import { CONTENT_CATEGORIES, autoDeadlineFromNow } from "../../constants/contentCategories"
 import { buildTimeOptions } from "../../lib/deadline"
+import { toast } from "react-toastify"
 import { motion, AnimatePresence } from "framer-motion"
 import { gearWarp } from "../../lib/gearHover"
 import DatePicker from "react-datepicker"
@@ -146,6 +147,31 @@ export default function OrderModal({
   // inherited from the parent form (newOrder).
   type SubOrderItem = { title: string; deadline: string }
   const [subOrderItems, setSubOrderItems] = useState<SubOrderItem[]>([])
+
+  // Manually re-notify translators that the source file changed. Used when the
+  // file behind the same link was swapped, so the link string is unchanged and
+  // the automatic "source updated" email never fires.
+  const [resendingSource, setResendingSource] = useState(false)
+  async function handleResendSourceNotification() {
+    if (!editingOrderId || resendingSource) return
+    setResendingSource(true)
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/orders/${editingOrderId}/resend-source-notification`,
+        { method: "POST", credentials: "include" }
+      )
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data?.message || "Failed to resend")
+      }
+      toast.success("Translators notified that the source file changed")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.message || "Failed to notify translators")
+    } finally {
+      setResendingSource(false)
+    }
+  }
   // The order title as it was when the title field gained focus — used to detect
   // a rename so sub-orders auto-named after the old title can follow the new one.
   const titleBeforeEditRef = useRef<string>("")
@@ -932,9 +958,26 @@ today.setHours(0, 0, 0, 0)
 
           {/* SOURCE FILE */}
           <div>
-            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
-              Source File
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-zinc-300 block tracking-wide">
+                Source File
+              </label>
+              {/* Resend email when the file behind an unchanged link was swapped. */}
+              {isEditing && editingOrderId && (newOrder.sourceFileLink || "").trim() && (
+                <button
+                  type="button"
+                  onClick={handleResendSourceNotification}
+                  disabled={resendingSource}
+                  title="Email translators that the source file has changed (use when the link is the same but the file was replaced)"
+                  className="text-xs font-medium text-[#D6B36A] hover:text-[#e8c987] disabled:opacity-50 disabled:cursor-not-allowed transition inline-flex items-center gap-1.5"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {resendingSource ? "Sending…" : "Resend email"}
+                </button>
+              )}
+            </div>
 
             <input
             data-ve
