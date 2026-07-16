@@ -701,12 +701,15 @@ today.setHours(0, 0, 0, 0)
         const cat = selected?.value || ""
         const next: any = { ...newOrder, contentCategory: cat }
         // If a source file is already in, choosing the category computes the
-        // deadline time now + the category's hours (nearest 5 min); date kept.
+        // deadline as now + the category's hours (nearest 5 min). Apply BOTH the
+        // date and the time: the computed instant can roll past midnight (e.g.
+        // 20:00 + Long Form 8h = 04:00 the NEXT day), so keeping the old date
+        // would land the deadline a day early.
         if (cat && (newOrder.sourceFileLink || "").trim()) {
           const auto = autoDeadlineFromNow(cat)
           if (auto) {
+            next.deadline = auto.date
             next.deadlineTime = auto.time
-            if (!newOrder.deadline) next.deadline = auto.date
           }
         }
         setNewOrder(next)
@@ -1016,8 +1019,9 @@ today.setHours(0, 0, 0, 0)
                 if (becameSet && newOrder.contentCategory) {
                   const auto = autoDeadlineFromNow(newOrder.contentCategory)
                   if (auto) {
+                    // Both date and time — the window can cross midnight.
+                    next.deadline = auto.date
                     next.deadlineTime = auto.time
-                    if (!newOrder.deadline) next.deadline = auto.date
                   }
                 }
                 setNewOrder(next)
