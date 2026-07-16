@@ -3,6 +3,7 @@ import ReactDOM from "react-dom"
 import PaginationBar from "../shared/PaginationBar"
 import { useWheelToHorizontalScroll } from "../../hooks/useWheelToHorizontalScroll"
 import { gearWarp } from "../../lib/gearHover"
+import { POSITION_LABELS } from "../../constants/positions"
 
 type Props = {
   users: any[]
@@ -344,7 +345,7 @@ export default function UsersPage({
 
                 {/* POSITION */}
                 <td className="px-6 py-2.5 text-zinc-300">
-                  {user.position?.replace(/_/g, " ") || "-"}
+                  {(user.position && POSITION_LABELS[user.position]) || user.position?.replace(/_/g, " ") || "-"}
                 </td>
 
                 {/* DEPARTMENT */}

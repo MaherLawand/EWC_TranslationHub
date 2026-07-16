@@ -1,4 +1,5 @@
 import React from "react"
+import { isTranslatorPosition } from "../../constants/positions"
 import ReactDOM from "react-dom"
 import { LANGUAGES } from "../../constants/languages"
 import { MARKETING_FORMAT_OPTIONS, formatLabel } from "../../constants/deliveryFormats"
@@ -119,7 +120,7 @@ const canUpdateStatus =
   currentUser?.role === "ADMIN" ||
   currentUser?.position === "PRODUCER" ||
   currentUser?.position === "POST_PRODUCTION_MANAGER" ||
-  currentUser?.position === "TRANSLATOR" ||
+  isTranslatorPosition(currentUser?.position) ||
   currentUser?.position === "EDITOR"
 
 const canAssignUsers =

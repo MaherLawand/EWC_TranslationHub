@@ -1,4 +1,5 @@
 import React from "react"
+import { isTranslatorPosition } from "../../constants/positions"
 import ReactDOM from "react-dom"
 
 export type Feedback = {
@@ -26,7 +27,7 @@ const SEEN_DELAY_MS = 1500
 function canPostFeedback(user: any): boolean {
   return (
     user?.role === "ADMIN" ||
-    user?.position === "TRANSLATOR" ||
+    isTranslatorPosition(user?.position) ||
     user?.position === "PRODUCER" ||
     user?.position === "POST_PRODUCTION_MANAGER" ||
     user?.position === "EDITOR"

@@ -38,9 +38,10 @@ export function useUsers() {
     email: "",
     password: "",
     role: "",
-    isActive: "",
+    isActive: "" as string | boolean,
     department: "",
     position: "",
+    specialtyLanguages: [] as string[],
   })
 
   const [isSavingUser, setIsSavingUser] =
@@ -99,6 +100,7 @@ export function useUsers() {
       isActive: "",
       department: "",
       position: "",
+      specialtyLanguages: [],
     })
     setShowUserModal(true)
   }
@@ -115,6 +117,7 @@ export function useUsers() {
       department: user.department || "BROADCAST",
       position: user.position || "",
       isActive: user.isActive || false,
+      specialtyLanguages: user.specialtyLanguages || [],
     })
     setShowUserModal(true)
   }

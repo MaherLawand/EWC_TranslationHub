@@ -1,4 +1,5 @@
 import React from "react"
+import { isTranslatorPosition } from "../../constants/positions"
 import SidebarItem from "../shared/SidebarItem"
 import { gearWarp } from "../../lib/gearHover"
 
@@ -259,7 +260,7 @@ export default function Sidebar({
           {!isViewer && (currentUser?.role === "ADMIN" ||
             currentUser?.position === "PRODUCER" ||
             currentUser?.position === "POST_PRODUCTION_MANAGER" ||
-            currentUser?.position === "TRANSLATOR") && (
+            isTranslatorPosition(currentUser?.position)) && (
             <div className="relative">
               <SidebarItem
                 active={activePage === "notifications"}

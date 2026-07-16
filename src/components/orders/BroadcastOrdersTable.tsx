@@ -1,4 +1,5 @@
 import React from "react"
+import { isTranslatorPosition } from "../../constants/positions"
 import ReactDOM from "react-dom"
 import StatusBadge from "../shared/StatusBadge"
 import PaginationBar from "../shared/PaginationBar"
@@ -175,8 +176,7 @@ const canUpdateStatus =
   currentUser?.position ===
     "POST_PRODUCTION_MANAGER" ||
 
-  currentUser?.position ===
-    "TRANSLATOR" ||
+  isTranslatorPosition(currentUser?.position) ||
 
   currentUser?.position ===
     "EDITOR"

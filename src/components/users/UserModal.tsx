@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react"
 import Select from "react-select"
 import { gearWarp } from "../../lib/gearHover"
+import { POSITION_OPTIONS, POSITION_LABELS } from "../../constants/positions"
+import { LANGUAGES } from "../../constants/languages"
+
+const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.name, label: l.name }))
 
 const darkSelectStyles = {
   control: (base: any, state: any) => ({
@@ -38,6 +42,21 @@ const darkSelectStyles = {
   input: (base: any) => ({ ...base, color: "#F5F1E8" }),
   placeholder: (base: any) => ({ ...base, color: "#8b8b93" }),
   singleValue: (base: any) => ({ ...base, color: "#F5F1E8" }),
+  // Selected multi-value chips (e.g. specialty languages) — dark/gold instead of
+  // react-select's default white.
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "rgba(214,179,106,0.15)",
+    border: "1px solid rgba(214,179,106,0.35)",
+    borderRadius: 8,
+  }),
+  multiValueLabel: (base: any) => ({ ...base, color: "#E8C77E" }),
+  multiValueRemove: (base: any) => ({
+    ...base,
+    color: "#E8C77E",
+    borderRadius: 8,
+    ":hover": { backgroundColor: "rgba(214,179,106,0.30)", color: "#F5F1E8" },
+  }),
   // Render the menu in a body-level portal so the modal's scroll container
   // can't clip it; keep it above the modal.
   menuPortal: (base: any) => ({ ...base, zIndex: 99999 }),
@@ -304,22 +323,50 @@ export default function UserModal({
                   {...selectMenuProps}
                   isSearchable={false}
                   placeholder="Select Position"
-                  options={[
-                    { value: "PRODUCER", label: "Producer" },
-                    { value: "POST_PRODUCTION_MANAGER", label: "Post Production Manager" },
-                    { value: "TRANSLATOR", label: "Translator" },
-                   // { value: "EDITOR", label: "Editor" },
-                    { value: "VIDEO_EDITOR", label: "Video Editor" },
-                    { value: "VIEWER", label: "Viewer" },
-                  ]}
+                  options={POSITION_OPTIONS}
                   value={userForm.position ? {
                     value: userForm.position,
-                    label: { PRODUCER: "Producer", POST_PRODUCTION_MANAGER: "Post Production Manager", TRANSLATOR: "Translator", EDITOR: "Editor", VIDEO_EDITOR: "Video Editor", VIEWER: "Viewer" }[userForm.position as string] || userForm.position,
+                    label: POSITION_LABELS[userForm.position as string] || userForm.position,
                   } : null}
-                  onChange={(selected) => { setUserForm({ ...userForm, position: selected?.value || "" }); clearError("position") }}
+                  onChange={(selected) => {
+                    const pos = selected?.value || ""
+                    // Specialty languages only apply to translators — clear when
+                    // switching away.
+                    setUserForm({
+                      ...userForm,
+                      position: pos,
+                      specialtyLanguages: pos === "TRANSLATOR" ? (userForm.specialtyLanguages || []) : [],
+                    })
+                    clearError("position")
+                  }}
                 />
                 {errors.position && <p className="text-red-400 text-xs mt-1.5">{errors.position}</p>}
               </div>
+
+              {/* SPECIALTY LANGUAGES — translators only. Routes source-file emails
+                  to matching translators (by the order's target languages). */}
+              {userForm.position === "TRANSLATOR" && (
+                <div>
+                  <label className="text-xs font-medium text-zinc-500 mb-2 block tracking-wide">
+                    Specialty Language(s)
+                    <span className="text-zinc-600 ml-1">(what they're good at translating)</span>
+                  </label>
+                  <Select
+                    styles={darkSelectStyles}
+                    {...selectMenuProps}
+                    isMulti
+                    placeholder="Select one or more languages"
+                    options={LANGUAGE_OPTIONS}
+                    value={(userForm.specialtyLanguages || []).map((l: string) => ({ value: l, label: l }))}
+                    onChange={(selected: any) =>
+                      setUserForm({ ...userForm, specialtyLanguages: (selected || []).map((s: any) => s.value) })
+                    }
+                  />
+                  <p className="text-xs text-zinc-600 mt-2">
+                    They'll be emailed source files whose target language matches a specialty. Leave empty to receive none.
+                  </p>
+                </div>
+              )}
 
             </div>
           </div>

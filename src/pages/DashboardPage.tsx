@@ -1,4 +1,5 @@
 import React from "react"
+import { isTranslatorPosition } from "../constants/positions"
 import Sidebar from "../components/layout/Sidebar"
 import Topbar from "../components/layout/Topbar"
 import UsersPage from "../components/pages/UsersPage"
@@ -151,6 +152,7 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     estimatedMinutes: "",
     deliveryDate: "",
     deliveries: [],
+    notifyPositions: [] as string[],
   })
 
   const [isEditing, setIsEditing] =
@@ -1042,7 +1044,7 @@ React.useEffect(() => {
     fetchOrderDetail(order.id)
     // A translator opening the order clears the "source changed" caution (mirrors
     // the server, which only clears for translators). Managers must NOT clear it.
-    if (order?.sourceChangedAt && currentUser?.position === "TRANSLATOR") {
+    if (order?.sourceChangedAt && isTranslatorPosition(currentUser?.position)) {
       const clear = (prev: any[]) => prev.map((o) => o.id === order.id ? { ...o, sourceChangedAt: null } : o)
       setBroadcastOrders(clear)
       setMarketingOrders(clear)
@@ -1117,6 +1119,7 @@ React.useEffect(() => {
           language: d.language,
           deliveryLink: d.deliveryLink || "",
         })) || [],
+      notifyPositions: detailSide?.notifyPositions || src?.notifyPositions || [],
     }
   }
 
@@ -1206,6 +1209,7 @@ React.useEffect(() => {
       estimatedMinutes: "",
       deliveryDate: "",
       deliveries: [],
+      notifyPositions: [],
     })
   }
 

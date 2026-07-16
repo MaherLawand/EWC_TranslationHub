@@ -12,6 +12,7 @@ import {
 } from "../../constants/deliveryFormats"
 import { CONTENT_TITLES } from "../../constants/contentTitles"
 import { CONTENT_CATEGORIES, autoDeadlineFromNow } from "../../constants/contentCategories"
+import { NOTIFY_POSITION_OPTIONS } from "../../constants/positions"
 import { buildTimeOptions } from "../../lib/deadline"
 import { toast } from "react-toastify"
 import { motion, AnimatePresence } from "framer-motion"
@@ -158,7 +159,12 @@ export default function OrderModal({
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/orders/${editingOrderId}/resend-source-notification`,
-        { method: "POST", credentials: "include" }
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notifyPositions: newOrder.notifyPositions || [] }),
+        }
       )
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
@@ -283,6 +289,16 @@ export default function OrderModal({
     if (!newOrder.deliveryFormats || newOrder.deliveryFormats.length === 0) {
       e.deliveryFormats = "At least one delivery format is required"
     }
+    // When a source file is present, at least one notify role must be chosen so
+    // the source-ready email has recipients.
+    if ((newOrder.sourceFileLink || "").trim() && (!newOrder.notifyPositions || newOrder.notifyPositions.length === 0)) {
+      e.notifyPositions = "Select at least one role to notify"
+    }
+    // A source file needs at least one target language, otherwise translators
+    // can't be matched/assigned and no email would be sent.
+    if ((newOrder.sourceFileLink || "").trim() && (!newOrder.targetLanguages || newOrder.targetLanguages.length === 0)) {
+      e.targetLanguages = "At least one target language is required when a source file is added"
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -377,6 +393,8 @@ setNewOrder({
   deliveryDate: "",
 
   deliveries: [],
+
+  notifyPositions: [],
 })
 }
 
@@ -873,11 +891,13 @@ today.setHours(0, 0, 0, 0)
     deliveries:
       updatedDeliveries,
   })
+  clearError("targetLanguages")
 }}
 
               placeholder="Search target languages..."
               className="text-sm"
             />
+            {errors.targetLanguages && <p className="text-red-400 text-xs mt-1.5">{errors.targetLanguages}</p>}
           </div>
 
         {/* DELIVERY TYPE (broadcast only) — gates the delivery format below.
@@ -1004,6 +1024,44 @@ today.setHours(0, 0, 0, 0)
               }}
               className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
             />
+
+            {/* NOTIFY ROLES — appears once a source file is set. Chooses which
+                roles receive the "source ready/updated" email. Required (≥1). */}
+            {(newOrder.sourceFileLink || "").trim() && (
+              <div className="mt-3">
+                <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
+                  Notify <span className="text-red-400">*</span>
+                  <span className="text-zinc-600 ml-1">(who gets the source-file email)</span>
+                </label>
+                <div className="flex gap-2">
+                  {NOTIFY_POSITION_OPTIONS.map((opt) => {
+                    const selected = (newOrder.notifyPositions || []).includes(opt.value)
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          const current: string[] = newOrder.notifyPositions || []
+                          const nextPositions = selected
+                            ? current.filter((p) => p !== opt.value)
+                            : [...current, opt.value]
+                          setNewOrder({ ...newOrder, notifyPositions: nextPositions })
+                          clearError("notifyPositions")
+                        }}
+                        className={`flex-1 text-center px-3 py-1.5 rounded-full text-sm font-medium border transition whitespace-nowrap ${
+                          selected
+                            ? "gear-fill border-transparent"
+                            : "bg-white/5 border-white/20 text-zinc-300 hover:border-[#D6B36A]/50 hover:text-white"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                {errors.notifyPositions && <p className="text-red-400 text-xs mt-1.5">{errors.notifyPositions}</p>}
+              </div>
+            )}
           </div>
 
           {/* SRT AVAILABLE LINK */}
@@ -1319,20 +1377,39 @@ today.setHours(0, 0, 0, 0)
         deliveries:
           updatedDeliveries,
       })
+      clearError("targetLanguages")
     }}
 
     placeholder="Search target languages..."
 
     className="text-sm"
   />
+  {errors.targetLanguages && <p className="text-red-400 text-xs mt-1.5">{errors.targetLanguages}</p>}
 
 </div>
 
       {/* SOURCE FILE */}
       <div>
-        <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
-          Source File
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-zinc-300 block tracking-wide">
+            Source File
+          </label>
+          {/* Resend email when the file behind an unchanged link was swapped. */}
+          {isEditing && editingOrderId && (newOrder.sourceFileLink || "").trim() && (
+            <button
+              type="button"
+              onClick={handleResendSourceNotification}
+              disabled={resendingSource}
+              title="Email translators that the source file has changed (use when the link is the same but the file was replaced)"
+              className="text-xs font-medium text-[#D6B36A] hover:text-[#e8c987] disabled:opacity-50 disabled:cursor-not-allowed transition inline-flex items-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              {resendingSource ? "Sending…" : "Resend email"}
+            </button>
+          )}
+        </div>
 
         <input
         data-ve
@@ -1350,6 +1427,43 @@ today.setHours(0, 0, 0, 0)
           placeholder="Paste source link..."
           className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] focus:bg-white/15 transition placeholder:text-white/50"
         />
+
+        {/* NOTIFY ROLES — required (≥1) once a source file is set. */}
+        {(newOrder.sourceFileLink || "").trim() && (
+          <div className="mt-3">
+            <label className="text-xs font-medium text-zinc-300 mb-2 block tracking-wide">
+              Notify <span className="text-red-400">*</span>
+              <span className="text-zinc-600 ml-1">(who gets the source-file email)</span>
+            </label>
+            <div className="flex gap-2">
+              {NOTIFY_POSITION_OPTIONS.map((opt) => {
+                const selected = (newOrder.notifyPositions || []).includes(opt.value)
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      const current: string[] = newOrder.notifyPositions || []
+                      const nextPositions = selected
+                        ? current.filter((p) => p !== opt.value)
+                        : [...current, opt.value]
+                      setNewOrder({ ...newOrder, notifyPositions: nextPositions })
+                      clearError("notifyPositions")
+                    }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
+                      selected
+                        ? "bg-[#D6B36A] border-[#D6B36A] text-black"
+                        : "bg-white/5 border-white/20 text-zinc-300 hover:border-[#D6B36A]/50 hover:text-white"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+            {errors.notifyPositions && <p className="text-red-400 text-xs mt-1.5">{errors.notifyPositions}</p>}
+          </div>
+        )}
       </div>
 
       {/* SRT AVAILABLE LINK */}

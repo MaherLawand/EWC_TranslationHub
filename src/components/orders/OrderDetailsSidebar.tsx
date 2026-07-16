@@ -895,6 +895,7 @@ export default function OrderDetailsSidebar({
                     orderDetail.type === "MARKETING"
                       ? orderDetail.marketing?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, deliveryLink: d.deliveryLink || "" })) || []
                       : orderDetail.broadcast?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, deliveryLink: d.deliveryLink || "" })) || [],
+                  notifyPositions: orderDetail.notifyPositions || [],
                   // Optimistic concurrency token — server checks this against DB before writing
                   // so a second concurrent editor gets a 409 instead of silently overwriting.
                   clientLastEditedAt: orderDetail.lastEditedAt ?? null,
