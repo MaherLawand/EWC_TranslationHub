@@ -194,6 +194,9 @@ export default function OrderDetailsSidebar({
       type,
       notes: orderDetail?.notes || "",
       priority: orderDetail?.priority ?? selectedOrder?.priority ?? "MEDIUM",
+      // Inherit the parent's notify audience — the sub-order copies the parent's
+      // source file, and this panel has no pills to choose with.
+      notifyPositions: orderDetail?.notifyPositions ?? [],
     }
     if (type === "BROADCAST" && broadcast) {
       base.game = broadcast.gameId || broadcast.game?.id || ""
