@@ -1,4 +1,5 @@
 import React from "react"
+import { POSITION_LABELS } from "../../constants/positions"
 import Select from "react-select"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
@@ -155,6 +156,12 @@ export default function OrderDetailsSidebar({
   const [newSubDeadlineTime, setNewSubDeadlineTime] = React.useState("")
 
   const isAdmin = currentUser?.role === "ADMIN"
+  // Who the source-file email went to (= who the order is assigned to). Only
+  // admins and the managing positions need to see this.
+  const canSeeSentTo =
+    isAdmin ||
+    currentUser?.position === "PRODUCER" ||
+    currentUser?.position === "POST_PRODUCTION_MANAGER"
 
   const isBroadcastReadOnly =
     activePage === "Broadcast" && currentUser?.department === "MARKETING"
@@ -364,6 +371,22 @@ export default function OrderDetailsSidebar({
                     </Row>
                   ) : null}
                 </>
+              )}
+
+              {/* SENT TO — the roles the source-file email went to (assignment).
+                  Managers/admins only. */}
+              {canSeeSentTo && (
+                <Row label="Sent To">
+                  {orderDetail?.notifyPositions?.length ? (
+                    <span>
+                      {orderDetail.notifyPositions
+                        .map((p: string) => POSITION_LABELS[p] || p)
+                        .join(", ")}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-600">—</span>
+                  )}
+                </Row>
               )}
 
               {isAdmin && (
