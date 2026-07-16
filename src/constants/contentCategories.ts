@@ -9,9 +9,9 @@ export type ContentCategory =
   | "EXPLAINER"
 
 // `hours` is the display label; `hoursNum` is the number of hours used to
-// auto-calculate a deadline time from when the source file is added (RAW = ASAP = 0).
+// auto-calculate a deadline time from when the source file is added.
 export const CONTENT_CATEGORIES: { value: ContentCategory; label: string; hours: string; hoursNum: number }[] = [
-  { value: "RAW", label: "Raw", hours: "ASAP", hoursNum: 0.5 }, // ASAP = 30-min window
+  { value: "RAW", label: "Raw", hours: "ASAP", hoursNum: 2 }, // ASAP = a 2h turnaround window
 
   { value: "OPENER", label: "Opener", hours: "2h", hoursNum: 2 },
   { value: "HYPE_PROMO", label: "Hype Promo", hours: "4h", hoursNum: 4 },
@@ -42,7 +42,7 @@ export function autoDeadlineFromNow(value?: string | null): { date: string; time
   const hours = contentCategoryHoursNum(value)
   if (hours === null) return null
   const d = new Date()
-  d.setMinutes(d.getMinutes() + Math.round(hours * 60)) // add the window (handles ASAP = 30 min)
+  d.setMinutes(d.getMinutes() + Math.round(hours * 60)) // add the category's window
   d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0) // nearest 5 min (60 rolls over cleanly)
   const p = (n: number) => String(n).padStart(2, "0")
   return {
