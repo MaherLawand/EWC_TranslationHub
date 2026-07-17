@@ -1,4 +1,5 @@
 import { weeksForEvent } from "../../constants/weeklyGames"
+import { useState } from "react";
 
 type Game = { id: string; name: string; logo?: string | null }
 
@@ -20,6 +21,35 @@ export default function WeeklyGameFilters({
   setSelectedGameFilter,
 }: Props) {
   const weeks = weeksForEvent(event)
+const [showLanguages, setShowLanguages] = useState<Record<string, boolean>>({});
+const gameLanguages: Record<string, string[]> = {
+  "League of Legends": ["AR", "CN", "FR"],
+  "Free Fire": ["EN"],
+  "Dota 2": ["EN", "AR", "CN"],
+  "Mobile Legends: MWI": ["EN", "AR"],
+  "EA Sports FC 26": ["EN", "AR"],
+  "Pubg Battlegrounds": ["EN", "AR", "CN"],
+  "Mobile Legends: MSC": ["EN", "AR"],
+  "Teamfight Tactics": ["EN", "CN"],
+  "Overwatch 2": ["EN", "AR", "CN", "FR"],
+  "Call of Duty: Warzone": ["EN", "AR", "FR"],
+  "Street Fighter 6": ["EN", "CN", "FR"],
+  "Honor of Kings": ["EN", "AR", "CN"],
+  "Call of Duty: Black Ops 7": ["EN", "AR", "FR"],
+  "Pubg Mobile": ["EN", "AR", "CN"],
+  "Tekken 8": ["EN", "FR"],
+  "Rainbow Six Siege": ["EN", "CN", "FR"],
+  "Rocket League": ["EN", "AR", "FR"],
+  "Chess": ["EN"],
+  "Counter-Strike 2": ["EN", "AR", "CN", "FR"],
+  "Fortnite": ["EN", "AR"],
+  "Trackmania": ["EN", "AR"],
+  "Crossfire": ["EN", "CN"],
+  "Mobile Legends: Wildcard": ["EN"],
+  "Valorant": ["EN", "AR", "CN", "FR"],
+  "Apex Legends": ["EN", "AR", "CN", "FR"],
+  "Fatal Fury": ["EN", "CN"],
+}
 
   // Quick lookup of DB games by normalized name; resolve an entry by trying its
   // primary name then any aliases.
@@ -87,24 +117,88 @@ export default function WeeklyGameFilters({
             <span className="text-[11px] font-bold tracking-[0.18em] text-gear-gradient">
               WEEK {wk.week}
             </span>
-            {wkIds.length > 0 && (
-              <span
-                className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-md border transition-colors ${
-                  weekActive
-                    ? "gear-fill border-transparent"
-                    : "border-[#E89B3A]/40 group-hover/wk:border-[#E89B3A]"
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={weekActive ? "" : "text-[#E89B3A]"}>
-                  {weekActive ? (
-                    <polyline points="20 6 9 17 4 12" />
-                  ) : (
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                  )}
-                </svg>
-                <span className={`text-[12px] ${weekActive ? "" : "text-gear-gradient"}`}>Orders</span>
-              </span>
-            )}
+           {wkIds.length > 0 && (
+  <div className="flex items-center gap-1">
+
+    {/* Languages toggle */}
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        setShowLanguages((prev) => ({
+          ...prev,
+          [wk.week]: !prev[wk.week],
+        }))
+      }}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-colors ${
+        showLanguages[wk.week]
+          ? "gear-fill border-transparent"
+          : "border-[#E89B3A]/40 bg-white/[0.04] hover:border-[#E89B3A]"
+      }`}
+      title={showLanguages[wk.week] ? "Hide languages" : "Show languages"}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="9"
+        height="9"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={showLanguages[wk.week] ? "" : "text-[#E89B3A]"}
+      >
+        <path d="M5 8h14" />
+        <path d="M8 5l-3 3 3 3" />
+        <path d="M16 19l3-3-3-3" />
+        <path d="M5 16h14" />
+      </svg>
+
+      <span
+        className={`text-[12px] ${
+          showLanguages[wk.week] ? "" : "text-gear-gradient"
+        }`}
+      >
+        Lang
+      </span>
+    </button>
+
+
+    {/* Orders */}
+    <span
+      className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-md border transition-colors ${
+        weekActive
+          ? "gear-fill border-transparent"
+          : "border-[#E89B3A]/40 group-hover/wk:border-[#E89B3A]"
+      }`}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="9"
+        height="9"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={weekActive ? "" : "text-[#E89B3A]"}
+      >
+        {weekActive ? (
+          <polyline points="20 6 9 17 4 12" />
+        ) : (
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+        )}
+      </svg>
+
+      <span className={`text-[12px] ${weekActive ? "" : "text-gear-gradient"}`}>
+        Orders
+      </span>
+    </span>
+
+  </div>
+)}
           </button>
 
           <div className="space-y-0.5">
@@ -153,13 +247,28 @@ export default function WeeklyGameFilters({
                     </span>
                   )}
 
-                  <span
-                    className={`flex-1 min-w-0 text-[12px] leading-snug break-words whitespace-normal ${
-                      gameActive ? "text-[#1a0f06] font-semibold" : "text-zinc-200"
-                    }`}
-                  >
-                    {label}
-                  </span>
+                <div className="flex-1 min-w-0">
+  <div
+    className={`text-[12px] leading-snug break-words whitespace-normal ${
+      gameActive ? "text-[#1a0f06] font-semibold" : "text-zinc-200"
+    }`}
+  >
+    {label}
+  </div>
+
+{showLanguages[wk.week] && gameLanguages[label] && (
+  <div className="mt-1 flex flex-wrap gap-1">
+    {gameLanguages[label].map((lang) => (
+      <span
+        key={lang}
+        className="rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none border border-[#E89B3A]/40 bg-white/[0.04] text-gear-gradient"
+      >
+        {lang}
+      </span>
+    ))}
+  </div>
+)}
+</div>
                 </button>
               )
             })}
