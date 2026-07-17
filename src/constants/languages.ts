@@ -26,6 +26,9 @@ const languageCodes = [
   // Portuguese is offered only as locale-differentiated Brazil & Portugal variants
   // (no generic "pt") so the locale is always explicit.
   "pa", "pi", "pl", "ps", "pt-BR", "pt-PT",
+  // "pe" is NOT ISO 639-1 (Peru is a country, not a language). Added as an
+  // explicit label at the team's request — see NAME_OVERRIDES below.
+  "pe",
   "qu",
   "rm", "rn", "ro", "ru", "rw",
   "sa", "sc", "sd", "se", "sg", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "ss", "st", "su", "sv", "sw",
@@ -45,6 +48,8 @@ const displayNames = new Intl.DisplayNames(["en"], { type: "language" })
 const NAME_OVERRIDES: Record<string, string> = {
   "pt-BR": "Portuguese (Brazil)",
   "pt-PT": "Portuguese (Portugal)",
+  // Custom non-ISO label (Intl can't resolve "pe" to a language name).
+  "pe": "Peru",
 }
 
 // Override the displayed abbreviation (pill code) for specific languages. The
