@@ -75,17 +75,19 @@ const gameLanguages: Record<string, string[]> = {
   const isWeekActive = (ids: string[]) =>
     ids.length > 0 && ids.length === selectedIds.length && ids.every((id) => selectedSet.has(id))
 
-  // Fixed-column grid keeps rows balanced while cards fill their cells (no big
-  // gaps): 1 col on phone, 2 on small, 4 on desktop. EWC (8 weeks) also goes to
-  // 8 columns on very wide screens so it's one clean row instead of 4 wide cards;
-  // ENC (4 weeks) caps at 4 columns to avoid empty trailing space.
-  const gridCols =
-    weeks.length > 4
-      ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-4 2xl:grid-cols-8"
-      : "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
+  // Column count follows the CONTAINER's width, not the viewport's — so when the
+  // detail sidebar opens (an overlay that shrinks this area without changing the
+  // viewport), the week cards reflow to fewer columns and wrap, exactly the way
+  // they do on a narrow screen. Fixed viewport breakpoints (md:grid-cols-8 etc.)
+  // couldn't do this: they'd still render 8 columns into the shrunken space and
+  // squeeze each game name into a one-letter-per-line stack.
+  //
+  // auto-fit: as many ~175px+ columns as fit, wrapping to new rows below that;
+  // it collapses empty tracks so ENC (4 weeks) fills the row instead of leaving
+  // trailing gaps, while EWC (8 weeks) still lands one clean row when wide.
 
   return (
-    <div className={`grid ${gridCols} gap-3 pb-2 pt-1`}>
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(175px,1fr))] gap-3 pb-2 pt-1">
       {weeks.map((wk) => {
         const wkIds = weekGameIds(wk)
         const weekActive = isWeekActive(wkIds)
