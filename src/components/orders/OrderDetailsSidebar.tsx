@@ -333,8 +333,11 @@ export default function OrderDetailsSidebar({
                       </span> */}
                     </Row>
                   )}
+                  {/* The hand-typed shoot date from the modal — named to match it.
+                      When the source actually landed is the Status Timeline's
+                      "Ready for Translation" row (readyAt), not this. */}
                   {broadcast.deliveryDate && (
-                    <Row label="Source Added On">
+                    <Row label="Delivery Date (Shoot Date)">
                       {formatDateOnly(broadcast.deliveryDate)}
                     </Row>
                   )}
