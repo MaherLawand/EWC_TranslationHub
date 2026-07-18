@@ -13,6 +13,7 @@ import AssignGamesModal from "../components/users/AssignGamesModal"
 import GamesPage from "../components/pages/GamesPage"
 import WeeklyGameFilters from "../components/orders/WeeklyGameFilters"
 import NotificationsPage from "../components/pages/NotificationsPage"
+import SrtCheckerPage from "../components/pages/SrtCheckerPage"
 import { api } from "../lib/api"
 import { CONTENT_TITLES } from "../constants/contentTitles"
 import { deadlineToFormParts } from "../lib/deadline"
@@ -1584,6 +1585,8 @@ React.useEffect(() => {
                   onFeedbackRead={refreshUnreadCounts}
                 />
               )}
+
+              {activePage === "srt-checker" && <SrtCheckerPage />}
 
               {activePage === "notifications" && (
                 <NotificationsPage

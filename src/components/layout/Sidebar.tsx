@@ -256,6 +256,17 @@ export default function Sidebar({
             </div>
           )}
 
+          {/* ── SRT CHECKER ── */}
+          {/* In-house translators only. Deliberately NOT isTranslatorPosition(),
+              which also matches the TransPerfect and Tarjama vendor roles. */}
+          {currentUser?.position === "TRANSLATOR" && (
+            <SidebarItem
+              active={activePage === "srt-checker"}
+              label="SRT Checker"
+              onClick={() => setActivePage("srt-checker")}
+            />
+          )}
+
           {/* ── NOTIFICATIONS ── */}
           {!isViewer && (currentUser?.role === "ADMIN" ||
             currentUser?.position === "PRODUCER" ||
