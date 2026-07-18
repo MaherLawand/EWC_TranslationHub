@@ -1,10 +1,17 @@
 export default function SidebarItem({
   label,
   active = false,
+  highlight = false,
   onClick,
 }: {
   label: string
   active?: boolean
+  /**
+   * Draws the label in a continuously sweeping gradient to call out a new
+   * feature. Ignored while the item is active, where the whole pill is already
+   * the gradient and gradient text would be unreadable on it.
+   */
+  highlight?: boolean
   onClick?: () => void
 }) {
   return (
@@ -68,17 +75,20 @@ export default function SidebarItem({
             ${
               active
                 ? "bg-black"
+                : highlight
+                ? "gear-fill"
                 : "bg-zinc-600 group-hover:bg-[#D6B36A]"
             }
           `}
         />
 
         <span
-          className="
-             text-[15px]
-    tracking-[0.01em]
-    leading-none
-          "
+          className={`
+            text-[15px]
+            tracking-[0.01em]
+            leading-none
+            ${!active && highlight ? "text-gear-gradient-animated font-semibold" : ""}
+          `}
         >
           {label}
         </span>

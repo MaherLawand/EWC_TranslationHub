@@ -263,6 +263,9 @@ export default function Sidebar({
           {(currentUser?.position === "TRANSLATOR" || currentUser?.role === "ADMIN") && (
             <SidebarItem
               active={activePage === "srt-checker"}
+              // New feature — the sweeping gradient marks it as such. Drop this
+              // prop once it stops being new.
+              highlight
               label="SRT Checker"
               onClick={() => setActivePage("srt-checker")}
             />

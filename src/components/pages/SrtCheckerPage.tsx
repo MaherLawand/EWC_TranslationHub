@@ -153,14 +153,30 @@ export default function SrtCheckerPage() {
     setDecisions({})
   }
 
+  /**
+   * Drop the loaded file and everything derived from it.
+   *
+   * Also clears the input's own value: without that, re-picking the SAME file
+   * after removing it fires no change event and the page looks stuck.
+   */
+  function clearFile() {
+    setFileName("")
+    setSrtText("")
+    if (fileInputRef.current) fileInputRef.current.value = ""
+    resetResults()
+  }
+
   async function onPickFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     // Reset so picking the same file twice still fires onChange.
     event.target.value = ""
     if (!file) return
 
-    if (!file.name.toLowerCase().endsWith(".srt")) {
-      toast.error("Please choose a .srt subtitle file")
+    // .txt is accepted because subtitle files are often handed over with the
+    // extension changed; the CONTENT still has to parse as SRT, which the server
+    // enforces and reports with a line number if it doesn't.
+    if (!/\.(srt|txt)$/i.test(file.name)) {
+      toast.error("Please choose a .srt or .txt subtitle file")
       return
     }
 
@@ -273,13 +289,16 @@ export default function SrtCheckerPage() {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.message || "The corrected file could not be produced")
 
-      // Same name as the original with _v2 before the extension.
-      const base = fileName.replace(/\.srt$/i, "")
+      // Same name as the original with _v2 before the extension, keeping whichever
+      // extension was uploaded so a .txt round-trips as a .txt.
+      const match = fileName.match(/^(.*?)(\.(?:srt|txt))?$/i)
+      const base = match?.[1] || fileName
+      const extension = (match?.[2] || ".srt").toLowerCase()
       const blob = new Blob([data.srtText], { type: "text/plain;charset=utf-8" })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = `${base}_v2.srt`
+      anchor.download = `${base}_v2${extension}`
       document.body.appendChild(anchor)
       anchor.click()
       document.body.removeChild(anchor)
@@ -320,22 +339,43 @@ export default function SrtCheckerPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".srt,text/plain"
+              accept=".srt,.txt,text/plain"
               onChange={onPickFile}
               className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/20 bg-white/10 text-left hover:border-[#D6B36A] transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#D6B36A] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6H16a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className={fileName ? "text-white truncate" : "text-white/50"}>
-                {fileName || "Choose a .srt file"}
-              </span>
-            </button>
+            {/* The picker and the clear control are siblings, not nested — a
+                button inside a button is invalid and swallows the inner click. */}
+            <div className="flex items-stretch gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isChecking}
+                className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/20 bg-white/10 text-left hover:border-[#D6B36A] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title={fileName ? "Choose a different file" : "Choose a file"}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#D6B36A] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6H16a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span className={fileName ? "text-white truncate" : "text-white/50"}>
+                  {fileName || "Choose a .srt or .txt file"}
+                </span>
+              </button>
+
+              {fileName && (
+                <button
+                  type="button"
+                  onClick={clearFile}
+                  disabled={isChecking}
+                  aria-label="Remove file"
+                  title="Remove file"
+                  className="px-3 rounded-2xl border border-white/20 bg-white/5 text-zinc-400 hover:text-white hover:border-red-400/60 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Language */}
