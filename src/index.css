@@ -364,6 +364,19 @@
   color: transparent;
 }
 
+/* ── Native select options ───────────────────────────────────────────────
+   The options popup is drawn by the OS, not the page, so it does not inherit
+   the app's dark theme. On Windows it defaults to a white list — and with a
+   light text colour that means white on white, which is unreadable. Chrome and
+   Edge use the select's own background when it is a SOLID colour (a translucent
+   one composites against white), but Firefox needs the option styled directly.
+   These two rules cover every native select in the app. */
+select option,
+select optgroup {
+  background-color: #0E0E0E;
+  color: #F5F1E8;
+}
+
 /* ── Animated gradient text — marks a genuinely new feature ──────────────
    The gradient is a palindrome (starts and ends on #F0C75E) at 200% width, so
    sweeping the background position by exactly one full tile loops seamlessly

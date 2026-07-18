@@ -388,21 +388,29 @@ export default function SrtCheckerPage() {
             <label className="text-xs font-medium text-zinc-400 mb-2 block tracking-wide">
               Subtitle language <span className="text-red-400">*</span>
             </label>
-            <select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value)
-                resetResults()
-              }}
-              className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] transition h-[50px]"
-            >
-              <option value="">Select the language of this file</option>
-              {languages.map((l) => (
-                <option key={l.column} value={l.label}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
+            {/* Solid background + appearance-none, matching the order tables.
+                A translucent bg leaks into the native options popup on Windows,
+                where it renders as white-on-white. */}
+            <div className="relative">
+              <select
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value)
+                  resetResults()
+                }}
+                className="w-full h-[50px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 pr-9 text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+              >
+                <option value="">Select the language of this file</option>
+                {languages.map((l) => (
+                  <option key={l.column} value={l.label}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">
+                ▼
+              </div>
+            </div>
             <p className="text-[11px] text-zinc-600 mt-1.5">
               Only languages covered by the glossary are listed.
             </p>
@@ -414,21 +422,26 @@ export default function SrtCheckerPage() {
           <label className="text-xs font-medium text-zinc-400 mb-2 block tracking-wide">
             Game <span className="text-zinc-600 font-normal">(optional)</span>
           </label>
-          <select
-            value={game}
-            onChange={(e) => {
-              setGame(e.target.value)
-              resetResults()
-            }}
-            className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-[#D6B36A] transition h-[50px]"
-          >
-            <option value="">No game — skip name checking</option>
-            {GAME_OPTIONS.map((g) => (
-              <option key={g.label} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={game}
+              onChange={(e) => {
+                setGame(e.target.value)
+                resetResults()
+              }}
+              className="w-full h-[50px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 pr-9 text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
+            >
+              <option value="">No game — skip name checking</option>
+              {GAME_OPTIONS.map((g) => (
+                <option key={g.label} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">
+              ▼
+            </div>
+          </div>
           <p className="text-[11px] text-zinc-600 mt-1.5">
             Checks player and team spellings against{" "}
             <a
@@ -569,11 +582,26 @@ export default function SrtCheckerPage() {
                     </span>
                   </div>
 
-                  {/* The change */}
-                  <div className="text-sm leading-relaxed mb-2">
-                    <span className="line-through text-red-400/90">{s.find}</span>
-                    <span className="text-zinc-600 mx-2">&rarr;</span>
-                    <span className="text-green-400 font-semibold">{s.replace}</span>
+                  {/* The change.
+                      dir="ltr" on the row keeps "old → new" in that visual order,
+                      and isolate stops each Arabic run from reordering around the
+                      arrow — without it, an Arabic-to-Arabic fix reads backwards. */}
+                  <div dir="ltr" className="text-sm leading-relaxed mb-2 flex items-center flex-wrap gap-x-2">
+                    <span
+                      dir="auto"
+                      style={{ unicodeBidi: "isolate" }}
+                      className="line-through text-red-400/90"
+                    >
+                      {s.find}
+                    </span>
+                    <span className="text-zinc-600">&rarr;</span>
+                    <span
+                      dir="auto"
+                      style={{ unicodeBidi: "isolate" }}
+                      className="text-green-400 font-semibold"
+                    >
+                      {s.replace}
+                    </span>
                   </div>
 
                   {/* The line it appears in, so the term can be judged in context.
