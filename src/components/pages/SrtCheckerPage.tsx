@@ -257,7 +257,10 @@ export default function SrtCheckerPage() {
       // click. Both remain individually changeable.
       const initial: Record<string, Decision> = {}
       for (const s of (data.suggestions || []) as Suggestion[]) {
-        initial[s.id] = s.kind === "glossary" ? "accepted" : undefined
+        // Only unambiguous glossary fixes are pre-accepted. A medium-confidence
+        // one needs a human: in a Latin-script language the matched English term
+        // may just be a word of that language ("Place au verdict" is French).
+        initial[s.id] = s.kind === "glossary" && s.confidence === "high" ? "accepted" : undefined
       }
       setDecisions(initial)
       setHasChecked(true)
