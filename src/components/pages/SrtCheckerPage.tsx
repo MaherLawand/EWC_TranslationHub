@@ -118,7 +118,12 @@ export default function SrtCheckerPage() {
     let cancelled = false
     fetch(`${API}/srt/languages`, { credentials: "include" })
       .then(async (r) => {
-        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || "Failed to load languages")
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}))
+          // `detail` names the actual misconfiguration. Without it the toast just
+          // says "temporarily unavailable", which is true of four different bugs.
+          throw new Error(body.detail || body.message || "Failed to load languages")
+        }
         return r.json()
       })
       .then((data) => {
