@@ -111,6 +111,16 @@ export default function SrtCheckerPage() {
   const [cues, setCues] = React.useState<Cue[]>([])
   const [suggestions, setSuggestions] = React.useState<Suggestion[]>([])
   const [decisions, setDecisions] = React.useState<Record<string, Decision>>({})
+  /**
+   * Replacements the translator has rewritten, keyed by suggestion id.
+   *
+   * The checker proposes; the translator decides the wording. An edited value is
+   * what gets applied on export, so a suggestion that is nearly right no longer
+   * has to be rejected and fixed by hand afterwards.
+   */
+  const [customReplacements, setCustomReplacements] = React.useState<Record<string, string>>({})
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [draft, setDraft] = React.useState("")
 
   // Which target languages the glossary actually covers. Anything not listed
   // here has no approved terminology, so checking it would be meaningless.
@@ -149,10 +159,38 @@ export default function SrtCheckerPage() {
     [decisions]
   )
 
+  /** The text that will actually be written: the translator's edit if there is one. */
+  function replacementFor(s: Suggestion): string {
+    return customReplacements[s.id] ?? s.replace
+  }
+
+  function startEditing(s: Suggestion) {
+    setEditingId(s.id)
+    setDraft(replacementFor(s))
+  }
+
+  function commitEdit(s: Suggestion) {
+    const value = draft.trim()
+    setCustomReplacements((current) => {
+      const next = { ...current }
+      // Back to the original wording — stop tracking it as an edit.
+      if (!value || value === s.replace) delete next[s.id]
+      else next[s.id] = value
+      return next
+    })
+    // Editing something is an implicit decision to use it.
+    if (value) setDecisions((d) => ({ ...d, [s.id]: "accepted" }))
+    setEditingId(null)
+    setDraft("")
+  }
+
   function resetResults() {
     setHasChecked(false)
     setRosterNote(null)
     setWiki("")
+    setCustomReplacements({})
+    setEditingId(null)
+    setDraft("")
     setCues([])
     setSuggestions([])
     setDecisions({})
@@ -291,7 +329,12 @@ export default function SrtCheckerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           srtText,
-          edits: accepted.map((s) => ({ cueIndex: s.cueIndex, find: s.find, replace: s.replace })),
+          // Send the translator's wording where they changed it.
+          edits: accepted.map((s) => ({
+            cueIndex: s.cueIndex,
+            find: s.find,
+            replace: replacementFor(s),
+          })),
         }),
       })
       const data = await response.json().catch(() => ({}))
@@ -598,13 +641,66 @@ export default function SrtCheckerPage() {
                       {s.find}
                     </span>
                     <span className="text-zinc-600">&rarr;</span>
-                    <span
-                      dir="auto"
-                      style={{ unicodeBidi: "isolate" }}
-                      className="text-green-400 font-semibold"
-                    >
-                      {s.replace}
-                    </span>
+
+                    {editingId === s.id ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <input
+                          autoFocus
+                          dir="auto"
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitEdit(s)
+                            if (e.key === "Escape") {
+                              setEditingId(null)
+                              setDraft("")
+                            }
+                          }}
+                          className="bg-black/50 border border-[#D6B36A]/60 rounded-lg px-2 py-1 text-sm text-green-300 outline-none min-w-[180px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => commitEdit(s)}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium gear-fill"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(null)
+                            setDraft("")
+                          }}
+                          className="px-2 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-400 hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEditing(s)}
+                        title="Click to edit the replacement"
+                        className="group/edit inline-flex items-center gap-1.5 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/5 transition"
+                      >
+                        <span
+                          dir="auto"
+                          style={{ unicodeBidi: "isolate" }}
+                          className="text-green-400 font-semibold"
+                        >
+                          {replacementFor(s)}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-zinc-600 group-hover/edit:text-[#D6B36A] transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {customReplacements[s.id] && editingId !== s.id && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-green-500/40 text-green-400">
+                        edited
+                      </span>
+                    )}
                   </div>
 
                   {/* The line it appears in, so the term can be judged in context.
