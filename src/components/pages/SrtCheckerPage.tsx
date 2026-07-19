@@ -59,6 +59,8 @@ type Suggestion = {
   approvedTerm: string
   context: string
   confidence: "high" | "medium"
+  /** True when this wording came from the team's own past correction. */
+  learned?: boolean
   /** Glossary rows containing this term inside a longer phrase. */
   relatedRows?: { source: string; target: string }[]
 }
@@ -78,6 +80,33 @@ const spinner = (
  * Plain string search on the exact text the server matched — no regex, so a term
  * containing regex metacharacters can't break the display.
  */
+/**
+ * Languages written right-to-left.
+ *
+ * The subtitle language decides the direction of the whole line, not the first
+ * character in it. `dir="auto"` picks direction from the first strong character,
+ * so an Arabic line opening with an English term ("Rampage حقق") renders
+ * left-to-right and reads wrongly. Setting the direction explicitly is the same
+ * thing as pressing Ctrl+Right-Shift in a text editor.
+ */
+const RTL_LANGUAGES = new Set(["arabic", "hebrew", "persian", "farsi", "urdu"])
+
+function isRtlLanguage(language: string): boolean {
+  return RTL_LANGUAGES.has(language.trim().toLowerCase())
+}
+
+/**
+ * The line as it will read once this change is applied.
+ *
+ * Mirrors the server's applyEdits(): plain first-occurrence replacement, so what
+ * is previewed is what gets written.
+ */
+function applyToLine(line: string, find: string, replace: string): string {
+  const at = line.indexOf(find)
+  if (at === -1) return line
+  return line.slice(0, at) + replace + line.slice(at + find.length)
+}
+
 function highlight(line: string, term: string): React.ReactNode {
   const at = line.indexOf(term)
   if (at === -1 || !term) return line
@@ -90,27 +119,54 @@ function highlight(line: string, term: string): React.ReactNode {
   )
 }
 
+/**
+ * The last check, kept alive while the tab is open.
+ *
+ * The dashboard swaps pages by unmounting, so navigating to Orders and back would
+ * otherwise throw away a review in progress — including any edits already made.
+ *
+ * Deliberately module scope rather than sessionStorage: it survives navigation but
+ * NOT a refresh, which is the behaviour asked for. It also keeps a 400k-character
+ * subtitle file out of browser storage, and avoids restoring a stale review from
+ * some earlier session.
+ */
+type CheckerSession = {
+  fileName: string
+  srtText: string
+  language: string
+  game: string
+  wiki: string
+  rosterNote: string | null
+  hasChecked: boolean
+  cues: Cue[]
+  suggestions: Suggestion[]
+  decisions: Record<string, Decision>
+  customReplacements: Record<string, string>
+}
+
+let savedSession: CheckerSession | null = null
+
 export default function SrtCheckerPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const [languages, setLanguages] = React.useState<Language[]>([])
-  const [language, setLanguage] = React.useState("")
-  const [game, setGame] = React.useState("")
-  const [rosterNote, setRosterNote] = React.useState<string | null>(null)
+  const [language, setLanguage] = React.useState(savedSession?.language ?? "")
+  const [game, setGame] = React.useState(savedSession?.game ?? "")
+  const [rosterNote, setRosterNote] = React.useState<string | null>(savedSession?.rosterNote ?? null)
   /** Liquipedia wiki path resolved by the server, used to link to source pages. */
-  const [wiki, setWiki] = React.useState("")
-  const [fileName, setFileName] = React.useState("")
-  const [srtText, setSrtText] = React.useState("")
+  const [wiki, setWiki] = React.useState(savedSession?.wiki ?? "")
+  const [fileName, setFileName] = React.useState(savedSession?.fileName ?? "")
+  const [srtText, setSrtText] = React.useState(savedSession?.srtText ?? "")
 
   const [isChecking, setIsChecking] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
   const [progressLabel, setProgressLabel] = React.useState("")
   const [isExporting, setIsExporting] = React.useState(false)
-  const [hasChecked, setHasChecked] = React.useState(false)
+  const [hasChecked, setHasChecked] = React.useState(savedSession?.hasChecked ?? false)
 
-  const [cues, setCues] = React.useState<Cue[]>([])
-  const [suggestions, setSuggestions] = React.useState<Suggestion[]>([])
-  const [decisions, setDecisions] = React.useState<Record<string, Decision>>({})
+  const [cues, setCues] = React.useState<Cue[]>(savedSession?.cues ?? [])
+  const [suggestions, setSuggestions] = React.useState<Suggestion[]>(savedSession?.suggestions ?? [])
+  const [decisions, setDecisions] = React.useState<Record<string, Decision>>(savedSession?.decisions ?? {})
   /**
    * Replacements the translator has rewritten, keyed by suggestion id.
    *
@@ -118,7 +174,9 @@ export default function SrtCheckerPage() {
    * what gets applied on export, so a suggestion that is nearly right no longer
    * has to be rejected and fixed by hand afterwards.
    */
-  const [customReplacements, setCustomReplacements] = React.useState<Record<string, string>>({})
+  const [customReplacements, setCustomReplacements] = React.useState<Record<string, string>>(
+    savedSession?.customReplacements ?? {}
+  )
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [draft, setDraft] = React.useState("")
 
@@ -147,6 +205,14 @@ export default function SrtCheckerPage() {
       cancelled = true
     }
   }, [])
+
+  // Mirror the review into module scope so navigating away and back restores it.
+  React.useEffect(() => {
+    savedSession = {
+      fileName, srtText, language, game, wiki, rosterNote,
+      hasChecked, cues, suggestions, decisions, customReplacements,
+    }
+  }, [fileName, srtText, language, game, wiki, rosterNote, hasChecked, cues, suggestions, decisions, customReplacements])
 
   const cueByIndex = React.useMemo(() => {
     const map = new Map<number, Cue>()
@@ -329,12 +395,28 @@ export default function SrtCheckerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           srtText,
+          language,
           // Send the translator's wording where they changed it.
           edits: accepted.map((s) => ({
             cueIndex: s.cueIndex,
             find: s.find,
             replace: replacementFor(s),
           })),
+          // Every decision, not just the applied ones — a rejection teaches as
+          // much as a correction, and both stop the suggestion recurring.
+          decisions: suggestions
+            .filter((s) => decisions[s.id])
+            .map((s) => {
+              const edited = customReplacements[s.id]
+              const rejected = decisions[s.id] === "rejected"
+              return {
+                findText: s.find,
+                suggestedText: s.replace,
+                finalText: rejected ? null : replacementFor(s),
+                outcome: rejected ? "rejected" : edited ? "edited" : "accepted",
+                kind: s.kind,
+              }
+            }),
         }),
       })
       const data = await response.json().catch(() => ({}))
@@ -356,6 +438,15 @@ export default function SrtCheckerPage() {
       URL.revokeObjectURL(url)
 
       toast.success(`Downloaded with ${data.applied} correction${data.applied === 1 ? "" : "s"}`)
+      // The decisions just sent are what the next check will honour.
+      const taught = suggestions.filter(
+        (s) => customReplacements[s.id] || decisions[s.id] === "rejected"
+      ).length
+      if (taught > 0) {
+        toast.info(
+          `Remembered ${taught} change${taught === 1 ? "" : "s"} — future checks will follow your wording`
+        )
+      }
     } catch (error: any) {
       toast.error(error.message || "The corrected file could not be produced")
     } finally {
@@ -584,6 +675,8 @@ export default function SrtCheckerPage() {
             {suggestions.map((s) => {
               const cue = cueByIndex.get(s.cueIndex)
               const decision = decisions[s.id]
+              // The file's own language decides how its lines read.
+              const lineDir = isRtlLanguage(language) ? "rtl" : "ltr"
               return (
                 <div
                   key={s.id}
@@ -632,7 +725,7 @@ export default function SrtCheckerPage() {
                       dir="ltr" on the row keeps "old → new" in that visual order,
                       and isolate stops each Arabic run from reordering around the
                       arrow — without it, an Arabic-to-Arabic fix reads backwards. */}
-                  <div dir="ltr" className="text-sm leading-relaxed mb-2 flex items-center flex-wrap gap-x-2">
+                  <div dir="ltr" className="text-[15px] leading-relaxed mb-2 flex items-center flex-wrap gap-x-2">
                     <span
                       dir="auto"
                       style={{ unicodeBidi: "isolate" }}
@@ -701,17 +794,47 @@ export default function SrtCheckerPage() {
                         edited
                       </span>
                     )}
+
+                    {s.learned && !customReplacements[s.id] && editingId !== s.id && (
+                      <span
+                        title="This wording comes from a correction your team made previously"
+                        className="text-[10px] px-1.5 py-0.5 rounded border border-[#D6B36A]/40 text-[#D6B36A]"
+                      >
+                        your wording
+                      </span>
+                    )}
                   </div>
 
-                  {/* The line it appears in, so the term can be judged in context.
-                      dir="auto" lets the browser pick RTL for Arabic lines. */}
+                  {/* The line before and after the change, so the result can be
+                      read as a sentence rather than inferred from a diff.
+                      Direction comes from the subtitle language, not the first
+                      character — see isRtlLanguage. */}
                   {cue && (
-                    <p
-                      dir="auto"
-                      className="text-[12px] text-zinc-500 bg-black/30 border border-white/5 rounded-lg px-3 py-2 mb-2.5 leading-relaxed whitespace-pre-wrap"
-                    >
-                      {highlight(cue.text, s.find)}
-                    </p>
+                    <div className="mb-2.5 space-y-1.5">
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wide text-zinc-600">Now</span>
+                        <p
+                          dir={lineDir}
+                          className="text-[14px] text-zinc-400 bg-black/30 border border-white/5 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap"
+                        >
+                          {highlight(cue.text, s.find)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wide text-green-600/80">
+                          After this change
+                        </span>
+                        <p
+                          dir={lineDir}
+                          className="text-[14px] text-zinc-300 bg-green-500/[0.06] border border-green-500/20 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap"
+                        >
+                          {highlight(
+                            applyToLine(cue.text, s.find, replacementFor(s)),
+                            replacementFor(s)
+                          )}
+                        </p>
+                      </div>
+                    </div>
                   )}
 
                   {/* Why */}
