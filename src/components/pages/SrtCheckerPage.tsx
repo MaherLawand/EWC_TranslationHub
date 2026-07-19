@@ -142,6 +142,7 @@ type CheckerSession = {
   suggestions: Suggestion[]
   decisions: Record<string, Decision>
   customReplacements: Record<string, string>
+  lineEdits: Record<number, string>
 }
 
 let savedSession: CheckerSession | null = null
@@ -180,6 +181,20 @@ export default function SrtCheckerPage() {
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [draft, setDraft] = React.useState("")
 
+  /**
+   * Whole lines the translator has rewritten, keyed by cue index.
+   *
+   * Editing the replacement term covers most cases, but sometimes the rest of the
+   * sentence needs to move with it — agreement, word order, a stray connector.
+   * A line edit replaces that cue's entire text and takes precedence over any
+   * term-level edits in the same cue, so the two can never fight each other.
+   */
+  const [lineEdits, setLineEdits] = React.useState<Record<number, string>>(
+    savedSession?.lineEdits ?? {}
+  )
+  const [editingLine, setEditingLine] = React.useState<number | null>(null)
+  const [lineDraft, setLineDraft] = React.useState("")
+
   // Which target languages the glossary actually covers. Anything not listed
   // here has no approved terminology, so checking it would be meaningless.
   React.useEffect(() => {
@@ -210,9 +225,9 @@ export default function SrtCheckerPage() {
   React.useEffect(() => {
     savedSession = {
       fileName, srtText, language, game, wiki, rosterNote,
-      hasChecked, cues, suggestions, decisions, customReplacements,
+      hasChecked, cues, suggestions, decisions, customReplacements, lineEdits,
     }
-  }, [fileName, srtText, language, game, wiki, rosterNote, hasChecked, cues, suggestions, decisions, customReplacements])
+  }, [fileName, srtText, language, game, wiki, rosterNote, hasChecked, cues, suggestions, decisions, customReplacements, lineEdits])
 
   const cueByIndex = React.useMemo(() => {
     const map = new Map<number, Cue>()
@@ -225,6 +240,55 @@ export default function SrtCheckerPage() {
     [decisions]
   )
 
+  /**
+   * The whole file as it will be written, cue by cue.
+   *
+   * Only ACCEPTED changes are applied, so the panel always shows the file that
+   * would be downloaded right now — rejecting a suggestion visibly restores its
+   * line. Rewritten lines win over term edits in the same cue, matching what the
+   * export sends.
+   */
+  const previewCues = React.useMemo(() => {
+    const acceptedByCue = new Map<number, Suggestion[]>()
+    for (const s of suggestions) {
+      if (decisions[s.id] !== "accepted") continue
+      const list = acceptedByCue.get(s.cueIndex) ?? []
+      list.push(s)
+      acceptedByCue.set(s.cueIndex, list)
+    }
+
+    return cues.map((cue) => {
+      const rewritten = lineEdits[cue.index]
+      if (rewritten !== undefined) {
+        return { ...cue, resultText: rewritten, changed: rewritten !== cue.text }
+      }
+      let text = cue.text
+      for (const s of acceptedByCue.get(cue.index) ?? []) {
+        text = applyToLine(text, s.find, customReplacements[s.id] ?? s.replace)
+      }
+      return { ...cue, resultText: text, changed: text !== cue.text }
+    })
+  }, [cues, suggestions, decisions, customReplacements, lineEdits])
+
+  const changedCueCount = React.useMemo(
+    () => previewCues.filter((c) => c.changed).length,
+    [previewCues]
+  )
+
+  /**
+   * How many edits the file will actually receive.
+   *
+   * Not the same as the accepted count: several accepted suggestions inside one
+   * rewritten line collapse into a single whole-cue edit.
+   */
+  const changeCount = React.useMemo(() => {
+    const rewritten = new Set(Object.keys(lineEdits).map(Number))
+    const terms = suggestions.filter(
+      (s) => decisions[s.id] === "accepted" && !rewritten.has(s.cueIndex)
+    ).length
+    return terms + rewritten.size
+  }, [suggestions, decisions, lineEdits])
+
   /** The text that will actually be written: the translator's edit if there is one. */
   function replacementFor(s: Suggestion): string {
     return customReplacements[s.id] ?? s.replace
@@ -233,6 +297,39 @@ export default function SrtCheckerPage() {
   function startEditing(s: Suggestion) {
     setEditingId(s.id)
     setDraft(replacementFor(s))
+  }
+
+  /** The cue's text as it will be written: a line edit wins over a term edit. */
+  function afterTextFor(s: Suggestion, cueText: string): string {
+    const edited = lineEdits[s.cueIndex]
+    if (edited !== undefined) return edited
+    return applyToLine(cueText, s.find, replacementFor(s))
+  }
+
+  function startEditingLine(cueIndex: number, text: string) {
+    setEditingLine(cueIndex)
+    setLineDraft(text)
+  }
+
+  function commitLineEdit(cueIndex: number, originalAfter: string) {
+    const value = lineDraft
+    setLineEdits((current) => {
+      const next = { ...current }
+      // Identical to what the suggestion already produces — nothing to override.
+      if (!value.trim() || value === originalAfter) delete next[cueIndex]
+      else next[cueIndex] = value
+      return next
+    })
+    // Rewriting a line is a decision to use it.
+    if (value.trim() && value !== originalAfter) {
+      setDecisions((d) => {
+        const next = { ...d }
+        for (const s of suggestions) if (s.cueIndex === cueIndex) next[s.id] = "accepted"
+        return next
+      })
+    }
+    setEditingLine(null)
+    setLineDraft("")
   }
 
   function commitEdit(s: Suggestion) {
@@ -255,8 +352,11 @@ export default function SrtCheckerPage() {
     setRosterNote(null)
     setWiki("")
     setCustomReplacements({})
+    setLineEdits({})
     setEditingId(null)
     setDraft("")
+    setEditingLine(null)
+    setLineDraft("")
     setCues([])
     setSuggestions([])
     setDecisions({})
@@ -385,10 +485,24 @@ export default function SrtCheckerPage() {
   async function downloadCorrected() {
     if (isExporting) return
     const accepted = suggestions.filter((s) => decisions[s.id] === "accepted")
-    if (accepted.length === 0) return
+    if (accepted.length === 0 && Object.keys(lineEdits).length === 0) return
 
     setIsExporting(true)
     try {
+      // A rewritten line replaces that cue's whole text. Term edits in the same
+      // cue are dropped: applying both would overlap, and the server would reject
+      // the second one anyway.
+      const rewrittenCues = new Set(Object.keys(lineEdits).map(Number))
+      const termEdits = accepted
+        .filter((s) => !rewrittenCues.has(s.cueIndex))
+        .map((s) => ({ cueIndex: s.cueIndex, find: s.find, replace: replacementFor(s) }))
+      const wholeLineEdits = [...rewrittenCues]
+        .map((cueIndex) => {
+          const cue = cueByIndex.get(cueIndex)
+          if (!cue) return null
+          return { cueIndex, find: cue.text, replace: lineEdits[cueIndex] }
+        })
+        .filter((edit): edit is { cueIndex: number; find: string; replace: string } => edit !== null)
       const response = await fetch(`${API}/srt/export`, {
         method: "POST",
         credentials: "include",
@@ -396,16 +510,12 @@ export default function SrtCheckerPage() {
         body: JSON.stringify({
           srtText,
           language,
-          // Send the translator's wording where they changed it.
-          edits: accepted.map((s) => ({
-            cueIndex: s.cueIndex,
-            find: s.find,
-            replace: replacementFor(s),
-          })),
+          // The translator's wording where they changed it.
+          edits: [...termEdits, ...wholeLineEdits],
           // Every decision, not just the applied ones — a rejection teaches as
           // much as a correction, and both stop the suggestion recurring.
           decisions: suggestions
-            .filter((s) => decisions[s.id])
+            .filter((s) => decisions[s.id] && !rewrittenCues.has(s.cueIndex))
             .map((s) => {
               const edited = customReplacements[s.id]
               const rejected = decisions[s.id] === "rejected"
@@ -461,7 +571,7 @@ export default function SrtCheckerPage() {
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-8 max-w-[1700px] mx-auto">
       {/* HEADER */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gear-gradient">SRT Checker</h1>
@@ -469,6 +579,11 @@ export default function SrtCheckerPage() {
           Check a subtitle file against the approved terminology glossary. Timings are never modified.
         </p>
       </div>
+
+      {/* Review on the left, the resulting file on the right. Stacks below lg,
+          where a side-by-side would leave neither column readable. */}
+      <div className="grid gap-6 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
+        <div className="min-w-0">
 
       {/* UPLOAD + LANGUAGE */}
       <div className="bg-white/[0.04] border border-white/10 rounded-[24px] p-6 mb-6">
@@ -824,15 +939,98 @@ export default function SrtCheckerPage() {
                         <span className="text-[10px] uppercase tracking-wide text-green-600/80">
                           After this change
                         </span>
-                        <p
-                          dir={lineDir}
-                          className="text-[14px] text-zinc-300 bg-green-500/[0.06] border border-green-500/20 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap"
-                        >
-                          {highlight(
-                            applyToLine(cue.text, s.find, replacementFor(s)),
-                            replacementFor(s)
-                          )}
-                        </p>
+                        {lineEdits[s.cueIndex] !== undefined && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded border border-green-500/40 text-green-400">
+                            line rewritten
+                          </span>
+                        )}
+
+                        {editingLine === s.cueIndex ? (
+                          <div className="mt-0.5">
+                            <textarea
+                              autoFocus
+                              dir={lineDir}
+                              rows={Math.max(2, lineDraft.split("\n").length)}
+                              value={lineDraft}
+                              onChange={(e) => setLineDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                // Enter saves; Shift+Enter adds a subtitle line break.
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault()
+                                  commitLineEdit(
+                                    s.cueIndex,
+                                    applyToLine(cue.text, s.find, replacementFor(s))
+                                  )
+                                }
+                                if (e.key === "Escape") {
+                                  setEditingLine(null)
+                                  setLineDraft("")
+                                }
+                              }}
+                              className="w-full text-[14px] text-zinc-100 bg-black/50 border border-[#D6B36A]/60 rounded-lg px-3 py-2 leading-relaxed outline-none resize-y"
+                            />
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  commitLineEdit(
+                                    s.cueIndex,
+                                    applyToLine(cue.text, s.find, replacementFor(s))
+                                  )
+                                }
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-medium gear-fill"
+                              >
+                                Save line
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingLine(null)
+                                  setLineDraft("")
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-400 hover:text-white"
+                              >
+                                Cancel
+                              </button>
+                              {lineEdits[s.cueIndex] !== undefined && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setLineEdits((current) => {
+                                      const next = { ...current }
+                                      delete next[s.cueIndex]
+                                      return next
+                                    })
+                                    setEditingLine(null)
+                                    setLineDraft("")
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-500 hover:text-white ml-auto"
+                                >
+                                  Reset to suggestion
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-zinc-600 mt-1">
+                              Enter saves &middot; Shift+Enter adds a line break &middot; Esc cancels
+                            </p>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEditingLine(s.cueIndex, afterTextFor(s, cue.text))}
+                            title="Click to rewrite the whole line"
+                            className="group/line w-full text-left"
+                          >
+                            <p
+                              dir={lineDir}
+                              className="text-[14px] text-zinc-300 bg-green-500/[0.06] border border-green-500/20 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap group-hover/line:border-[#D6B36A]/50 transition"
+                            >
+                              {lineEdits[s.cueIndex] !== undefined
+                                ? lineEdits[s.cueIndex]
+                                : highlight(afterTextFor(s, cue.text), replacementFor(s))}
+                            </p>
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -918,10 +1116,10 @@ export default function SrtCheckerPage() {
           {/* Export */}
           <button
             type="button"
-            disabled={acceptedCount === 0 || isExporting}
+            disabled={changeCount === 0 || isExporting}
             onClick={downloadCorrected}
             className={`mt-5 w-full py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-3 ${
-              acceptedCount === 0 || isExporting
+              changeCount === 0 || isExporting
                 ? "bg-white/10 text-zinc-500 cursor-not-allowed"
                 : "gear-fill"
             }`}
@@ -929,7 +1127,7 @@ export default function SrtCheckerPage() {
             {isExporting && spinner}
             {isExporting
               ? "Preparing file..."
-              : `Download corrected .srt (${acceptedCount} change${acceptedCount === 1 ? "" : "s"})`}
+              : `Download corrected .srt (${changeCount} change${changeCount === 1 ? "" : "s"})`}
           </button>
         </>
       )}
@@ -959,6 +1157,66 @@ export default function SrtCheckerPage() {
           .
         </p>
       )}
+        </div>
+
+        {/* ── RESULTING FILE ─────────────────────────────────────────────
+            Sticky, with its own scroll, so the file stays in view while the
+            suggestions are worked through. */}
+        <aside className="min-w-0 lg:sticky lg:top-6">
+          <div className="bg-white/[0.03] border border-white/10 rounded-[24px] overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-[#F5F1E8]">Corrected file</h2>
+                <p className="text-[11px] text-zinc-500 truncate">
+                  {hasChecked
+                    ? `${changedCueCount} of ${previewCues.length} lines changed`
+                    : fileName || "Nothing loaded yet"}
+                </p>
+              </div>
+              {hasChecked && changedCueCount > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-[#D6B36A]/40 text-[#D6B36A] whitespace-nowrap">
+                  live preview
+                </span>
+              )}
+            </div>
+
+            {previewCues.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-sm text-zinc-500">
+                  Run a check to see the corrected file here.
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-[calc(100vh-190px)] overflow-y-auto divide-y divide-white/[0.04]">
+                {previewCues.map((cue) => (
+                  <div
+                    key={cue.index}
+                    className={`px-4 py-2.5 ${cue.changed ? "bg-[#E89B3A]/[0.07]" : ""}`}
+                  >
+                    <div className="flex items-center gap-2 mb-1 text-[10px] text-zinc-600">
+                      <span className="font-semibold text-zinc-500">{cue.index}</span>
+                      <span className="font-mono">
+                        {cue.start} &rarr; {cue.end}
+                      </span>
+                      {cue.changed && (
+                        <span className="ml-auto text-[#D6B36A] font-medium">changed</span>
+                      )}
+                    </div>
+                    <p
+                      dir={isRtlLanguage(language) ? "rtl" : "ltr"}
+                      className={`text-[13px] leading-relaxed whitespace-pre-wrap ${
+                        cue.changed ? "text-[#F0C070]" : "text-zinc-400"
+                      }`}
+                    >
+                      {cue.resultText}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }
