@@ -753,13 +753,20 @@ function renderRow(order: any, isSub: boolean) {
         />
       </td>
 
-      {/* DEADLINE — a collapsed parent shows its NEAREST non-completed sub-order deadline. */}
+      {/* DEADLINE — a big order has no single deadline (it's per sub-order), so
+          it shows nothing here, matching the Status column. Expand to see each. */}
       <td className="px-6 py-2.5 text-zinc-300 align-center">
 
-        {(() => {
-          const nsd = order.isParent ? order.nearestSubDeadline : null
-          const deadlineDate = nsd?.deadlineDate ?? broadcast?.deadlineDate
-          const hasTime = nsd ? nsd.deadlineHasTime : broadcast?.deadlineHasTime
+        {isParent ? (
+          <span
+            title="Deadline is tracked per sub-order — expand to view"
+            className="text-[#6E6E6E] text-xs italic cursor-default select-none"
+          >
+            Per sub-order
+          </span>
+        ) : (() => {
+          const deadlineDate = broadcast?.deadlineDate
+          const hasTime = broadcast?.deadlineHasTime
           if (!deadlineDate) return <span className="text-zinc-600">—</span>
           const info = getDeadlineInfo(deadlineDate, hasTime)
           return (
