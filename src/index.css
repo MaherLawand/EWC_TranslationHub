@@ -364,6 +364,50 @@
   color: transparent;
 }
 
+/* ── Dark checkbox (order multi-select) ──────────────────────────────────
+   A native checkbox renders a white box in dark mode — accent-color only tints
+   the checkmark, not the empty background. appearance:none lets us draw the
+   whole control: dark idle, gold when checked, a bar when indeterminate. */
+input[type="checkbox"].dark-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 1.5px solid #3A3A3A;
+  border-radius: 5px;
+  background: #141414;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+input[type="checkbox"].dark-check:hover {
+  border-color: #D6B36A;
+}
+input[type="checkbox"].dark-check:checked,
+input[type="checkbox"].dark-check:indeterminate {
+  background: linear-gradient(135deg, #E8C77E 0%, #D6B36A 55%, #C79A47 100%);
+  border-color: transparent;
+}
+/* Checkmark: a rotated corner border, sized to the box. */
+input[type="checkbox"].dark-check:checked::after {
+  content: "";
+  width: 0.3rem;
+  height: 0.55rem;
+  border: solid #1a0f06;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+}
+/* Indeterminate: a single horizontal bar. */
+input[type="checkbox"].dark-check:indeterminate::after {
+  content: "";
+  width: 0.55rem;
+  height: 2px;
+  background: #1a0f06;
+  border-radius: 1px;
+}
+
 /* ── Native select options ───────────────────────────────────────────────
    The options popup is drawn by the OS, not the page, so it does not inherit
    the app's dark theme. On Windows it defaults to a white list — and with a

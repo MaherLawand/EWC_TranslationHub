@@ -62,6 +62,82 @@ export function useOrders({
   const updatingStatusIdsRef = React.useRef(new Set<string>())
   const [deletingOrderId, setDeletingOrderId] = React.useState("")
 
+  // Multi-select for bulk actions. Separate from selectedOrder (which opens the
+  // sidebar) so ticking a row never opens details and vice-versa.
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = React.useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false)
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  /** Tick/untick a whole visible set at once (header checkbox). */
+  function setSelection(ids: string[], selected: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) {
+        if (selected) next.add(id)
+        else next.delete(id)
+      }
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+  }
+
+  async function bulkDeleteOrders() {
+    const ids = [...selectedIds]
+    if (ids.length === 0 || isBulkDeleting) return
+    setIsBulkDeleting(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/bulk-delete`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        toast.error(data.message || "Failed to delete the selected orders")
+        return
+      }
+
+      // Remove every id we asked to delete. The server cascades a parent's
+      // sub-orders, and the per-order "order-deleted" socket events clean up any
+      // cascaded rows that were on screen.
+      const removed = new Set<string>(data.deletedIds ?? ids)
+      setBroadcastOrders((prev) => prev.filter((o) => !removed.has(o.id)))
+      setMarketingOrders((prev) => prev.filter((o) => !removed.has(o.id)))
+
+      // If the open sidebar order was among them, close it.
+      setSelectedOrder((cur: any) => (cur && removed.has(cur.id) ? null : cur))
+
+      clearSelection()
+      setShowBulkDeleteModal(false)
+
+      const failed = Array.isArray(data.failed) ? data.failed.length : 0
+      const count = data.deleted ?? ids.length
+      if (failed > 0) {
+        toast.warn(`Deleted ${count} order${count === 1 ? "" : "s"}; ${failed} could not be deleted`)
+      } else {
+        toast.success(`Deleted ${count} order${count === 1 ? "" : "s"}`)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete the selected orders")
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
 
 
   // ─── Order counts (for Topbar stat cards — counts ALL orders, not just page) ─
@@ -857,6 +933,14 @@ export function useOrders({
     updateOrderStatus,
     updateOrderContentCategory,
     deleteOrder,
+    selectedIds,
+    toggleSelected,
+    setSelection,
+    clearSelection,
+    bulkDeleteOrders,
+    showBulkDeleteModal,
+    setShowBulkDeleteModal,
+    isBulkDeleting,
     toListOrder,
     orderCounts,
     fetchOrderCounts,

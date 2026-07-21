@@ -361,6 +361,14 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     updateOrderStatus,
     updateOrderContentCategory,
     deleteOrder,
+    selectedIds,
+    toggleSelected,
+    setSelection,
+    clearSelection,
+    bulkDeleteOrders,
+    showBulkDeleteModal,
+    setShowBulkDeleteModal,
+    isBulkDeleting,
     orderCounts,
     selectedOrderDetail,
     setSelectedOrderDetail,
@@ -494,6 +502,12 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
   }
 }
   }, [activePage])
+
+  // Ticked rows are per table/event; drop them when either changes so a bulk
+  // delete can never act on rows the user can no longer see.
+  React.useEffect(() => {
+    clearSelection()
+  }, [activePage, selectedEvent])
 
   // When any manual filter changes while a deep-link pin (orderIdFilter) is
   // active, release the pin and close the sidebar so normal filtering takes over.
@@ -1574,6 +1588,9 @@ React.useEffect(() => {
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}
                   canManageOrders={canManageOrders}
+                  selectedIds={canManageOrders ? selectedIds : undefined}
+                  onToggleSelected={canManageOrders ? toggleSelected : undefined}
+                  onToggleVisible={canManageOrders ? setSelection : undefined}
                   onDuplicate={openDuplicateOrder}
                   onDuplicateBig={openDuplicateBigOrder}
                   onDuplicateSubOrder={duplicateSubOrder}
@@ -1625,6 +1642,9 @@ React.useEffect(() => {
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}
                   canManageOrders={canManageOrders}
+                  selectedIds={canManageOrders ? selectedIds : undefined}
+                  onToggleSelected={canManageOrders ? toggleSelected : undefined}
+                  onToggleVisible={canManageOrders ? setSelection : undefined}
                   onDuplicate={openDuplicateOrder}
                   onDuplicateBig={openDuplicateBigOrder}
                   onDuplicateSubOrder={duplicateSubOrder}
@@ -1717,6 +1737,75 @@ React.useEffect(() => {
                 </button>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* BULK-SELECT TOOLBAR — floats above the table while rows are ticked. */}
+        {canManageOrders && selectedIds.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] flex items-center gap-4 bg-[#141414]/95 border border-white/15 backdrop-blur-xl rounded-2xl pl-5 pr-3 py-3 shadow-[0_16px_50px_rgba(0,0,0,0.55)]">
+            <span className="text-sm text-[#F5F1E8] font-medium whitespace-nowrap">
+              {selectedIds.size} selected
+            </span>
+            <button
+              onClick={clearSelection}
+              disabled={isBulkDeleting}
+              className="text-xs text-zinc-400 hover:text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setShowBulkDeleteModal(true)}
+              disabled={isBulkDeleting}
+              className="inline-flex items-center gap-2 bg-red-500/90 hover:bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isBulkDeleting ? (
+                <div className="w-4 h-4 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+              {isBulkDeleting ? "Deleting…" : `Delete ${selectedIds.size}`}
+            </button>
+          </div>
+        )}
+
+        {/* BULK DELETE CONFIRM MODAL */}
+        {showBulkDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center px-4">
+            <div className="w-full max-w-[480px] bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gear-gradient w-fit">
+                  Delete {selectedIds.size} order{selectedIds.size === 1 ? "" : "s"}
+                </h2>
+                <p className="text-zinc-500 mt-3 leading-relaxed">
+                  This action cannot be undone. The selected orders and all related
+                  delivery assets will be permanently deleted. Deleting a big order
+                  also deletes its sub-orders.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowBulkDeleteModal(false)}
+                  disabled={isBulkDeleting}
+                  className="bg-white/5 border border-white/15 text-zinc-300 py-3 rounded-2xl font-semibold hover:text-white hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={bulkDeleteOrders}
+                  disabled={isBulkDeleting}
+                  className="inline-flex items-center justify-center gap-2 bg-red-500 text-white py-3 rounded-2xl font-semibold hover:bg-red-600 transition disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isBulkDeleting && (
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+                  )}
+                  {isBulkDeleting
+                    ? "Deleting…"
+                    : `Delete ${selectedIds.size} order${selectedIds.size === 1 ? "" : "s"}`}
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -58,6 +58,10 @@ type Props = {
   subRefresh?: number
   /** Whether the current user can create/manage orders (controls Duplicate). */
   canManageOrders?: boolean
+  /** Ids ticked for a bulk action; enables the checkbox column for managers. */
+  selectedIds?: Set<string>
+  onToggleSelected?: (id: string) => void
+  onToggleVisible?: (ids: string[], selected: boolean) => void
   /** Open the create modal pre-filled with this order's data (duplicate). */
   onDuplicate?: (order: any) => void | Promise<void>
   /** Duplicate a big order together with all of its sub-orders. */
@@ -105,6 +109,9 @@ export default function MarketingOrdersTable({
   statusPatch,
   subRefresh,
   canManageOrders,
+  selectedIds,
+  onToggleSelected,
+  onToggleVisible,
   onDuplicate,
   onDuplicateBig,
   onDuplicateSubOrder,
@@ -508,6 +515,26 @@ function toggleExpand(e: React.MouseEvent, id: string) {
 }
 
 // Renders a single order row. `isSub` = an indented sub-order under a parent.
+  const selectable = !!canManageOrders && !!onToggleSelected && !!selectedIds
+  const SPAN = selectable ? 10 : 9
+  const selectableIds: string[] = selectable ? orders.map((o: any) => o.id) : []
+  const allVisibleSelected =
+    selectableIds.length > 0 && selectableIds.every((id) => selectedIds!.has(id))
+  const someVisibleSelected = selectableIds.some((id) => selectedIds!.has(id))
+
+  const selectCell = (id: string) =>
+    selectable ? (
+      <td className="pl-4 pr-1 py-2.5 align-center w-9" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={selectedIds!.has(id)}
+          onChange={() => onToggleSelected!(id)}
+          aria-label="Select order"
+          className="dark-check"
+        />
+      </td>
+    ) : null
+
 function renderRow(order: any, isSub: boolean) {
   const marketing = order.marketing
   const isUpdating = updatingOrderId === order.id
@@ -520,6 +547,7 @@ function renderRow(order: any, isSub: boolean) {
   // a "part of {parent}" breadcrumb and no expand chevron.
   const isFlat = mode === "flat"
   const showBreadcrumb = isFlat && order.parentId && order.parent
+  const isChecked = selectable && selectedIds!.has(order.id)
 
   return (
     <tr
@@ -534,7 +562,9 @@ function renderRow(order: any, isSub: boolean) {
         transition-colors
         duration-150
         ${
-          order.id === selectedOrderId
+          isChecked
+            ? "bg-[rgba(214,179,106,0.16)] shadow-[inset_3px_0_0_0_#D6B36A]"
+            : order.id === selectedOrderId
             ? "bg-[rgba(214,179,106,0.12)] shadow-[inset_3px_0_0_0_#D6B36A]"
             : isSub
             ? "bg-white/[0.015]"
@@ -542,6 +572,8 @@ function renderRow(order: any, isSub: boolean) {
         }
       `}
     >
+
+      {selectCell(order.id)}
 
       {/* ORDER */}
       <td className="px-6 py-2.5 align-center">
@@ -908,6 +940,21 @@ function renderRow(order: any, isSub: boolean) {
 
           <tr>
 
+  {selectable && (
+    <th className="pl-4 pr-1 py-3 w-9">
+      <input
+        type="checkbox"
+        checked={allVisibleSelected}
+        ref={(el) => {
+          if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected
+        }}
+        onChange={(e) => onToggleVisible?.(selectableIds, e.target.checked)}
+        aria-label="Select all orders on this page"
+        className="dark-check"
+      />
+    </th>
+  )}
+
   <th className="text-left px-6 py-3">
     Order
   </th>
@@ -962,7 +1009,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={9}
+        colSpan={SPAN}
         className="py-20 text-center text-zinc-500"
       >
         Loading orders...
@@ -973,7 +1020,7 @@ function renderRow(order: any, isSub: boolean) {
 
     <tr>
       <td
-        colSpan={9}
+        colSpan={SPAN}
         className="py-20 text-center text-zinc-500"
       >
         No orders found
@@ -1030,7 +1077,7 @@ function renderRow(order: any, isSub: boolean) {
               if (entry?.loading) {
                 rows.push(
                   <tr key={`${order.id}-loading`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={9} className="px-6 py-3" style={{ paddingLeft: 56 }}>
+                    <td colSpan={SPAN} className="px-6 py-3" style={{ paddingLeft: 56 }}>
                       <div className="flex items-center gap-2 text-zinc-500 text-sm">
                         <div className="w-3.5 h-3.5 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
                         Loading sub-orders…
@@ -1041,7 +1088,7 @@ function renderRow(order: any, isSub: boolean) {
               } else if (entry && entry.page < entry.totalPages) {
                 rows.push(
                   <tr key={`${order.id}-more`} className="border-b border-[#1F1F1F] bg-white/[0.015]">
-                    <td colSpan={9} className="px-6 py-2" style={{ paddingLeft: 56 }}>
+                    <td colSpan={SPAN} className="px-6 py-2" style={{ paddingLeft: 56 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); loadSubOrders(order.id, entry.page + 1) }}
                         className="text-xs font-semibold text-[#E8C77E] hover:text-[#F5D98A] transition"
