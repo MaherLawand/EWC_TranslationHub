@@ -212,6 +212,13 @@ export default function OrderModal({
     if (!vendorGroups.includes(activeVendor)) setActiveVendor(vendorGroups[0] ?? "")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendorGroups.join("|")])
+
+  // The "apply to all" field belongs to the vendor currently shown, so clear it
+  // when switching vendors — otherwise one vendor's pasted link would appear to
+  // carry over to the next.
+  useEffect(() => {
+    setGlobalDeliveryLink("")
+  }, [activeVendor])
   const initialOrderRef = useRef(JSON.stringify(newOrder))
   const wasOpenRef = useRef(showModal)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
