@@ -61,6 +61,8 @@ type Suggestion = {
   confidence: "high" | "medium"
   /** True when this wording came from the team's own past correction. */
   learned?: boolean
+  /** Which glossary a glossary-kind term came from. */
+  glossarySource?: "main" | "priority" | null
   /** Glossary rows containing this term inside a longer phrase. */
   relatedRows?: { source: string; target: string }[]
 }
@@ -238,6 +240,14 @@ export default function SrtCheckerPage() {
   const acceptedCount = React.useMemo(
     () => Object.values(decisions).filter((d) => d === "accepted").length,
     [decisions]
+  )
+
+  // A second (priority) glossary is in play only when some suggestion came from
+  // it. Used to decide whether to label glossary terms "main" vs "new" — for a
+  // single-glossary language there's nothing to contrast, so we don't.
+  const hasPriorityGlossary = React.useMemo(
+    () => suggestions.some((s) => s.glossarySource === "priority"),
+    [suggestions]
   )
 
   /**
@@ -823,9 +833,22 @@ export default function SrtCheckerPage() {
                             ? "no standalone rule"
                             : "not in glossary"}
                         </span>
+                      ) : s.glossarySource === "priority" ? (
+                        <span
+                          title="From the new high-priority Arabic glossary"
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/50 text-emerald-400"
+                        >
+                          new glossary
+                        </span>
                       ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-[#D6B36A]/40 text-[#D6B36A]">
-                          approved term
+                        <span
+                          title="From the main glossary"
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-[#D6B36A]/40 text-[#D6B36A]"
+                        >
+                          {/* Only contrast "main" vs "new" when a second glossary
+                              exists for this language (Arabic). Otherwise there's
+                              just the one glossary. */}
+                          {hasPriorityGlossary ? "main glossary" : "approved term"}
                         </span>
                       )}
                       {s.confidence === "medium" && (
