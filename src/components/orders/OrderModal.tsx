@@ -86,6 +86,72 @@ type Props = {
 // Escape a string so it can be used literally inside a RegExp.
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
+// ── Per-vendor delivery links ──────────────────────────────────────────────
+// A delivery entry is { language, vendor, deliveryLink }. `vendor` is "" for the
+// shared "General" set, or one of the three vendor roles. Each selected vendor
+// gets its own link per language; the modal shows one vendor at a time via pills.
+const VENDOR_VALUES = ["TRANSLATOR", "TRANSPERFECT", "TARJAMA"] as const
+const VENDOR_LABELS: Record<string, string> = {
+  "": "General",
+  TRANSLATOR: "Translator",
+  TRANSPERFECT: "TransPerfect",
+  TARJAMA: "Tarjama",
+}
+const delVendor = (d: any) => (typeof d?.vendor === "string" ? d.vendor : "")
+const uniq = (arr: string[]) => [...new Set(arr)]
+
+/**
+ * Which vendors get their own link set (and thus a pill).
+ *
+ * No vendors selected → just the shared "General" set (no pills). Vendors
+ * selected → one set each; the General set is also shown, but only if it already
+ * holds links (legacy orders), so it never appears empty on a fresh order.
+ */
+function deliveryVendorGroups(deliveries: any[], notifyPositions: string[]): string[] {
+  const selected = (notifyPositions || []).filter((v) => (VENDOR_VALUES as readonly string[]).includes(v))
+  if (selected.length === 0) return [""]
+  const generalHasLinks = (deliveries || []).some((d) => delVendor(d) === "" && (d.deliveryLink || "").trim())
+  return uniq([...(generalHasLinks ? [""] : []), ...selected])
+}
+
+/**
+ * Ensure every (group vendor × target language) has an entry, drop entries for
+ * untargeted languages, and preserve any existing links — including legacy
+ * General links that aren't a current group.
+ */
+function reconcileDeliveries(existing: any[], languages: string[], groups: string[]): any[] {
+  const langSet = new Set(languages)
+  const groupSet = new Set(groups)
+  const keep = (existing || []).filter(
+    (d) =>
+      langSet.has(d.language) &&
+      // Keep entries for a current group, plus any (legacy) entry that already has
+      // a link. Drop empty entries for vendors no longer in the group set.
+      (groupSet.has(delVendor(d)) || (d.deliveryLink || "").trim())
+  )
+  const present = new Set(keep.map((d) => `${delVendor(d)}::${d.language}`))
+  const out = [...keep]
+  for (const vendor of groups) {
+    for (const language of languages) {
+      const key = `${vendor}::${language}`
+      if (!present.has(key)) {
+        out.push({ language, vendor, deliveryLink: "" })
+        present.add(key)
+      }
+    }
+  }
+  return out
+}
+
+/** Structural equality so the reconcile effect doesn't loop. */
+function sameDeliveries(a: any[], b: any[]): boolean {
+  if (a.length !== b.length) return false
+  const key = (d: any) => `${delVendor(d)}::${d.language}::${d.deliveryLink || ""}::${d.id || ""}`
+  const sa = a.map(key).sort()
+  const sb = b.map(key).sort()
+  return sa.every((v, i) => v === sb[i])
+}
+
 
 export default function OrderModal({
   showModal,
@@ -116,6 +182,36 @@ export default function OrderModal({
   const [languageSearch, setLanguageSearch] = useState("")
   // "Apply to all" delivery link — pasting here fills every language's link.
   const [globalDeliveryLink, setGlobalDeliveryLink] = useState("")
+  // Which vendor's link set the delivery panel is currently showing.
+  const [activeVendor, setActiveVendor] = useState<string>("")
+
+  const vendorGroups = deliveryVendorGroups(
+    newOrder.deliveries || [],
+    newOrder.notifyPositions || []
+  )
+
+  // Keep each (vendor × language) link entry in sync as languages or vendors
+  // change, without wiping links the user already typed. Centralised here so the
+  // language/vendor pickers only set their own field.
+  useEffect(() => {
+    const languages = newOrder.targetLanguages || []
+    if (languages.length === 0) return
+    const groups = deliveryVendorGroups(newOrder.deliveries || [], newOrder.notifyPositions || [])
+    const next = reconcileDeliveries(newOrder.deliveries || [], languages, groups)
+    if (!sameDeliveries(next, newOrder.deliveries || [])) {
+      setNewOrder((o: any) => ({ ...o, deliveries: next }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    JSON.stringify(newOrder.targetLanguages || []),
+    JSON.stringify(newOrder.notifyPositions || []),
+  ])
+
+  // Keep the active pill valid as the group set changes.
+  useEffect(() => {
+    if (!vendorGroups.includes(activeVendor)) setActiveVendor(vendorGroups[0] ?? "")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorGroups.join("|")])
   const initialOrderRef = useRef(JSON.stringify(newOrder))
   const wasOpenRef = useRef(showModal)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
@@ -862,37 +958,11 @@ today.setHours(0, 0, 0, 0)
     (selected || []).map(
       (item: any) => item.value
     )
-
-  const existingDeliveries =
-    newOrder.deliveries || []
-
-  const updatedDeliveries =
-    selectedLanguages.map(
-      (language: string) => {
-        const existing =
-          existingDeliveries.find(
-            (d: any) =>
-              d.language === language
-          )
-
-        return existing
-          ? existing
-          : {
-              language,
-              // A newly-added language inherits the "apply to all" link if one is set.
-              deliveryLink: globalDeliveryLink,
-            }
-      }
-    )
-
+  // Only set the languages — the reconcile effect adds/removes the per-vendor
+  // delivery entries and preserves any links already typed.
   setNewOrder({
     ...newOrder,
-
-    targetLanguages:
-      selectedLanguages,
-
-    deliveries:
-      updatedDeliveries,
+    targetLanguages: selectedLanguages,
   })
   clearError("targetLanguages")
 }}
@@ -1341,45 +1411,15 @@ today.setHours(0, 0, 0, 0)
     }
 
     onChange={(selected) => {
-
       const selectedLanguages =
         (selected || []).map(
           (item: any) =>
             item.value
         )
-
-      const existingDeliveries =
-        newOrder.deliveries || []
-
-      const updatedDeliveries =
-        selectedLanguages.map(
-          (language: string) => {
-
-            const existing =
-              existingDeliveries.find(
-                (d: any) =>
-                  d.language ===
-                  language
-              )
-
-            return existing
-              ? existing
-              : {
-                  language,
-                  // A newly-added language inherits the "apply to all" link if one is set.
-                  deliveryLink: globalDeliveryLink,
-                }
-          }
-        )
-
+      // Reconcile effect handles the per-vendor delivery entries.
       setNewOrder({
         ...newOrder,
-
-        targetLanguages:
-          selectedLanguages,
-
-        deliveries:
-          updatedDeliveries,
+        targetLanguages: selectedLanguages,
       })
       clearError("targetLanguages")
     }}
@@ -1638,15 +1678,39 @@ transition={{
       </h3>
 
       <p className="text-sm text-zinc-500 mt-1">
-        Manage language and format links
+        {vendorGroups.length > 1
+          ? "Each vendor has its own links — switch with the pills below"
+          : "Manage language and format links"}
       </p>
 
-      {/* APPLY-TO-ALL — a single link pasted here fills every language's link
-          (handy when all deliveries share the same link). The X clears them all. */}
-      {newOrder.deliveries?.length > 0 && (
+      {/* VENDOR PILLS — one per vendor with its own delivery links. Only shown
+          when more than one group exists (i.e. vendors were selected). */}
+      {vendorGroups.length > 1 && (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {vendorGroups.map((v) => (
+            <button
+              key={v || "general"}
+              type="button"
+              data-ve
+              onClick={() => setActiveVendor(v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                activeVendor === v
+                  ? "gear-fill border-transparent"
+                  : "border-white/15 text-zinc-300 hover:border-[#D6B36A]/50 hover:text-white"
+              }`}
+            >
+              {VENDOR_LABELS[v] ?? v}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* APPLY-TO-ALL — fills every language's link FOR THE ACTIVE VENDOR. */}
+      {newOrder.deliveries?.some((d: any) => delVendor(d) === activeVendor) && (
         <div className="mt-4">
           <label className="block text-xs text-zinc-400 mb-1.5">
             Apply one link to all languages
+            {vendorGroups.length > 1 ? ` (${VENDOR_LABELS[activeVendor] ?? activeVendor})` : ""}
           </label>
           <div className="flex items-center gap-2">
             <input
@@ -1658,7 +1722,9 @@ transition={{
                 setGlobalDeliveryLink(link)
                 setNewOrder({
                   ...newOrder,
-                  deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: link })),
+                  deliveries: newOrder.deliveries.map((d: any) =>
+                    delVendor(d) === activeVendor ? { ...d, deliveryLink: link } : d
+                  ),
                 })
               }}
               placeholder="Paste a link to fill every language..."
@@ -1671,10 +1737,12 @@ transition={{
                 setGlobalDeliveryLink("")
                 setNewOrder({
                   ...newOrder,
-                  deliveries: newOrder.deliveries.map((d: any) => ({ ...d, deliveryLink: "" })),
+                  deliveries: newOrder.deliveries.map((d: any) =>
+                    delVendor(d) === activeVendor ? { ...d, deliveryLink: "" } : d
+                  ),
                 })
               }}
-              title="Clear all delivery links"
+              title="Clear these delivery links"
               className="flex-shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-lg border border-white/10 text-zinc-400 hover:text-red-400 hover:border-red-400/40 hover:bg-red-400/10 transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
@@ -1689,14 +1757,15 @@ transition={{
 
     <div className="space-y-4 max-h-[650px] overflow-auto pr-1 dark-scroll">
 
-      {newOrder.deliveries.map(
+      {newOrder.deliveries
+        .filter((d: any) => delVendor(d) === activeVendor)
+        .map(
         (
-          delivery: any,
-          index: number
+          delivery: any
         ) => (
           <div
             key={
-              delivery.language
+              (delivery.vendor || "") + "::" + delivery.language
             }
             className="bg-white/[0.03] border border-white/10 rounded-2xl p-4"
           >
@@ -1714,23 +1783,16 @@ transition={{
                 delivery.deliveryLink || ""
               }
               onChange={(e) => {
-                const updated =
-                  [
-                    ...newOrder.deliveries,
-                  ]
-
-                updated[index] = {
-                  ...updated[index],
-
-                  deliveryLink:
-                    e.target.value,
-                }
-
+                const link = e.target.value
+                // Update the matching entry by vendor+language (indices shift
+                // once the list is filtered to the active vendor).
                 setNewOrder({
                   ...newOrder,
-
-                  deliveries:
-                    updated,
+                  deliveries: newOrder.deliveries.map((d: any) =>
+                    delVendor(d) === delVendor(delivery) && d.language === delivery.language
+                      ? { ...d, deliveryLink: link }
+                      : d
+                  ),
                 })
               }}
 

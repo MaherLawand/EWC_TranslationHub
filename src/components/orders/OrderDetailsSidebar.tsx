@@ -794,28 +794,61 @@ export default function OrderDetailsSidebar({
               )
             })()}
 
-            {/* DELIVERY ASSETS */}
+            {/* DELIVERY ASSETS — grouped per vendor. The server only sends the
+                vendors this viewer is allowed to see (a vendor sees their own +
+                the shared "General" set; admins/PPMs/producers see all). */}
             {(() => {
               const deliveries = broadcast?.deliveries || marketing?.deliveries || []
               if (!deliveries.length) return null
+
+              const VENDOR_LABELS: Record<string, string> = {
+                "": "General",
+                TRANSLATOR: "Translator",
+                TRANSPERFECT: "TransPerfect",
+                TARJAMA: "Tarjama",
+              }
+              const VENDOR_ORDER = ["", "TRANSLATOR", "TRANSPERFECT", "TARJAMA"]
+
+              // Group by vendor, ordered General-first.
+              const groups = new Map<string, any[]>()
+              for (const d of deliveries) {
+                const v = typeof d.vendor === "string" ? d.vendor : ""
+                if (!groups.has(v)) groups.set(v, [])
+                groups.get(v)!.push(d)
+              }
+              const orderedVendors = [...groups.keys()].sort(
+                (a, b) => VENDOR_ORDER.indexOf(a) - VENDOR_ORDER.indexOf(b)
+              )
+              // Only label groups when there's more than one vendor to distinguish.
+              const showVendorLabels = orderedVendors.length > 1
+
               return (
                 <div>
                   <SectionLabel title="Delivery Assets" />
-                  <div className="space-y-2">
-                    {deliveries.map((d: any) => (
-                      <div key={d.id} className="flex items-start gap-2.5 bg-[#111111] border border-[#242424] rounded-xl px-3 py-2.5">
-                        <img src="/google-drive.png?v=2" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-[#F5F1E8] text-base font-semibold">{d.language}</p>
-                          {d.deliveryLink ? (
-                            <a href={formatUrl(d.deliveryLink)} target="_blank" rel="noreferrer"
-                              className="text-gear-gradient underline decoration-[#D6B36A]/60 text-base break-all mt-0.5 block">
-                              {d.deliveryLink}
-                            </a>
-                          ) : (
-                            <p className="text-sm text-zinc-600 mt-0.5">No link yet</p>
-                          )}
-                        </div>
+                  <div className="space-y-4">
+                    {orderedVendors.map((vendor) => (
+                      <div key={vendor || "general"} className="space-y-2">
+                        {showVendorLabels && (
+                          <p className="text-[11px] uppercase tracking-wide text-[#D6B36A]/80 font-medium">
+                            {VENDOR_LABELS[vendor] ?? vendor}
+                          </p>
+                        )}
+                        {groups.get(vendor)!.map((d: any) => (
+                          <div key={d.id} className="flex items-start gap-2.5 bg-[#111111] border border-[#242424] rounded-xl px-3 py-2.5">
+                            <img src="/google-drive.png?v=2" alt="Drive" className="w-4 h-4 mt-px shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[#F5F1E8] text-base font-semibold">{d.language}</p>
+                              {d.deliveryLink ? (
+                                <a href={formatUrl(d.deliveryLink)} target="_blank" rel="noreferrer"
+                                  className="text-gear-gradient underline decoration-[#D6B36A]/60 text-base break-all mt-0.5 block">
+                                  {d.deliveryLink}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-zinc-600 mt-0.5">No link yet</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -922,8 +955,8 @@ export default function OrderDetailsSidebar({
                   estimatedMinutes: String(orderDetail.broadcast?.estimatedMinutes || ""),
                   deliveries:
                     orderDetail.type === "MARKETING"
-                      ? orderDetail.marketing?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, deliveryLink: d.deliveryLink || "" })) || []
-                      : orderDetail.broadcast?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, deliveryLink: d.deliveryLink || "" })) || [],
+                      ? orderDetail.marketing?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, vendor: d.vendor || "", deliveryLink: d.deliveryLink || "" })) || []
+                      : orderDetail.broadcast?.deliveries?.map((d: any) => ({ id: d.id, language: d.language, vendor: d.vendor || "", deliveryLink: d.deliveryLink || "" })) || [],
                   notifyPositions: orderDetail.notifyPositions || [],
                   // Optimistic concurrency token — server checks this against DB before writing
                   // so a second concurrent editor gets a 409 instead of silently overwriting.
