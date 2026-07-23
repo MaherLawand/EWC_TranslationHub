@@ -24,7 +24,11 @@ type Match = {
   start: string
   end: string
   line: string
+  /** The corrected-file cue this term was aligned to (when the checker ran). */
+  arCueIndex?: number | null
 }
+
+export type AlignCue = { index: number; text: string; start: string; end: string }
 
 const spinner = (
   <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
@@ -63,11 +67,19 @@ let savedRefSession: RefSession | null = null
 export default function EnReferencePanel({
   compact = false,
   onMatchesChange,
+  alignTo,
+  checkerReady = true,
 }: {
   compact?: boolean
   /** Fires whenever the match set changes, so the parent can weave the terms
    *  into the corrected-file preview line by line. */
   onMatchesChange?: (matches: Match[]) => void
+  /** The corrected-file cues, so each term can be pinned to the line that is
+   *  actually the translation of its English line (not just time-overlapping). */
+  alignTo?: AlignCue[]
+  /** In the embedded copy, the lookup needs the corrected file, so the button is
+   *  disabled until the terminology check has produced it. */
+  checkerReady?: boolean
 }) {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -141,7 +153,9 @@ export default function EnReferencePanel({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ srtText, target }),
+        // When embedded, send the corrected-file cues so the server aligns each
+        // term to the line that is genuinely its translation.
+        body: JSON.stringify({ srtText, target, arCues: alignTo ?? [] }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.message || "The reference check could not complete")
@@ -240,17 +254,30 @@ export default function EnReferencePanel({
           </div>
         </div>
 
-        <button
-          type="button"
-          disabled={!srtText || !target || isChecking}
-          onClick={runCheck}
-          className={`mt-5 w-full py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-3 ${
-            !srtText || !target || isChecking ? "bg-white/10 text-zinc-500 cursor-not-allowed" : "gear-fill"
-          }`}
-        >
-          {isChecking && spinner}
-          {isChecking ? "Looking up terms…" : "Look up terms"}
-        </button>
+        {(() => {
+          const gated = compact && !checkerReady
+          const disabled = !srtText || !target || isChecking || gated
+          return (
+            <>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={runCheck}
+                className={`mt-5 w-full py-3.5 rounded-2xl font-semibold transition flex items-center justify-center gap-3 ${
+                  disabled ? "bg-white/10 text-zinc-500 cursor-not-allowed" : "gear-fill"
+                }`}
+              >
+                {isChecking && spinner}
+                {isChecking ? "Looking up terms…" : "Look up terms"}
+              </button>
+              {gated && (
+                <p className="text-[11px] text-zinc-500 mt-2 text-center">
+                  Run the terminology check first — the lookup lines terms up with the corrected file.
+                </p>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {/* RESULTS */}

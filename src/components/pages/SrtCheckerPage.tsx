@@ -164,7 +164,14 @@ export default function SrtCheckerPage() {
   // counts, so we can't line them up by index — we align by TIMESTAMP overlap,
   // which holds because both are the same video.
   const [refMatches, setRefMatches] = React.useState<
-    { cueIndex: number; term: string; translation: string; start: string; end: string }[]
+    {
+      cueIndex: number
+      term: string
+      translation: string
+      start: string
+      end: string
+      arCueIndex?: number | null
+    }[]
   >([])
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -301,23 +308,35 @@ export default function SrtCheckerPage() {
     [previewCues]
   )
 
-  // Attach each reference term to the corrected cue whose time range it overlaps,
-  // so terms line up with the right line even when the two files differ in count.
+  // Place each reference term on the corrected line it belongs to. When the
+  // server aligned matches (LLM-verified counterpart), use that exact line;
+  // otherwise fall back to timestamp overlap.
   const refByPreviewCue = React.useMemo(() => {
+    const map = new Map<number, { term: string; translation: string }[]>()
+    const push = (cueIndex: number, m: { term: string; translation: string }) => {
+      const list = map.get(cueIndex) ?? []
+      list.push(m)
+      map.set(cueIndex, list)
+    }
+
+    if (refMatches.some((m) => m.arCueIndex != null)) {
+      for (const m of refMatches) {
+        if (m.arCueIndex == null) continue
+        push(m.arCueIndex, { term: m.term, translation: m.translation })
+      }
+      return map
+    }
+
+    // Fallback: time overlap (alignment unavailable).
     const parsed = refMatches
       .map((m) => ({ ...m, s: tsToMs(m.start), e: tsToMs(m.end) }))
       .filter((m) => !Number.isNaN(m.s) && !Number.isNaN(m.e))
-    const map = new Map<number, { term: string; translation: string }[]>()
     for (const cue of previewCues) {
       const cs = tsToMs(cue.start)
       const ce = tsToMs(cue.end)
       if (Number.isNaN(cs) || Number.isNaN(ce)) continue
-      const hits = parsed.filter((m) => m.s < ce && m.e > cs) // time overlap
-      if (hits.length) {
-        map.set(
-          cue.index,
-          hits.map((m) => ({ term: m.term, translation: m.translation }))
-        )
+      for (const m of parsed.filter((m) => m.s < ce && m.e > cs)) {
+        push(cue.index, { term: m.term, translation: m.translation })
       }
     }
     return map
@@ -1348,7 +1367,17 @@ export default function SrtCheckerPage() {
               Look up approved translations for an English source file.
             </p>
           </div>
-          <EnReferencePanel compact onMatchesChange={setRefMatches} />
+          <EnReferencePanel
+            compact
+            checkerReady={hasChecked}
+            alignTo={previewCues.map((c) => ({
+              index: c.index,
+              text: c.resultText,
+              start: c.start,
+              end: c.end,
+            }))}
+            onMatchesChange={setRefMatches}
+          />
         </aside>
       </div>
       )}
