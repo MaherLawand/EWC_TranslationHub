@@ -1369,6 +1369,11 @@ React.useEffect(() => {
           setActivePage(page)
           setMobileMenuOpen(false)
         }}
+        onGoHome={() => {
+          resetFilters()
+          setActivePage(computeInitialPage(currentUser))
+          setMobileMenuOpen(false)
+        }}
         currentUser={currentUser}
         logout={logout}
         selectedEvent={selectedEvent}

@@ -7,6 +7,8 @@ type Props = {
   activePage: string
   logout: () => void
   setActivePage: (page: string) => void
+  /** Return to the user's default landing page and clear all filters. */
+  onGoHome?: () => void
   currentUser: any
   selectedEvent: string
   setSelectedEvent: (value: string) => void
@@ -17,6 +19,7 @@ type Props = {
 export default function Sidebar({
   activePage,
   setActivePage,
+  onGoHome,
   currentUser,
   logout,
   selectedEvent,
@@ -99,10 +102,15 @@ export default function Sidebar({
       `}
     >
 
-      {/* LOGO */}
-      <div
+      {/* LOGO — click to return to the home page and clear all filters. */}
+      <button
+        type="button"
+        onClick={() => onGoHome?.()}
+        title="Back to home"
+        aria-label="Back to home"
         className="
           h-[100px]
+          w-full
           flex-shrink-0
           border-b
           border-[#1F1F1F]
@@ -110,6 +118,9 @@ export default function Sidebar({
           items-center
           justify-center
           overflow-hidden
+          cursor-pointer
+          transition
+          hover:bg-white/[0.03]
         "
       >
         <img
@@ -118,7 +129,7 @@ export default function Sidebar({
           alt={selectedEvent === "ENC" ? "ENC Logo" : "EWC Logo"}
           className="w-[120%] h-auto object-contain"
         />
-      </div>
+      </button>
 
       {/* EVENT SWITCHER */}
       <div className="px-5 pt-6">
