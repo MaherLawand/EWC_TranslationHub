@@ -1,6 +1,7 @@
 import React from "react"
 import { toast } from "react-toastify"
 import { EWC_WEEKS, ENC_WEEKS } from "../../constants/weeklyGames"
+import EnReferencePanel from "./EnReferencePanel"
 
 /**
  * SRT glossary checker — translators upload a subtitle file, pick its language,
@@ -103,6 +104,13 @@ function isRtlLanguage(language: string): boolean {
  * Mirrors the server's applyEdits(): plain first-occurrence replacement, so what
  * is previewed is what gets written.
  */
+/** "HH:MM:SS,mmm" (or ".mmm") → milliseconds. Returns NaN if unparseable. */
+function tsToMs(t: string): number {
+  const m = /(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})/.exec(t || "")
+  if (!m) return NaN
+  return (+m[1]) * 3600000 + (+m[2]) * 60000 + (+m[3]) * 1000 + Number(m[4].padEnd(3, "0"))
+}
+
 function applyToLine(line: string, find: string, replace: string): string {
   const at = line.indexOf(find)
   if (at === -1) return line
@@ -150,6 +158,14 @@ type CheckerSession = {
 let savedSession: CheckerSession | null = null
 
 export default function SrtCheckerPage() {
+  const [tab, setTab] = React.useState<"checker" | "reference">("checker")
+  // EN→AR/FR reference matches, shown inline next to each corrected-file line.
+  // The English source and the corrected (target) file can have DIFFERENT line
+  // counts, so we can't line them up by index — we align by TIMESTAMP overlap,
+  // which holds because both are the same video.
+  const [refMatches, setRefMatches] = React.useState<
+    { cueIndex: number; term: string; translation: string; start: string; end: string }[]
+  >([])
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const [languages, setLanguages] = React.useState<Language[]>([])
@@ -285,6 +301,28 @@ export default function SrtCheckerPage() {
     [previewCues]
   )
 
+  // Attach each reference term to the corrected cue whose time range it overlaps,
+  // so terms line up with the right line even when the two files differ in count.
+  const refByPreviewCue = React.useMemo(() => {
+    const parsed = refMatches
+      .map((m) => ({ ...m, s: tsToMs(m.start), e: tsToMs(m.end) }))
+      .filter((m) => !Number.isNaN(m.s) && !Number.isNaN(m.e))
+    const map = new Map<number, { term: string; translation: string }[]>()
+    for (const cue of previewCues) {
+      const cs = tsToMs(cue.start)
+      const ce = tsToMs(cue.end)
+      if (Number.isNaN(cs) || Number.isNaN(ce)) continue
+      const hits = parsed.filter((m) => m.s < ce && m.e > cs) // time overlap
+      if (hits.length) {
+        map.set(
+          cue.index,
+          hits.map((m) => ({ term: m.term, translation: m.translation }))
+        )
+      }
+    }
+    return map
+  }, [refMatches, previewCues])
+
   /**
    * How many edits the file will actually receive.
    *
@@ -385,12 +423,8 @@ export default function SrtCheckerPage() {
     resetResults()
   }
 
-  async function onPickFile(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    // Reset so picking the same file twice still fires onChange.
-    event.target.value = ""
+  async function ingestFile(file: File | undefined) {
     if (!file) return
-
     // .txt is accepted because subtitle files are often handed over with the
     // extension changed; the CONTENT still has to parse as SRT, which the server
     // enforces and reports with a line number if it doesn't.
@@ -398,16 +432,28 @@ export default function SrtCheckerPage() {
       toast.error("Please choose a .srt or .txt subtitle file")
       return
     }
-
     const text = await file.text()
     if (text.length > MAX_SRT_CHARS) {
       toast.error("That subtitle file is too large to check")
       return
     }
-
     setFileName(file.name)
     setSrtText(text)
     resetResults()
+  }
+
+  function onPickFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    // Reset so picking the same file twice still fires onChange.
+    event.target.value = ""
+    ingestFile(file)
+  }
+
+  const [dragOver, setDragOver] = React.useState(false)
+  function onDropFile(event: React.DragEvent) {
+    event.preventDefault()
+    setDragOver(false)
+    ingestFile(event.dataTransfer.files?.[0])
   }
 
   /**
@@ -583,16 +629,42 @@ export default function SrtCheckerPage() {
   return (
     <div className="p-4 sm:p-8 max-w-[1700px] mx-auto">
       {/* HEADER */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gear-gradient">SRT Checker</h1>
         <p className="text-zinc-500 text-sm mt-1">
-          Check a subtitle file against the approved terminology glossary. Timings are never modified.
+          {tab === "checker"
+            ? "Check a subtitle file against the approved terminology glossary. Timings are never modified."
+            : "Look up the approved Arabic/French translations for the glossary terms in an English subtitle."}
         </p>
       </div>
 
-      {/* Review on the left, the resulting file on the right. Stacks below lg,
-          where a side-by-side would leave neither column readable. */}
-      <div className="grid gap-6 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
+      {/* TABS */}
+      <div className="flex gap-2 mb-6 border-b border-white/10">
+        {([
+          ["checker", "Glossary Checker"],
+          ["reference", "EN → AR / FR Reference"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTab(value)}
+            className={`px-4 py-2.5 text-sm font-medium -mb-px border-b-2 transition ${
+              tab === value
+                ? "border-[#D6B36A] text-[#F5F1E8]"
+                : "border-transparent text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "reference" && <EnReferencePanel />}
+
+      {/* Three columns on wide screens: review · corrected file · EN reference.
+          Stacks below xl, where three side-by-side would be unreadable. */}
+      {tab === "checker" && (
+      <div className="grid gap-6 items-start xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)_minmax(0,420px)]">
         <div className="min-w-0">
 
       {/* UPLOAD + LANGUAGE */}
@@ -616,8 +688,16 @@ export default function SrtCheckerPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                onDrop={onDropFile}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setDragOver(true)
+                }}
+                onDragLeave={() => setDragOver(false)}
                 disabled={isChecking}
-                className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/20 bg-white/10 text-left hover:border-[#D6B36A] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-2xl border bg-white/10 text-left transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                  dragOver ? "border-[#D6B36A] bg-[#D6B36A]/10" : "border-white/20 hover:border-[#D6B36A]"
+                }`}
                 title={fileName ? "Choose a different file" : "Choose a file"}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#D6B36A] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1185,7 +1265,7 @@ export default function SrtCheckerPage() {
         {/* ── RESULTING FILE ─────────────────────────────────────────────
             Sticky, with its own scroll, so the file stays in view while the
             suggestions are worked through. */}
-        <aside className="min-w-0 lg:sticky lg:top-6">
+        <aside className="min-w-0">
           <div className="bg-white/[0.03] border border-white/10 rounded-[24px] overflow-hidden">
             <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -1233,13 +1313,45 @@ export default function SrtCheckerPage() {
                     >
                       {cue.resultText}
                     </p>
+
+                    {/* EN → AR/FR reference terms whose timing overlaps this line. */}
+                    {(refByPreviewCue.get(cue.index) ?? []).length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {refByPreviewCue.get(cue.index)!.map((m, i) => (
+                          <span
+                            key={`${m.term}-${i}`}
+                            className="inline-flex items-center gap-1 text-[11px] bg-emerald-500/10 border border-emerald-500/25 rounded-md px-1.5 py-0.5"
+                          >
+                            <span className="text-zinc-300">{m.term}</span>
+                            <span className="text-zinc-600">→</span>
+                            <span dir={isRtlLanguage(language) ? "rtl" : "ltr"} className="text-emerald-400 font-medium">
+                              {m.translation}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
         </aside>
+
+        {/* EN → AR/FR reference — its own column beside the corrected file.
+            Shares state with the standalone Reference tab (module-scope), so a
+            lookup done in either place shows in both. */}
+        <aside className="min-w-0">
+          <div className="px-1 mb-2">
+            <h2 className="text-sm font-semibold text-[#F5F1E8]">EN → AR / FR reference</h2>
+            <p className="text-[11px] text-zinc-500">
+              Look up approved translations for an English source file.
+            </p>
+          </div>
+          <EnReferencePanel compact onMatchesChange={setRefMatches} />
+        </aside>
       </div>
+      )}
     </div>
   )
 }
