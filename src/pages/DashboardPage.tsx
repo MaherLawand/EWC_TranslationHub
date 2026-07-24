@@ -1589,6 +1589,7 @@ React.useEffect(() => {
                   setFormatFilter={setFormatFilter}
                   selectedEvent={selectedEvent}
                   mode={broadcastMode}
+                  autoExpandParents={statusFilter === "In Progress" || statusFilter === "Ready for Translation"}
                   fetchSubOrders={fetchSubOrders}
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}
@@ -1643,6 +1644,7 @@ React.useEffect(() => {
                   setFormatFilter={setFormatFilter}
                   selectedEvent={selectedEvent}
                   mode={marketingMode}
+                  autoExpandParents={statusFilter === "In Progress" || statusFilter === "Ready for Translation"}
                   fetchSubOrders={fetchSubOrders}
                   statusPatch={statusPatch}
                   subRefresh={subRefresh}

@@ -85,6 +85,8 @@ type Props = {
   setFormatFilter: (v: string[]) => void
   selectedEvent: string
   mode?: "grouped" | "flat"
+  /** Auto-expand every parent's sub-orders (used for the In Progress / Ready tabs). */
+  autoExpandParents?: boolean
   fetchSubOrders?: (
     parentId: string,
     page?: number
@@ -156,6 +158,7 @@ export default function BroadcastOrdersTable({
   setFormatFilter,
   selectedEvent,
   mode = "grouped",
+  autoExpandParents = false,
   fetchSubOrders,
   statusPatch,
   catPatch,
@@ -563,6 +566,32 @@ function toggleExpand(e: React.MouseEvent, id: string) {
     return next
   })
 }
+
+// Auto-expand every parent on the In Progress / Ready tabs, so a translator sees
+// the sub-orders at a glance without clicking each arrow. Runs once per list
+// signature (the set of parent ids), so a manual collapse afterwards isn't
+// re-opened on the next render — only a real list change re-applies it.
+const autoExpandedSigRef = React.useRef<string>("")
+React.useEffect(() => {
+  if (!autoExpandParents || mode !== "grouped") {
+    autoExpandedSigRef.current = ""
+    return
+  }
+  const parentIds = orders.filter((o: any) => o.isParent).map((o: any) => o.id)
+  const sig = parentIds.join(",")
+  if (sig === autoExpandedSigRef.current) return
+  autoExpandedSigRef.current = sig
+  if (parentIds.length === 0) return
+  setExpandedIds((prev) => {
+    const next = new Set(prev)
+    for (const id of parentIds) next.add(id)
+    return next
+  })
+  for (const id of parentIds) {
+    if (!subCache.get(id)?.rows.length) loadSubOrders(id, 1)
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [autoExpandParents, orders, mode])
 
   // Selection column shows only for managers who wired the handlers.
   const selectable = !!canManageOrders && !!onToggleSelected && !!selectedIds
