@@ -220,6 +220,14 @@ export default function SrtCheckerPage() {
   const [editingLine, setEditingLine] = React.useState<number | null>(null)
   const [lineDraft, setLineDraft] = React.useState("")
 
+  // Free editing of a line straight in the Corrected file panel. Separate from
+  // the review-panel line rewrite above so editing here never flips a suggestion
+  // card into edit mode. Writes to the same `lineEdits` override, which the
+  // download already honours — and, being a whole-line edit, it is excluded from
+  // the decisions posted back, so nothing here is saved to the database.
+  const [editingResultLine, setEditingResultLine] = React.useState<number | null>(null)
+  const [resultDraft, setResultDraft] = React.useState("")
+
   // Which target languages the glossary actually covers. Anything not listed
   // here has no approved terminology, so checking it would be meaningless.
   React.useEffect(() => {
@@ -399,6 +407,40 @@ export default function SrtCheckerPage() {
     setLineDraft("")
   }
 
+  /** A cue's corrected text from accepted suggestions alone — no manual override. */
+  function baseCorrectedText(cueIndex: number, cueText: string): string {
+    let text = cueText
+    for (const s of suggestions) {
+      if (s.cueIndex !== cueIndex || decisions[s.id] !== "accepted") continue
+      text = applyToLine(text, s.find, customReplacements[s.id] ?? s.replace)
+    }
+    return text
+  }
+
+  function startEditingResultLine(cueIndex: number, text: string) {
+    setEditingResultLine(cueIndex)
+    setResultDraft(text)
+  }
+
+  /**
+   * Save a free edit made in the Corrected file panel. Stores the exact text as a
+   * whole-line override; if it matches the suggestion-only result, the override is
+   * dropped instead. Never touches accept/reject decisions, so a manual tweak here
+   * can't re-add a suggestion the translator rejected — and never persists to the DB.
+   */
+  function commitResultLineEdit(cueIndex: number, cueText: string) {
+    const value = resultDraft
+    const base = baseCorrectedText(cueIndex, cueText)
+    setLineEdits((current) => {
+      const next = { ...current }
+      if (!value.trim() || value === base) delete next[cueIndex]
+      else next[cueIndex] = value
+      return next
+    })
+    setEditingResultLine(null)
+    setResultDraft("")
+  }
+
   function commitEdit(s: Suggestion) {
     const value = draft.trim()
     setCustomReplacements((current) => {
@@ -424,6 +466,8 @@ export default function SrtCheckerPage() {
     setDraft("")
     setEditingLine(null)
     setLineDraft("")
+    setEditingResultLine(null)
+    setResultDraft("")
     setCues([])
     setSuggestions([])
     setDecisions({})
@@ -1291,7 +1335,7 @@ export default function SrtCheckerPage() {
                 <h2 className="text-sm font-semibold text-[#F5F1E8]">Corrected file</h2>
                 <p className="text-[11px] text-zinc-500 truncate">
                   {hasChecked
-                    ? `${changedCueCount} of ${previewCues.length} lines changed`
+                    ? `${changedCueCount} of ${previewCues.length} lines changed · click a line to edit`
                     : fileName || "Nothing loaded yet"}
                 </p>
               </div>
@@ -1320,18 +1364,94 @@ export default function SrtCheckerPage() {
                       <span className="font-mono">
                         {cue.start} &rarr; {cue.end}
                       </span>
+                      {lineEdits[cue.index] !== undefined && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded border border-sky-500/40 text-sky-400">
+                          edited
+                        </span>
+                      )}
                       {cue.changed && (
                         <span className="ml-auto text-[#D6B36A] font-medium">changed</span>
                       )}
                     </div>
-                    <p
-                      dir={isRtlLanguage(language) ? "rtl" : "ltr"}
-                      className={`text-[13px] leading-relaxed whitespace-pre-wrap ${
-                        cue.changed ? "text-[#F0C070]" : "text-zinc-400"
-                      }`}
-                    >
-                      {cue.resultText}
-                    </p>
+
+                    {editingResultLine === cue.index ? (
+                      <div>
+                        <textarea
+                          autoFocus
+                          dir={isRtlLanguage(language) ? "rtl" : "ltr"}
+                          rows={Math.max(2, resultDraft.split("\n").length)}
+                          value={resultDraft}
+                          onChange={(e) => setResultDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            // Enter saves; Shift+Enter adds a subtitle line break.
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault()
+                              commitResultLineEdit(cue.index, cue.text)
+                            }
+                            if (e.key === "Escape") {
+                              setEditingResultLine(null)
+                              setResultDraft("")
+                            }
+                          }}
+                          className="w-full text-[13px] text-zinc-100 bg-black/50 border border-[#D6B36A]/60 rounded-lg px-3 py-2 leading-relaxed outline-none resize-y"
+                        />
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => commitResultLineEdit(cue.index, cue.text)}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-medium gear-fill"
+                          >
+                            Save line
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingResultLine(null)
+                              setResultDraft("")
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-400 hover:text-white"
+                          >
+                            Cancel
+                          </button>
+                          {lineEdits[cue.index] !== undefined && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLineEdits((current) => {
+                                  const next = { ...current }
+                                  delete next[cue.index]
+                                  return next
+                                })
+                                setEditingResultLine(null)
+                                setResultDraft("")
+                              }}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-500 hover:text-white ml-auto"
+                            >
+                              Reset line
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-zinc-600 mt-1">
+                          Enter saves &middot; Shift+Enter adds a line break &middot; Esc cancels
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEditingResultLine(cue.index, cue.resultText)}
+                        title="Click to edit this line"
+                        className="group/rline w-full text-left"
+                      >
+                        <p
+                          dir={isRtlLanguage(language) ? "rtl" : "ltr"}
+                          className={`text-[13px] leading-relaxed whitespace-pre-wrap rounded-lg px-2 py-1 -mx-2 border border-transparent group-hover/rline:border-[#D6B36A]/40 group-hover/rline:bg-white/[0.03] transition ${
+                            cue.changed ? "text-[#F0C070]" : "text-zinc-400"
+                          }`}
+                        >
+                          {cue.resultText}
+                        </p>
+                      </button>
+                    )}
 
                     {/* EN → AR/FR reference terms whose timing overlaps this line. */}
                     {(refByPreviewCue.get(cue.index) ?? []).length > 0 && (
