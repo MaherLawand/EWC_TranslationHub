@@ -329,6 +329,15 @@ export default function Sidebar({
             />
           )}
 
+          {/* ── DAILY REPORT ── owner-only (server also enforces the email). */}
+          {currentUser?.email?.toLowerCase() === "maher.lawand10@gmail.com" && (
+            <SidebarItem
+              active={activePage === "daily-report"}
+              label="Daily Report"
+              onClick={() => setActivePage("daily-report")}
+            />
+          )}
+
         </div>
 
       </nav>

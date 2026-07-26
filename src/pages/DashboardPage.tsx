@@ -14,6 +14,7 @@ import GamesPage from "../components/pages/GamesPage"
 import WeeklyGameFilters from "../components/orders/WeeklyGameFilters"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import SrtCheckerPage from "../components/pages/SrtCheckerPage"
+import DailyReportPage from "../components/pages/DailyReportPage"
 import { api } from "../lib/api"
 import { CONTENT_TITLES } from "../constants/contentTitles"
 import { deadlineToFormParts } from "../lib/deadline"
@@ -1634,6 +1635,11 @@ React.useEffect(() => {
               )}
 
               {activePage === "srt-checker" && <SrtCheckerPage />}
+
+              {activePage === "daily-report" &&
+                currentUser?.email?.toLowerCase() === "maher.lawand10@gmail.com" && (
+                  <DailyReportPage />
+                )}
 
               {activePage === "notifications" && (
                 <NotificationsPage
