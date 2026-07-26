@@ -29,7 +29,7 @@ const gameLanguages: Record<string, string[]> = {
   "Mobile Legends: MWI": ["EN", "AR"],
   "EA Sports FC 26": ["EN", "AR"],
   "Pubg Battlegrounds": ["EN", "AR", "CN"],
-  "Mobile Legends: MSC": ["EN", "AR"],
+  "Mobile Legends: MSC": ["EN", "AR", "ID"],
   "Teamfight Tactics": ["EN", "CN"],
   "Overwatch 2": ["EN", "AR", "CN", "FR"],
   "Call of Duty: Warzone": ["EN", "AR", "FR"],

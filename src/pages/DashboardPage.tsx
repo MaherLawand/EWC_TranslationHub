@@ -23,6 +23,13 @@ import { useUsers } from "../hooks/useUsers"
 import { useGames } from "../hooks/useGames"
 import { io as socketIo } from "socket.io-client"
 
+// The server build this tab first connected to. The socket sends "server-version"
+// on every (re)connect; we anchor on the first value and force a one-time reload
+// if it ever changes — i.e. a new deploy went out — so every open tab picks up
+// the freshly shipped frontend without anyone manually refreshing. Module scope
+// so it survives component remounts for the life of the tab.
+let anchoredServerVersion: string | null = null
+
 // Compute the user's landing page from their role/department/position.
 // Called synchronously at useState initialisation time so the correct page
 // (and therefore showFilters) is known on the very first render — preventing
@@ -672,6 +679,9 @@ React.useEffect(() => {
   // Same idea for a content-category quick-edit — patches a sub-order row that
   // lives only in the table's subCache (not the top-level list).
   const [catPatch, setCatPatch] = React.useState<{ id: string; contentCategory: string; nonce: number } | null>(null)
+  // Set when the socket reports a newer server build than this tab loaded with —
+  // drives the "new update" reload prompt (never auto-reloads; the user chooses).
+  const [newVersionAvailable, setNewVersionAvailable] = React.useState(false)
 
   // Bumped on any structural change (create / edit / delete) so the order tables
   // refresh the sub-orders of currently-expanded parents. Pure status changes use
@@ -753,6 +763,20 @@ React.useEffect(() => {
     // auth handshake needed. withCredentials sends the cookie on the upgrade.
     const socket = socketIo(import.meta.env.VITE_API_URL, {
       withCredentials: true,
+    })
+
+    // ── New-deploy prompt ─────────────────────────────────────────────────
+    // The server emits its build version on every (re)connect. Anchor on the
+    // first one; if a later reconnect reports a different version, a deploy
+    // shipped — surface a confirm popup rather than force-reloading, so nobody
+    // mid-edit loses their work. The user reloads when they're ready.
+    socket.on("server-version", (version: string) => {
+      if (!version) return
+      if (anchoredServerVersion === null) {
+        anchoredServerVersion = version
+        return
+      }
+      if (version !== anchoredServerVersion) setNewVersionAvailable(true)
     })
 
     // ── Real-time order list sync ─────────────────────────────────────────
@@ -1741,6 +1765,40 @@ React.useEffect(() => {
                   className="bg-red-500 text-white py-3 rounded-2xl font-semibold hover:bg-red-600 transition"
                 >
                   Delete Order
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* NEW-VERSION RELOAD PROMPT — a deploy shipped while this tab was open.
+            Never auto-reloads, so in-progress work isn't lost; the user reloads
+            when ready. Matches the delete-confirm modal's styling. */}
+        {newVersionAvailable && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center px-4">
+            <div className="w-full max-w-[480px] bg-[#0C0C0C]/95 border border-white/10 backdrop-blur-2xl rounded-3xl p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
+
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gear-gradient w-fit">New update available</h2>
+                <p className="text-zinc-500 mt-3 leading-relaxed">
+                  A new version of the site has been published. Reload to get the
+                  latest changes. Your current work won&rsquo;t reload until you choose to.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setNewVersionAvailable(false)}
+                  className="bg-white/5 border border-white/15 text-zinc-300 py-3 rounded-2xl font-semibold hover:text-white hover:bg-white/10 transition"
+                >
+                  Not now
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="gear-fill text-black py-3 rounded-2xl font-semibold transition"
+                >
+                  Reload
                 </button>
               </div>
 
