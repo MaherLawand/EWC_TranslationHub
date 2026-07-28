@@ -175,8 +175,12 @@ export default function SrtQcPanel() {
     return cues.map((cue) => {
       const edited = lineEdits[cue.index]
       const corr = corrByCue.get(cue.index)
-      const result = edited !== undefined ? edited : corr ? corr.corrected : cue.text
-      return { ...cue, result, changed: result !== cue.text, changes: corr?.changes ?? [] }
+      // Baseline with NO manual override: the model's corrected text if it changed
+      // this cue, else the original. A manual edit is compared against this, so
+      // editing a corrected line back toward the original is kept, not discarded.
+      const base = corr ? corr.corrected : cue.text
+      const result = edited !== undefined ? edited : base
+      return { ...cue, base, result, changed: result !== cue.text, changes: corr?.changes ?? [] }
     })
   }, [cues, corrByCue, lineEdits])
 
@@ -371,13 +375,13 @@ export default function SrtQcPanel() {
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(cue.index, cue.text) }
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(cue.index, cue.base) }
                         if (e.key === "Escape") { setEditing(null); setDraft("") }
                       }}
                       className="w-full text-[13px] text-zinc-100 bg-black/50 border border-[#D6B36A]/60 rounded-lg px-3 py-2 leading-relaxed outline-none resize-y"
                     />
                     <div className="flex items-center gap-2 mt-1.5">
-                      <button type="button" onClick={() => commitEdit(cue.index, cue.text)} className="px-2.5 py-1 rounded-lg text-[11px] font-medium gear-fill">Save line</button>
+                      <button type="button" onClick={() => commitEdit(cue.index, cue.base)} className="px-2.5 py-1 rounded-lg text-[11px] font-medium gear-fill">Save line</button>
                       <button type="button" onClick={() => { setEditing(null); setDraft("") }} className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-white/20 text-zinc-400 hover:text-white">Cancel</button>
                       {lineEdits[cue.index] !== undefined && (
                         <button
