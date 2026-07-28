@@ -2,6 +2,7 @@ import React from "react"
 import { toast } from "react-toastify"
 import { EWC_WEEKS, ENC_WEEKS } from "../../constants/weeklyGames"
 import EnReferencePanel from "./EnReferencePanel"
+import SrtQcPanel from "./SrtQcPanel"
 
 /**
  * SRT glossary checker — translators upload a subtitle file, pick its language,
@@ -158,7 +159,7 @@ type CheckerSession = {
 let savedSession: CheckerSession | null = null
 
 export default function SrtCheckerPage() {
-  const [tab, setTab] = React.useState<"checker" | "reference">("checker")
+  const [tab, setTab] = React.useState<"checker" | "qc">("checker")
   // EN→AR/FR reference matches, shown inline next to each corrected-file line.
   // The English source and the corrected (target) file can have DIFFERENT line
   // counts, so we can't line them up by index — we align by TIMESTAMP overlap,
@@ -697,7 +698,7 @@ export default function SrtCheckerPage() {
         <p className="text-zinc-500 text-sm mt-1">
           {tab === "checker"
             ? "Check a subtitle file against the approved terminology glossary. Timings are never modified."
-            : "Look up the approved Arabic/French translations for the glossary terms in an English subtitle."}
+            : "Proofread a subtitle file for grammar & spelling in its language. Player/team names are left untouched; timings are never modified."}
         </p>
       </div>
 
@@ -705,7 +706,7 @@ export default function SrtCheckerPage() {
       <div className="flex gap-2 mb-6 border-b border-white/10">
         {([
           ["checker", "Glossary Checker"],
-          ["reference", "EN → AR / FR Reference"],
+          ["qc", "QC"],
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -722,7 +723,7 @@ export default function SrtCheckerPage() {
         ))}
       </div>
 
-      {tab === "reference" && <EnReferencePanel />}
+      {tab === "qc" && <SrtQcPanel />}
 
       {/* Three columns on wide screens: review · corrected file · EN reference.
           Stacks below xl, where three side-by-side would be unreadable. */}
