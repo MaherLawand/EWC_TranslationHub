@@ -1300,6 +1300,21 @@ React.useEffect(() => {
     const now = new Date()
     const deadline = new Date(deadlineDate)
 
+    // Graduated urgency colors, so the deadline column reads at a glance instead
+    // of being uniformly red. Time LEFT runs cool→warm as it shrinks (green =
+    // plenty, orange = imminent); OVERDUE stays red and deepens with how late it is.
+    const leftColor = (mins: number) =>
+      mins < 60 ? "text-orange-500" :      // under 1h
+      mins < 180 ? "text-orange-400" :     // under 3h
+      mins < 720 ? "text-yellow-400" :     // under 12h
+      mins < 1440 ? "text-lime-400" :      // under 24h
+      mins < 4320 ? "text-green-400" :     // under 3 days
+      "text-zinc-500"                      // 3+ days
+    const overdueColor = (mins: number) =>
+      mins < 60 ? "text-red-400" :         // under 1h late
+      mins < 240 ? "text-red-500" :        // under 4h late
+      "text-red-600"                       // 4h+ late
+
     // Timed deadlines are real instants → judge by the actual time remaining, NOT
     // the calendar-day gap. A deadline a few hours away that lands after midnight
     // (e.g. 01:00 AM) is still "hours left", not "1 day left".
@@ -1318,11 +1333,11 @@ React.useEffect(() => {
         }
         return h > 0 ? `${h}h ${m}m` : `${m}m`
       }
-      if (diffMin <= 0) return { text: `${fmt(Math.max(1, -diffMin))} overdue`, color: "text-red-400" }
-      // Under a day → red; up to 3 days → yellow; beyond → grey.
-      const days = Math.floor(diffMin / 1440)
-      const color = diffMin < 1440 ? "text-red-400" : days <= 3 ? "text-yellow-400" : "text-zinc-500"
-      return { text: `${fmt(diffMin)} left`, color }
+      if (diffMin <= 0) {
+        const over = Math.max(1, -diffMin)
+        return { text: `${fmt(over)} overdue`, color: overdueColor(over) }
+      }
+      return { text: `${fmt(diffMin)} left`, color: leftColor(diffMin) }
     }
 
     // Date-only deadlines are floating calendar dates stored at UTC midnight →
@@ -1334,10 +1349,14 @@ React.useEffect(() => {
       (startDeadline.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24)
     )
 
-    if (diffDays === 0) return { text: "Due today", color: "text-red-400" }
-    if (diffDays < 0) return { text: `${Math.abs(diffDays)} days overdue`, color: "text-red-400" }
-    if (diffDays <= 3) return { text: `${diffDays} day${diffDays > 1 ? "s" : ""} left`, color: "text-yellow-400" }
-    return { text: `${diffDays} day${diffDays > 1 ? "s" : ""} left`, color: "text-zinc-500" }
+    if (diffDays === 0) return { text: "Due today", color: "text-orange-400" }
+    if (diffDays < 0) {
+      const d = Math.abs(diffDays)
+      const color = d <= 1 ? "text-red-400" : d <= 3 ? "text-red-500" : "text-red-600"
+      return { text: `${d} day${d > 1 ? "s" : ""} overdue`, color }
+    }
+    const color = diffDays <= 1 ? "text-yellow-400" : diffDays <= 3 ? "text-green-400" : "text-zinc-500"
+    return { text: `${diffDays} day${diffDays > 1 ? "s" : ""} left`, color }
   }
 
   /*
