@@ -62,6 +62,8 @@ export default function SrtQcPanel() {
   const [corrections, setCorrections] = React.useState<Correction[]>(savedQc?.corrections ?? [])
   const [lineEdits, setLineEdits] = React.useState<Record<number, string>>(savedQc?.lineEdits ?? {})
   const [isChecking, setIsChecking] = React.useState(false)
+  const [progress, setProgress] = React.useState(0)
+  const [progressLabel, setProgressLabel] = React.useState("")
   const [isExporting, setIsExporting] = React.useState(false)
   const [dragOver, setDragOver] = React.useState(false)
   const [editing, setEditing] = React.useState<number | null>(null)
@@ -108,10 +110,34 @@ export default function SrtQcPanel() {
     ingestFile(e.dataTransfer.files?.[0])
   }
 
+  /**
+   * Drive the progress bar for a run. The server returns one response at the end
+   * (no streaming), so this is a MODELLED estimate grounded in the work: cue count
+   * decides how many model batches run. It eases toward 95% and only hits 100%
+   * when the real response lands.
+   */
+  function startProgress(cueCount: number) {
+    const batches = Math.max(1, Math.ceil(cueCount / 40))
+    const estimateMs = 4_000 + batches * 7_000
+    const startedAt = Date.now()
+    setProgress(0)
+    setProgressLabel("Reading the subtitles…")
+    const timer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      const ratio = 1 - Math.exp(-elapsed / (estimateMs / 2.5))
+      setProgress(Math.min(95, Math.round(ratio * 95)))
+      setProgressLabel(elapsed < 3_000 ? "Reading the subtitles…" : `Proofreading ${cueCount} line${cueCount === 1 ? "" : "s"}…`)
+    }, 200)
+    return () => window.clearInterval(timer)
+  }
+
   async function runCheck() {
     if (!srtText || !language || isChecking) return
     setIsChecking(true)
     reset()
+    // Estimate cue count from the file to pace the bar (one "-->" per cue).
+    const cueCount = (srtText.match(/-->/g) || []).length || 1
+    const stopProgress = startProgress(cueCount)
     try {
       const res = await fetch(`${API}/srt/qc`, {
         method: "POST",
@@ -124,11 +150,14 @@ export default function SrtQcPanel() {
       setCues(data.cues || [])
       setCorrections(data.corrections || [])
       setHasChecked(true)
+      setProgress(100)
       const n = (data.corrections || []).length
       toast.success(n === 0 ? "No issues found" : `Found issues in ${n} line${n === 1 ? "" : "s"}`)
     } catch (error) {
       toast.error((error as Error).message || "Failed to proofread")
     } finally {
+      stopProgress()
+      setProgressLabel("")
       setIsChecking(false)
     }
   }
@@ -270,8 +299,27 @@ export default function SrtQcPanel() {
               : "gear-fill"
           }`}
         >
-          {isChecking ? "Proofreading…" : "Check grammar & spelling"}
+          {isChecking ? `Proofreading… ${progress}%` : "Check grammar & spelling"}
         </button>
+
+        {isChecking && (
+          <div className="mt-3">
+            <div
+              className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Proofread progress"
+            >
+              <div
+                className="h-full gear-fill rounded-full transition-[width] duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-1.5">{progressLabel}</p>
+          </div>
+        )}
       </div>
 
       {/* RESULT */}
