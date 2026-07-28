@@ -1,6 +1,8 @@
 import React from "react"
 import { toast } from "react-toastify"
-import { LANGUAGES } from "../../constants/languages"
+
+// The proofreader only carries style rules for these three (Arabic, English, French).
+const QC_LANGUAGES = ["Arabic", "English", "French"]
 
 const API = import.meta.env.VITE_API_URL
 const MAX_SRT_CHARS = 400_000
@@ -277,8 +279,8 @@ export default function SrtQcPanel() {
                 className="w-full h-[50px] appearance-none bg-[#0E0E0E] border border-[#2A2A2A] rounded-2xl px-4 pr-9 text-[#F5F1E8] outline-none transition hover:border-[#3A3A3A] focus:border-[#D6B36A] cursor-pointer"
               >
                 <option value="">Select the language</option>
-                {LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.name}>{l.name}</option>
+                {QC_LANGUAGES.map((l) => (
+                  <option key={l} value={l}>{l}</option>
                 ))}
               </select>
               <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[9px]">▼</div>
