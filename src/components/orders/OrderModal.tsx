@@ -1851,7 +1851,9 @@ transition={{
 
 {/* SUB ORDERS PANEL — shown when creating, or when editing a standalone order
     (adding sub-orders here promotes it into a big order). */}
-{!restricted && (!isEditing || canAddSubOrdersWhileEditing) && (
+{/* Hidden when duplicating a single sub-order (parentId set) — a sub-order
+    can't itself have sub-orders. */}
+{!restricted && !newOrder.parentId && (!isEditing || canAddSubOrdersWhileEditing) && (
   <div className="mt-6 bg-[radial-gradient(circle_at_top,rgba(214,179,106,0.06),transparent_60%)] bg-white/[0.04] border border-white/10 rounded-[28px] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
     <div className="flex items-center justify-between mb-2">
       <div>

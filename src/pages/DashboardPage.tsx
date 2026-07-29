@@ -1160,6 +1160,9 @@ React.useEffect(() => {
           deliveryLink: d.deliveryLink || "",
         })) || [],
       notifyPositions: detailSide?.notifyPositions || src?.notifyPositions || [],
+      // Standalone/big duplicates are top-level; the sub-order duplicate flow
+      // overrides this with the real parent so the copy stays a sub-order.
+      parentId: null,
     }
   }
 
@@ -1214,6 +1217,28 @@ React.useEffect(() => {
   // Instantly duplicate a sub-order into the same parent (server auto-increments
   // the name); then reload the expanded parent's sub-orders so it appears.
   async function duplicateSubOrder(order: any) {
+    // A sub-order WITH a source file shouldn't be silently cloned (the copy would
+    // arrive "Ready for Translation" and email translators the same source). Open
+    // the modal pre-filled instead, so the reviewer can adjust or clear the source
+    // before creating. The copy stays a sub-order of the same parent (parentId).
+    const detail = await fetchOrderDetail(order.id)
+    const src = detail || order
+    const detailSide = src.type === "MARKETING" ? src.marketing : src.broadcast
+    const hasSource = !!(detailSide?.sourceFileLink || "").trim()
+
+    if (hasSource) {
+      setIsEditing(false)
+      setEditingOrderId("")
+      setDuplicateSubOrders([])
+      setNewOrder({
+        ...buildDuplicateOrderState(src),
+        parentId: src.parentId || order.parentId || null,
+      })
+      setShowModal(true)
+      return
+    }
+
+    // No source file → duplicate immediately, as before.
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/orders/${order.id}/duplicate`, {
         method: "POST",
@@ -1250,6 +1275,7 @@ React.useEffect(() => {
       deliveryDate: "",
       deliveries: [],
       notifyPositions: [],
+      parentId: null,
     })
   }
 
