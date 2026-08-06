@@ -1013,10 +1013,9 @@ today.setHours(0, 0, 0, 0)
     Delivery Format <span className="text-red-400">*</span>
   </label>
 
-<div className={(!newOrder.deliveryType || (newOrder.deliveryType === "RAW" || newOrder.deliveryType === "FINISHED")) ? "opacity-50 cursor-not-allowed" : ""}>
+<div>
 <Select
   isMulti
-  isDisabled={!newOrder.deliveryType || (newOrder.deliveryType === "RAW" || newOrder.deliveryType === "FINISHED")}
   styles={darkSelectStyles}
   options={BROADCAST_FORMAT_OPTIONS}
   value={
