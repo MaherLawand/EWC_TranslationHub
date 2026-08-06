@@ -162,6 +162,8 @@ export default function App({ initialUser }: { initialUser?: any } = {}) {
     deliveryDate: "",
     deliveries: [],
     notifyPositions: [] as string[],
+    // Set only by the sub-order duplicate flow, so the copy stays a sub-order.
+    parentId: null as string | null,
   })
 
   const [isEditing, setIsEditing] =
