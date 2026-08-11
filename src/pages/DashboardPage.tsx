@@ -15,6 +15,8 @@ import WeeklyGameFilters from "../components/orders/WeeklyGameFilters"
 import NotificationsPage from "../components/pages/NotificationsPage"
 import SrtCheckerPage from "../components/pages/SrtCheckerPage"
 import DailyReportPage from "../components/pages/DailyReportPage"
+// ── ADMIN STATISTICS DASHBOARD (removable feature) ──
+import StatisticsPage from "../components/pages/StatisticsPage"
 import { api } from "../lib/api"
 import { CONTENT_TITLES } from "../constants/contentTitles"
 import { deadlineToFormParts } from "../lib/deadline"
@@ -1683,10 +1685,17 @@ React.useEffect(() => {
 
               {activePage === "srt-checker" && <SrtCheckerPage />}
 
+              {/* ── ADMIN STATISTICS (removable feature) — Main + Weekly Breakdown + Daily Report (view) tabs ── */}
+              {activePage === "analytics" && currentUser?.role === "ADMIN" && (
+                <StatisticsPage event={selectedEvent} />
+              )}
+
+              {/* ── DAILY REPORT UPLOAD — owner-only (server also enforces the email) ── */}
               {activePage === "daily-report" &&
                 currentUser?.email?.toLowerCase() === "maher.lawand10@gmail.com" && (
                   <DailyReportPage />
                 )}
+
 
               {activePage === "notifications" && (
                 <NotificationsPage

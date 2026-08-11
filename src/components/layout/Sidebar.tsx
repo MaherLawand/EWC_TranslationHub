@@ -320,6 +320,16 @@ export default function Sidebar({
             </div>
           )}
 
+          {/* ── STATISTICS ── admin-only analytics dashboard (removable feature) */}
+          {currentUser?.role === "ADMIN" && (
+            <SidebarItem
+              active={activePage === "analytics"}
+              highlight
+              label="Statistics"
+              onClick={() => setActivePage("analytics")}
+            />
+          )}
+
           {/* ── USERS ── */}
           {currentUser?.role === "ADMIN" && (
             <SidebarItem
@@ -329,7 +339,7 @@ export default function Sidebar({
             />
           )}
 
-          {/* ── DAILY REPORT ── owner-only (server also enforces the email). */}
+          {/* ── DAILY REPORT ── owner-only CSV upload → Google Sheets (server also enforces the email). */}
           {currentUser?.email?.toLowerCase() === "maher.lawand10@gmail.com" && (
             <SidebarItem
               active={activePage === "daily-report"}
