@@ -19,12 +19,15 @@ import Select from "react-select"
 import { api } from "../../lib/api"
 import { weeksForEvent } from "../../constants/weeklyGames"
 import { darkSelectStyles } from "../../lib/selectStyles"
+import { assignWeeksByDeadline } from "../../lib/weekAssign"
 
 const UTC_DAY_MS = 24 * 60 * 60 * 1000
 const H = 60 * 60 * 1000
 // Report rule: RAW/ASAP only counts as delayed past 2h from source-added.
 const RAW_THRESHOLD_MS = 2 * H
-const MINOR_DELAY_MAX_HOURS = 1
+// A late/overdue order is "extremely late" once it passes this many hours; below
+// it, it's "mildly late". Adjust to taste.
+const LATE_EXTREME_HOURS = 6
 
 const CATEGORY_INFO: Record<string, { label: string; hours: number | "ASAP" }> = {
   RAW: { label: "Raw", hours: "ASAP" },
@@ -142,7 +145,8 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
   const [weekFilter, setWeekFilter] = React.useState<string>("all")
   const [dayFilter, setDayFilter] = React.useState<string>("all")
   const [gameFilter, setGameFilter] = React.useState<string>("all")
-  const [delayFilter, setDelayFilter] = React.useState<string>("all") // all | late | early | ontime
+  const [statusFilter, setStatusFilter] = React.useState<string>("all") // all | IN_PROGRESS | COMPLETED
+  const [delayFilter, setDelayFilter] = React.useState<string>("all") // all | overdue | late | extreme | early | ontime
   const [search, setSearch] = React.useState("")
   const [page, setPage] = React.useState(0)
   const [selected, setSelected] = React.useState<{ o: Order; week: string | null; delay: Delay } | null>(null)
@@ -166,60 +170,20 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
     setWeekFilter("all")
     setDayFilter("all")
     setGameFilter("all")
+    setStatusFilter("all")
     setDelayFilter("all")
     setSearch("")
     setPage(0)
   }, [event])
   React.useEffect(() => {
     setPage(0)
-  }, [weekFilter, dayFilter, gameFilter, delayFilter, search, kind])
+  }, [weekFilter, dayFilter, gameFilter, statusFilter, delayFilter, search, kind])
 
-  /* Assign each order to an event week (broadcast only) by deadline order within shared games. */
+  /* Assign each order to an event week by DEADLINE, cross-referenced with the game
+     schedule (see lib/weekAssign). */
   const weekOf = React.useMemo(() => {
-    const map = new Map<string, string | null>()
-    if (!data) return map
-    const schedule = weeksForEvent(event)
-    const keySets = schedule.map((w) => {
-      const s = new Set<string>()
-      for (const g of w.games) for (const n of [g.game, g.display, ...(g.aliases ?? [])]) if (n) s.add(norm(n))
-      return s
-    })
-    const weeksForGame = (game: string) => schedule.filter((_, i) => keySets[i].has(norm(game))).map((w) => w.week)
-    const byGame = new Map<string, Order[]>()
-    for (const o of data.orders) {
-      if (!o.game) {
-        map.set(o.id, null)
-        continue
-      }
-      const list = byGame.get(o.game)
-      if (list) list.push(o)
-      else byGame.set(o.game, [o])
-    }
-    for (const [game, list] of byGame) {
-      const wl = weeksForGame(game)
-      if (wl.length === 0) {
-        for (const o of list) map.set(o.id, null)
-        continue
-      }
-      if (wl.length === 1) {
-        for (const o of list) map.set(o.id, wl[0])
-        continue
-      }
-      const sorted = [...list].sort((a, b) => {
-        const da = a.deadline, db = b.deadline
-        if (!da && !db) return 0
-        if (!da) return 1
-        if (!db) return -1
-        return Date.parse(da) - Date.parse(db)
-      })
-      const n = wl.length, k = sorted.length, base = Math.floor(k / n), rem = k % n
-      let pos = 0
-      for (let wi = 0; wi < n; wi++) {
-        const count = base + (wi < rem ? 1 : 0)
-        for (let j = 0; j < count; j++) map.set(sorted[pos++].id, wl[wi])
-      }
-    }
-    return map
+    if (!data) return new Map<string, string | null>()
+    return assignWeeksByDeadline(data.orders.map((o) => ({ id: o.id, game: o.game, deadline: o.deadline })), event)
   }, [data, event])
 
   const rows = React.useMemo(() => {
@@ -233,10 +197,6 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
     const set = new Set(rows.map((r) => r.week).filter(Boolean) as string[])
     return weeksForEvent(event).map((w) => w.week).filter((w) => set.has(w))
   }, [rows, event])
-  const daysWithData = React.useMemo(
-    () => [...new Set(rows.map((r) => r.day).filter(Boolean) as string[])].sort((a, b) => b.localeCompare(a)),
-    [rows]
-  )
   const gameOptions = React.useMemo(
     () => [...new Set(rows.map((r) => r.o.game).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b)),
     [rows]
@@ -246,48 +206,65 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
     if (delayFilter === "all") return true
     if (delayFilter === "late") return d?.kind === "late"
     if (delayFilter === "overdue") return d?.kind === "overdue"
+    if (delayFilter === "extreme") return (d?.kind === "late" || d?.kind === "overdue") && d.hours >= LATE_EXTREME_HOURS
     if (delayFilter === "early") return d?.kind === "early"
     if (delayFilter === "ontime") return !d || d.kind === "left"
     return true
   }
 
-  const filtered = React.useMemo(() => {
+  // Rows matching every filter EXCEPT day — drives both the Day options and the table.
+  const rowsExceptDay = React.useMemo(() => {
     const q = search.trim().toLowerCase()
     const wantType = kind.toUpperCase()
     return rows.filter(
       (r) =>
         (r.o.type || "").toUpperCase() === wantType &&
         (weekFilter === "all" || r.week === weekFilter) &&
-        (dayFilter === "all" || r.day === dayFilter) &&
         (gameFilter === "all" || r.o.game === gameFilter) &&
+        (statusFilter === "all" || r.o.status === statusFilter) &&
         matchesDelay(r.delay) &&
         (!q || r.o.title.toLowerCase().includes(q) || (r.o.game || "").toLowerCase().includes(q))
     )
-  }, [rows, weekFilter, dayFilter, gameFilter, delayFilter, search, kind])
+  }, [rows, weekFilter, gameFilter, statusFilter, delayFilter, search, kind])
+
+  // Day options scoped to the selected week (and other filters) → "days per week".
+  const daysWithData = React.useMemo(
+    () => [...new Set(rowsExceptDay.map((r) => r.day).filter(Boolean) as string[])].sort((a, b) => b.localeCompare(a)),
+    [rowsExceptDay]
+  )
+  // If the picked day isn't in the current week's days, drop back to "all".
+  React.useEffect(() => {
+    if (dayFilter !== "all" && !daysWithData.includes(dayFilter)) setDayFilter("all")
+  }, [daysWithData, dayFilter])
+
+  const filtered = React.useMemo(
+    () => rowsExceptDay.filter((r) => dayFilter === "all" || r.day === dayFilter),
+    [rowsExceptDay, dayFilter]
+  )
 
   const stats = React.useMemo(() => {
-    let completed = 0, inProgress = 0, late = 0, overdue = 0, early = 0, lateHours = 0
+    let completed = 0, inProgress = 0, late = 0, overdue = 0, early = 0, extreme = 0, lateHours = 0
     for (const r of filtered) {
       if (r.o.status === "COMPLETED") completed++
       else inProgress++
       const d = r.delay
       if (!d) continue
-      if (d.kind === "late") { late++; lateHours += d.hours }
-      else if (d.kind === "overdue") overdue++
+      if (d.kind === "late") { late++; lateHours += d.hours; if (d.hours >= LATE_EXTREME_HOURS) extreme++ }
+      else if (d.kind === "overdue") { overdue++; if (d.hours >= LATE_EXTREME_HOURS) extreme++ }
       else if (d.kind === "early") early++
     }
     const completedRows = filtered.filter((r) => r.o.status === "COMPLETED")
     const onTime = completedRows.filter((r) => !r.delay || r.delay.kind === "early").length
     const pct = completedRows.length ? Math.round((onTime / completedRows.length) * 100) : null
-    return { completed, inProgress, late, overdue, early, onTimePct: pct, avgLate: late ? amountLabel(lateHours / late) : "—" }
+    return { completed, inProgress, late, overdue, early, extreme, onTimePct: pct, avgLate: late ? amountLabel(lateHours / late) : "—" }
   }, [filtered])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
-  const anyFilter = weekFilter !== "all" || dayFilter !== "all" || gameFilter !== "all" || delayFilter !== "all" || !!search
+  const anyFilter = weekFilter !== "all" || dayFilter !== "all" || gameFilter !== "all" || statusFilter !== "all" || delayFilter !== "all" || !!search
   const clear = () => {
-    setWeekFilter("all"); setDayFilter("all"); setGameFilter("all"); setDelayFilter("all"); setSearch("")
+    setWeekFilter("all"); setDayFilter("all"); setGameFilter("all"); setStatusFilter("all"); setDelayFilter("all"); setSearch("")
   }
 
   return (
@@ -322,13 +299,18 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] uppercase tracking-wider text-zinc-500 pr-1">Day</span>
-              <div className="w-[190px]">
+              <div className="w-[210px]">
                 <Select
                   styles={darkSelectStyles}
                   menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
                   isSearchable={false}
-                  options={[{ value: "all", label: "All days" }, ...daysWithData.map((d) => ({ value: d, label: dayLabelFor(d) }))]}
-                  value={dayFilter === "all" ? { value: "all", label: "All days" } : { value: dayFilter, label: dayLabelFor(dayFilter) }}
+                  options={[
+                    { value: "all", label: weekFilter === "all" ? "All days" : `All days · W${weekFilter}` },
+                    ...daysWithData.map((d) => ({ value: d, label: dayLabelFor(d) })),
+                  ]}
+                  value={dayFilter === "all"
+                    ? { value: "all", label: weekFilter === "all" ? "All days" : `All days · W${weekFilter}` }
+                    : { value: dayFilter, label: dayLabelFor(dayFilter) }}
                   onChange={(o: any) => setDayFilter(o?.value ?? "all")}
                 />
               </div>
@@ -355,8 +337,12 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] uppercase tracking-wider text-zinc-500 pr-1">Timing</span>
-              {[["all", "All"], ["late", "Late"], ["early", "Early"], ["ontime", "On time"]].map(([v, l]) => (
+              <span className="text-[11px] uppercase tracking-wider text-zinc-500 pr-1">Status</span>
+              {[["all", "All"], ["IN_PROGRESS", "In Progress"], ["COMPLETED", "Completed"]].map(([v, l]) => (
+                <Chip key={v} active={statusFilter === v} onClick={() => setStatusFilter(v)}>{l}</Chip>
+              ))}
+              <span className="text-[11px] uppercase tracking-wider text-zinc-500 pl-2 pr-1">Timing</span>
+              {[["all", "All"], ["overdue", "Overdue"], ["late", "Late"], ["extreme", "Extremely late"], ["early", "Early"], ["ontime", "On time"]].map(([v, l]) => (
                 <Chip key={v} active={delayFilter === v} onClick={() => setDelayFilter(v)}>{l}</Chip>
               ))}
               {anyFilter && (
@@ -366,10 +352,12 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-            <Tile label="Completed orders" value={filtered.length} accent />
-            <Tile label="Late" value={stats.late} tone="#E8894A" />
-            <Tile label="Early" value={stats.early} tone="#6FBF9B" />
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-5">
+            <Tile label="Orders" value={filtered.length} accent />
+            <Tile label="In progress" value={stats.inProgress} tone="#E8B14A" />
+            <Tile label="Overdue" value={stats.overdue} tone="#C6597A" sub="in progress, past deadline" />
+            <Tile label="Late" value={stats.late} tone="#E8894A" sub="completed late" />
+            <Tile label="Extremely late" value={stats.extreme} tone="#EF4444" sub={`≥ ${LATE_EXTREME_HOURS}h`} />
             <Tile label="On-time" value={stats.onTimePct == null ? "—" : `${stats.onTimePct}%`} sub={stats.avgLate !== "—" ? `avg late ${stats.avgLate}` : undefined} />
           </div>
 
@@ -397,7 +385,10 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
                     >
                       <td className="px-5 py-4 max-w-[320px]">
                         <div className="truncate text-[#F5F1E8] font-medium" title={r.o.title}>{r.o.title}</div>
-                        <div className="text-[12px] text-zinc-500 truncate">{r.o.game || "Marketing"}{r.week ? ` · W${r.week}` : ""}</div>
+                        <div className="text-[12px] text-zinc-500 truncate flex items-center gap-2 mt-0.5">
+                          <StatusPill status={r.o.status} />
+                          <span className="truncate">{r.o.game || "Marketing"}{r.week ? ` · W${r.week}` : ""}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-zinc-400">{r.o.contentCategory ? CATEGORY_INFO[r.o.contentCategory]?.label || r.o.contentCategory : "—"}</td>
                       <td className="px-4 py-4"><DelayPill delay={r.delay} /></td>
@@ -426,8 +417,10 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
           </div>
 
           <p className="text-[11px] text-zinc-600 leading-relaxed mt-4">
-            View only — the CSV upload that writes to Google Sheets is the owner's sidebar page. Only completed orders
-            appear. Week = event week by game schedule; Day = the completion day (UTC).
+            View only — the CSV upload that writes to Google Sheets is the owner's sidebar page. In-progress and
+            completed orders. In-progress past their deadline show as <span className="text-[#C6597A]">overdue</span>;
+            ⚠ = mildly late/overdue, ⛔ = extremely late/overdue (≥ {LATE_EXTREME_HOURS}h). Week = event week by deadline;
+            Day = the order's latest activity (UTC).
             {data.generatedAt && <> · Updated {new Date(data.generatedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</>}
           </p>
         </>
@@ -527,11 +520,11 @@ function DelayPill({ delay }: { delay: Delay }) {
   const amount = amountLabel(delay.hours)
   if (delay.kind === "early") return <Pill bg="#6FBF9B22" fg="#6FBF9B">✅ {amount} early</Pill>
   if (delay.kind === "left") return <Pill bg="#5AA9E622" fg="#5AA9E6">⏳ {amount} left</Pill>
-  const minor = delay.hours < MINOR_DELAY_MAX_HOURS
-  const label = delay.kind === "overdue" ? "overdue" : "late"
-  return minor
-    ? <Pill bg="#E8894A22" fg="#E8894A">⚠ {amount} {label}</Pill>
-    : <Pill bg="#C6597A22" fg="#C6597A">⛔ {amount} {label}</Pill>
+  const word = delay.kind === "overdue" ? "overdue" : "late"
+  const extreme = delay.hours >= LATE_EXTREME_HOURS
+  return extreme
+    ? <Pill bg="#EF444422" fg="#F87171">⛔ {amount} {word}</Pill>
+    : <Pill bg="#E8894A22" fg="#E8894A">⚠ {amount} {word}</Pill>
 }
 function Pill({ bg, fg, children }: { bg: string; fg: string; children: React.ReactNode }) {
   return <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold" style={{ background: bg, color: fg }}>{children}</span>

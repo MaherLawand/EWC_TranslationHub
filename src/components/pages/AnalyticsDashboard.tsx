@@ -24,6 +24,7 @@ import { api } from "../../lib/api"
 import { weeksForEvent } from "../../constants/weeklyGames"
 import { CONTENT_TITLES } from "../../constants/contentTitles"
 import { darkSelectStyles } from "../../lib/selectStyles"
+import { assignWeeksByDeadline } from "../../lib/weekAssign"
 
 /* ── categories / colours ── */
 const CATS = [
@@ -110,59 +111,17 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
     setOpenWeeks(new Set())
   }, [event])
 
-  /* ── assign every order to an event week ──
-     A game's scheduled weeks (from the schedule) decide membership — that's the
-     reliable signal (deadlines in the data are noisy and occasionally corrupt).
-     A game that spans two weeks distributes its orders across them by DEADLINE
-     ORDER (earliest deadlines → earliest week; the earlier week takes the extra
-     when the count is odd). This uses the deadline where it's trustworthy — the
-     relative order within one game — without depending on absolute week dates. */
+  /* ── assign every order to an event week by DEADLINE, cross-referenced with the
+     game schedule (see lib/weekAssign). A game's scheduled weeks are the
+     candidates; the deadline picks which one when a game spans two weeks. */
   const { assigned, weekOrder } = React.useMemo(() => {
     if (!data) return { assigned: [] as Assigned[], weekOrder: [] as string[] }
-    const schedule = weeksForEvent(event)
-    const keySets = schedule.map((w) => {
-      const s = new Set<string>()
-      for (const g of w.games) for (const n of [g.game, g.display, ...(g.aliases ?? [])]) if (n) s.add(norm(n))
-      return s
-    })
-    const weeksForGame = (game: string) =>
-      schedule.filter((_, i) => keySets[i].has(norm(game))).map((w) => w.week)
-
-    const assigned: Assigned[] = data.orders.map((o) => ({ ...o, week: null }))
-    const byGame = new Map<string, number[]>()
-    data.orders.forEach((o, i) => {
-      const list = byGame.get(o.game)
-      if (list) list.push(i)
-      else byGame.set(o.game, [i])
-    })
-
-    for (const [game, idxs] of byGame) {
-      const wl = weeksForGame(game)
-      if (wl.length === 0) continue // not in this event's schedule → no week
-      if (wl.length === 1) {
-        for (const i of idxs) assigned[i].week = wl[0]
-        continue
-      }
-      // Spread this game's orders across its weeks by deadline order.
-      const sorted = [...idxs].sort((a, b) => {
-        const da = data.orders[a].deadline
-        const db = data.orders[b].deadline
-        if (!da && !db) return 0
-        if (!da) return 1
-        if (!db) return -1
-        return Date.parse(da) - Date.parse(db)
-      })
-      const n = wl.length
-      const k = sorted.length
-      const base = Math.floor(k / n)
-      const rem = k % n
-      let pos = 0
-      for (let wi = 0; wi < n; wi++) {
-        const count = base + (wi < rem ? 1 : 0) // earlier weeks take the extra
-        for (let j = 0; j < count; j++) assigned[sorted[pos++]].week = wl[wi]
-      }
-    }
-    return { assigned, weekOrder: schedule.map((w) => w.week) }
+    const wk = assignWeeksByDeadline(
+      data.orders.map((o, i) => ({ id: String(i), game: o.game, deadline: o.deadline })),
+      event
+    )
+    const assigned: Assigned[] = data.orders.map((o, i) => ({ ...o, week: wk.get(String(i)) ?? null }))
+    return { assigned, weekOrder: weeksForEvent(event).map((w) => w.week) }
   }, [data, event])
 
   /* filter option lists (stable, from full dataset) */
