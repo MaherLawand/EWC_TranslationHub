@@ -145,6 +145,7 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
   const [delayFilter, setDelayFilter] = React.useState<string>("all") // all | late | early | ontime
   const [search, setSearch] = React.useState("")
   const [page, setPage] = React.useState(0)
+  const [selected, setSelected] = React.useState<{ o: Order; week: string | null; delay: Delay } | null>(null)
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -372,42 +373,42 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
             <Tile label="On-time" value={stats.onTimePct == null ? "—" : `${stats.onTimePct}%`} sub={stats.avgLate !== "—" ? `avg late ${stats.avgLate}` : undefined} />
           </div>
 
-          {/* Table */}
+          {/* Table — key columns only; click a row for full details. */}
           <div className="bg-white/[0.03] border border-white/10 rounded-[20px] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px] border-collapse whitespace-nowrap">
+              <table className="w-full text-[15px] border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="text-zinc-400 border-b border-white/10">
-                    {["Order", "Type", "Status", "Late / Early", "Category", "Expected", "Time to deliver", "Deadline (UTC)", "Ready (UTC)", "In progress", "R→IP", "Completed (UTC)", "Source→Completed", "Completed by", "Vendor"].map((h) => (
-                      <th key={h} className="text-left font-semibold px-3 py-3">{h}</th>
-                    ))}
+                  <tr className="text-zinc-400 border-b border-white/10 text-[13px]">
+                    <th className="text-left font-semibold px-5 py-4">Order</th>
+                    <th className="text-left font-semibold px-4 py-4">Category</th>
+                    <th className="text-left font-semibold px-4 py-4">Late / Early</th>
+                    <th className="text-left font-semibold px-4 py-4">Deadline (UTC)</th>
+                    <th className="text-left font-semibold px-4 py-4">Completed (UTC)</th>
+                    <th className="text-left font-semibold px-4 py-4">Source→Completed</th>
+                    <th className="w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.map((r) => (
-                    <tr key={r.o.id} className="border-b border-white/[0.05] hover:bg-white/[0.02]">
-                      <td className="px-3 py-2.5 max-w-[240px]">
-                        <div className="truncate text-[#F5F1E8]" title={r.o.title}>{r.o.title}</div>
-                        <div className="text-[11px] text-zinc-600 truncate">{r.o.game || "—"}{r.week ? ` · W${r.week}` : ""}</div>
+                    <tr
+                      key={r.o.id}
+                      onClick={() => setSelected({ o: r.o, week: r.week, delay: r.delay })}
+                      className="border-b border-white/[0.05] hover:bg-white/[0.03] cursor-pointer transition"
+                    >
+                      <td className="px-5 py-4 max-w-[320px]">
+                        <div className="truncate text-[#F5F1E8] font-medium" title={r.o.title}>{r.o.title}</div>
+                        <div className="text-[12px] text-zinc-500 truncate">{r.o.game || "Marketing"}{r.week ? ` · W${r.week}` : ""}</div>
                       </td>
-                      <td className="px-3 py-2.5 text-zinc-400">{r.o.type === "BROADCAST" ? "Broadcast" : "Marketing"}</td>
-                      <td className="px-3 py-2.5"><StatusPill status={r.o.status} /></td>
-                      <td className="px-3 py-2.5"><DelayPill delay={r.delay} /></td>
-                      <td className="px-3 py-2.5 text-zinc-400">{r.o.contentCategory ? CATEGORY_INFO[r.o.contentCategory]?.label || r.o.contentCategory : "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-500">{expectedDelivery(r.o.contentCategory) || "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-500">{timeToDeliver(r.o) || "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-400">{fmtTs(r.o.deadline)}</td>
-                      <td className="px-3 py-2.5 text-zinc-400">{fmtTs(r.o.readyAt)}</td>
-                      <td className="px-3 py-2.5 text-zinc-400">{fmtTs(r.o.inProgressAt)}</td>
-                      <td className="px-3 py-2.5 text-zinc-500">{durationLabel(r.o.readyAt, r.o.inProgressAt) || "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-400">{fmtTs(r.o.completedAt)}</td>
-                      <td className="px-3 py-2.5 text-zinc-300">{durationLabel(r.o.readyAt, r.o.completedAt) || "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-400 max-w-[140px] truncate" title={r.o.completedBy}>{r.o.completedBy || "—"}</td>
-                      <td className="px-3 py-2.5 text-zinc-500 max-w-[140px] truncate" title={r.o.notifyPositions.join(", ")}>{r.o.notifyPositions.map((p) => p.replace(/_/g, " ")).join(", ") || "—"}</td>
+                      <td className="px-4 py-4 text-zinc-400">{r.o.contentCategory ? CATEGORY_INFO[r.o.contentCategory]?.label || r.o.contentCategory : "—"}</td>
+                      <td className="px-4 py-4"><DelayPill delay={r.delay} /></td>
+                      <td className="px-4 py-4 text-zinc-400">{fmtTs(r.o.deadline)}</td>
+                      <td className="px-4 py-4 text-zinc-400">{fmtTs(r.o.completedAt)}</td>
+                      <td className="px-4 py-4 text-zinc-200 font-medium">{durationLabel(r.o.readyAt, r.o.completedAt) || "—"}</td>
+                      <td className="px-3 py-4 text-zinc-600 text-right">›</td>
                     </tr>
                   ))}
                   {!pageRows.length && (
-                    <tr><td colSpan={15} className="px-3 py-12 text-center text-zinc-600">No orders match the current filters.</td></tr>
+                    <tr><td colSpan={7} className="px-3 py-12 text-center text-zinc-600">No orders match the current filters.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -431,7 +432,65 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
           </p>
         </>
       )}
+
+      {selected && <DetailPanel row={selected} onClose={() => setSelected(null)} />}
     </div>
+  )
+}
+
+/** Right-side detail drawer for a single order — all the fields not in the table. */
+function DetailPanel({ row, onClose }: { row: { o: Order; week: string | null; delay: Delay }; onClose: () => void }) {
+  const { o, week, delay } = row
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  const details: [string, React.ReactNode][] = [
+    ["Type", o.type === "BROADCAST" ? "Broadcast" : "Marketing"],
+    ["Status", <StatusPill status={o.status} />],
+    ["Priority", o.priority ? o.priority[0] + o.priority.slice(1).toLowerCase() : "—"],
+    ["Category", o.contentCategory ? CATEGORY_INFO[o.contentCategory]?.label || o.contentCategory : "—"],
+    ["Delivery format", o.deliveryFormat || "—"],
+    ["Expected delivery", expectedDelivery(o.contentCategory) || "—"],
+    ["Time to deliver", timeToDeliver(o) || "—"],
+    ["Deadline (UTC)", fmtTs(o.deadline)],
+    ["Source added (UTC)", fmtTs(o.readyAt)],
+    ["In progress (UTC)", fmtTs(o.inProgressAt)],
+    ["Ready → In progress", durationLabel(o.readyAt, o.inProgressAt) || "—"],
+    ["Completed (UTC)", fmtTs(o.completedAt)],
+    ["Source → Completed", durationLabel(o.readyAt, o.completedAt) || "—"],
+    ["Completed by", o.completedBy || "—"],
+    ["Created by", o.createdBy || "—"],
+    ["Vendor", o.notifyPositions.map((p) => p.replace(/_/g, " ")).join(", ") || "—"],
+    ["Assigned to", o.assignedTo.join(", ") || "—"],
+  ]
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-[300]" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-[#0C0C0C] border-l border-white/10 z-[301] overflow-y-auto shadow-[0_0_60px_rgba(0,0,0,0.7)]">
+        <div className="sticky top-0 bg-[#0C0C0C] border-b border-white/10 px-5 py-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[#F5F1E8] font-semibold truncate" title={o.title}>{o.title}</div>
+            <div className="text-[12px] text-zinc-500 truncate">{o.game || "Marketing"}{week ? ` · W${week}` : ""}</div>
+          </div>
+          <button onClick={onClose} className="shrink-0 text-zinc-400 hover:text-white text-lg leading-none px-1">✕</button>
+        </div>
+        <div className="px-5 py-4">
+          <div className="mb-4"><DelayPill delay={delay} /></div>
+          <dl className="divide-y divide-white/[0.06]">
+            {details.map(([label, value]) => (
+              <div key={label} className="flex items-start justify-between gap-4 py-2.5">
+                <dt className="text-[12px] uppercase tracking-wider text-zinc-500 shrink-0">{label}</dt>
+                <dd className="text-[13px] text-zinc-200 text-right break-words min-w-0">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </>
   )
 }
 

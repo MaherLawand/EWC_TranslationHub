@@ -77,7 +77,14 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
   const [weekFilter, setWeekFilter] = React.useState<string>("all")
   const [gameFilter, setGameFilter] = React.useState<string>("all")
   const [statusFilter, setStatusFilter] = React.useState<string>("all")
-  const [openWeek, setOpenWeek] = React.useState<string | null>(null)
+  const [openWeeks, setOpenWeeks] = React.useState<Set<string>>(new Set())
+  const toggleWeek = (wk: string) =>
+    setOpenWeeks((prev) => {
+      const next = new Set(prev)
+      if (next.has(wk)) next.delete(wk)
+      else next.add(wk)
+      return next
+    })
 
   const load = React.useCallback(async () => {
     setLoading(true)
@@ -100,7 +107,7 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
     setWeekFilter("all")
     setGameFilter("all")
     setStatusFilter("all")
-    setOpenWeek(null)
+    setOpenWeeks(new Set())
   }, [event])
 
   /* ── assign every order to an event week ──
@@ -422,17 +429,17 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
                 </thead>
                 <tbody>
                   {weekRows.map((w) => {
-                    const isOpen = openWeek === w.week
+                    const isOpen = openWeeks.has(w.week)
                     const games = [...w.games.entries()].map(([name, g]) => ({ name, ...g })).sort((a, b) => b.total - a.total)
                     return (
                       <React.Fragment key={w.week}>
                         <tr
-                          onClick={() => setOpenWeek(isOpen ? null : w.week)}
-                          className={`border-b border-white/[0.06] transition cursor-pointer hover:bg-white/[0.03] ${isOpen ? "bg-white/[0.04]" : ""}`}
+                          onClick={() => toggleWeek(w.week)}
+                          className={`border-b border-white/[0.06] transition cursor-pointer hover:bg-white/[0.03] ${isOpen ? "bg-[#D6B36A]/[0.06]" : ""}`}
                         >
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-zinc-500 transition-transform ${isOpen ? "rotate-90" : ""}`}>▸</span>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <span className={`text-[#D6B36A] text-[11px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                               <div>
                                 <div className="font-semibold text-[#F5F1E8]">Week {w.week}</div>
                                 <div className="text-[11px] text-zinc-500">{fmtDate(w.min)} – {fmtDate(w.max)}</div>
@@ -440,30 +447,45 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
                             </div>
                           </td>
                           {CATS.map((c) => (
-                            <td key={c.key} className="text-right px-3 py-3 text-zinc-300 tabular-nums">
+                            <td key={c.key} className="text-right px-3 py-3.5 text-zinc-300 tabular-nums">
                               {w.cats[c.key] || <span className="text-zinc-600">0</span>}
                             </td>
                           ))}
-                          <td className="text-right px-4 py-3 font-bold text-[#D6B36A] tabular-nums">{w.total}</td>
+                          <td className="text-right px-4 py-3.5 font-bold text-[#D6B36A] tabular-nums">{w.total}</td>
                         </tr>
                         {isOpen && (
-                          <tr className="bg-black/30">
-                            <td colSpan={CATS.length + 2} className="px-4 py-3">
-                              <table className="w-full text-[13px]">
-                                <tbody>
-                                  {games.map((g) => (
-                                    <tr key={g.name} className="border-b border-white/[0.05] last:border-0">
-                                      <td className="py-2 pr-3 text-[#F5F1E8]">{g.name}</td>
+                          <tr>
+                            <td colSpan={CATS.length + 2} className="p-0">
+                              {/* Per-game split — indented card so it reads as a detail of the week above. */}
+                              <div className="mx-4 mb-3 -mt-px rounded-b-xl border border-t-0 border-[#D6B36A]/20 bg-black/40 overflow-hidden">
+                                <div className="px-4 pt-2.5 pb-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                                  Week {w.week} · per game
+                                </div>
+                                <table className="w-full text-[13px] table-fixed">
+                                  <thead>
+                                    <tr className="text-zinc-500">
+                                      <th className="text-left font-medium px-4 py-1.5">Game</th>
                                       {CATS.map((c) => (
-                                        <td key={c.key} className="text-right py-2 px-3 text-zinc-400 tabular-nums">
-                                          {g.cats[c.key] || <span className="text-zinc-700">·</span>}
-                                        </td>
+                                        <th key={c.key} className="text-right font-medium px-3 py-1.5 whitespace-nowrap">{c.label}</th>
                                       ))}
-                                      <td className="text-right py-2 px-4 font-semibold text-zinc-200 tabular-nums">{g.total}</td>
+                                      <th className="text-right font-medium px-4 py-1.5">Total</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {games.map((g) => (
+                                      <tr key={g.name} className="border-t border-white/[0.05]">
+                                        <td className="py-2 px-4 text-[#F5F1E8] truncate" title={g.name}>{g.name}</td>
+                                        {CATS.map((c) => (
+                                          <td key={c.key} className="text-right py-2 px-3 text-zinc-400 tabular-nums">
+                                            {g.cats[c.key] || <span className="text-zinc-700">·</span>}
+                                          </td>
+                                        ))}
+                                        <td className="text-right py-2 px-4 font-semibold text-zinc-200 tabular-nums">{g.total}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </td>
                           </tr>
                         )}
