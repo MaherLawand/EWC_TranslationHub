@@ -1101,10 +1101,12 @@ React.useEffect(() => {
     const isMarketing = src.type === "MARKETING"
     const detailSide = isMarketing ? src.marketing : src.broadcast
 
+    // A duplicate is a fresh order that hasn't been delivered yet — never carry
+    // over the source order's delivery links (format-level or per-language).
     let deliveryFormats =
       detailSide?.deliveryFormats?.map((f: any) => ({
         format: f.format,
-        deliveryLink: f.deliveryLink || "",
+        deliveryLink: "",
       })) || []
     let deliveryType = ""
     if (!isMarketing) {
@@ -1158,11 +1160,10 @@ React.useEffect(() => {
       srtAvailableLink: detailSide?.srtAvailableLink || "",
       estimatedMinutes: String(src.broadcast?.estimatedMinutes || ""),
       deliveryDate: src.broadcast?.deliveryDate?.split("T")[0] || "",
-      deliveries:
-        detailSide?.deliveries?.map((d: any) => ({
-          language: d.language,
-          deliveryLink: d.deliveryLink || "",
-        })) || [],
+      // Start with no delivery entries — the modal regenerates empty ones per
+      // target language × vendor group, so a duplicate never inherits the source
+      // order's links or a stray "General" set.
+      deliveries: [],
       notifyPositions: detailSide?.notifyPositions || src?.notifyPositions || [],
       // Standalone/big duplicates are top-level; the sub-order duplicate flow
       // overrides this with the real parent so the copy stays a sub-order.
