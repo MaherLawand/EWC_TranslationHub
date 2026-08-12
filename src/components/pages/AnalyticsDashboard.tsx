@@ -412,42 +412,18 @@ export default function AnalyticsDashboard({ event = "EWC", kind = "broadcast", 
                           ))}
                           <td className="text-right px-4 py-3.5 font-bold text-[#D6B36A] tabular-nums">{w.total}</td>
                         </tr>
-                        {isOpen && (
-                          <tr>
-                            <td colSpan={CATS.length + 2} className="p-0">
-                              {/* Per-game split — indented card so it reads as a detail of the week above. */}
-                              <div className="mx-4 mb-3 -mt-px rounded-b-xl border border-t-0 border-[#D6B36A]/20 bg-black/40 overflow-hidden">
-                                <div className="px-4 pt-2.5 pb-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-                                  Week {w.week} · per game
-                                </div>
-                                <table className="w-full text-[13px] table-fixed">
-                                  <thead>
-                                    <tr className="text-zinc-500">
-                                      <th className="text-left font-medium px-4 py-1.5">Game</th>
-                                      {CATS.map((c) => (
-                                        <th key={c.key} className="text-right font-medium px-3 py-1.5 whitespace-nowrap">{c.label}</th>
-                                      ))}
-                                      <th className="text-right font-medium px-4 py-1.5">Total</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {games.map((g) => (
-                                      <tr key={g.name} className="border-t border-white/[0.05]">
-                                        <td className="py-2 px-4 text-[#F5F1E8] truncate" title={g.name}>{g.name}</td>
-                                        {CATS.map((c) => (
-                                          <td key={c.key} className="text-right py-2 px-3 text-zinc-400 tabular-nums">
-                                            {g.cats[c.key] || <span className="text-zinc-700">·</span>}
-                                          </td>
-                                        ))}
-                                        <td className="text-right py-2 px-4 font-semibold text-zinc-200 tabular-nums">{g.total}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
+                        {/* Per-game split — rendered as real rows so the columns line up with the table above. */}
+                        {isOpen && games.map((g) => (
+                          <tr key={w.week + "·" + g.name} className="bg-[#D6B36A]/[0.04] border-b border-white/[0.04]">
+                            <td className="pl-10 pr-4 py-2 text-[13px] text-zinc-300 truncate" title={g.name}>{g.name}</td>
+                            {CATS.map((c) => (
+                              <td key={c.key} className="text-right px-3 py-2 text-[13px] text-zinc-400 tabular-nums">
+                                {g.cats[c.key] || <span className="text-zinc-700">·</span>}
+                              </td>
+                            ))}
+                            <td className="text-right px-4 py-2 text-[13px] font-semibold text-zinc-300 tabular-nums">{g.total}</td>
                           </tr>
-                        )}
+                        ))}
                       </React.Fragment>
                     )
                   })}

@@ -31,22 +31,43 @@ export function assignWeeksByDeadline(orders: WeekAssignInput[], event: string):
   })
   const weeksForGame = (game: string) => schedule.filter((_, i) => keySets[i].has(norm(game))).map((w) => w.week)
 
-  // Learn a representative date (centre) for each week: prefer deadlines of games
-  // that sit in only one week (unambiguous anchors); otherwise use all candidates.
+  // Week "centre" dates come ONLY from single-week ("anchor") games — a game that
+  // spans two weeks would pull a centre toward the wrong week. Weeks with no
+  // anchor in THIS dataset (e.g. a future week that has nothing completed yet in
+  // the daily report) are filled by interpolating/extrapolating from the anchored
+  // weeks, so the centres stay in chronological order and a shared game can never
+  // be dragged into a week whose real anchor is missing.
   const anchor: Record<string, number[]> = {}
-  const cand: Record<string, number[]> = {}
   for (const o of orders) {
     if (!o.game || !o.deadline) continue
     const t = Date.parse(o.deadline)
     if (Number.isNaN(t) || !saneTime(t)) continue
     const wl = weeksForGame(o.game)
     if (wl.length === 1) (anchor[wl[0]] ||= []).push(t)
-    for (const w of wl) (cand[w] ||= []).push(t)
   }
   const centre: Record<string, number> = {}
-  for (const w of schedule) {
-    if (anchor[w.week]?.length) centre[w.week] = median(anchor[w.week])
-    else if (cand[w.week]?.length) centre[w.week] = median(cand[w.week])
+  for (const w of schedule) if (anchor[w.week]?.length) centre[w.week] = median(anchor[w.week])
+
+  // Fill gaps/ends over the week-index order using the anchored weeks.
+  const seq = schedule.map((w, i) => ({ i, week: w.week }))
+  const known = seq.filter((s) => centre[s.week] != null)
+  if (known.length >= 2) {
+    const first = known[0]
+    const last = known[known.length - 1]
+    const slope = (centre[last.week] - centre[first.week]) / (last.i - first.i)
+    for (const s of seq) {
+      if (centre[s.week] != null) continue
+      const left = [...known].reverse().find((k) => k.i < s.i)
+      const right = known.find((k) => k.i > s.i)
+      if (left && right) {
+        const frac = (s.i - left.i) / (right.i - left.i)
+        centre[s.week] = centre[left.week] + frac * (centre[right.week] - centre[left.week])
+      } else if (left) {
+        centre[s.week] = centre[left.week] + (s.i - left.i) * slope
+      } else if (right) {
+        centre[s.week] = centre[right.week] - (right.i - s.i) * slope
+      }
+    }
   }
   const nearest = (t: number, weeks: string[]) => {
     let best = weeks[0]

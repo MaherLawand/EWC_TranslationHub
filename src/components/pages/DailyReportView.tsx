@@ -197,10 +197,22 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
     const set = new Set(rows.map((r) => r.week).filter(Boolean) as string[])
     return weeksForEvent(event).map((w) => w.week).filter((w) => set.has(w))
   }, [rows, event])
-  const gameOptions = React.useMemo(
-    () => [...new Set(rows.map((r) => r.o.game).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b)),
-    [rows]
-  )
+  // Game options scoped to the selected week (and kind/status) → "games per week".
+  const gameOptions = React.useMemo(() => {
+    const wantType = kind.toUpperCase()
+    const set = new Set<string>()
+    for (const r of rows) {
+      if ((r.o.type || "").toUpperCase() !== wantType) continue
+      if (weekFilter !== "all" && r.week !== weekFilter) continue
+      if (statusFilter !== "all" && r.o.status !== statusFilter) continue
+      if (r.o.game) set.add(r.o.game)
+    }
+    return [...set].sort((a, b) => a.localeCompare(b))
+  }, [rows, weekFilter, statusFilter, kind])
+  // Drop back to "all games" if the picked game isn't in the current week.
+  React.useEffect(() => {
+    if (gameFilter !== "all" && !gameOptions.includes(gameFilter)) setGameFilter("all")
+  }, [gameOptions, gameFilter])
 
   const matchesDelay = (d: Delay) => {
     if (delayFilter === "all") return true
@@ -404,17 +416,19 @@ export default function DailyReportView({ event = "EWC", kind = "broadcast" }: {
                 </tbody>
               </table>
             </div>
-            {filtered.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 text-[12px] text-zinc-400">
-                <span>Showing {page * PAGE_SIZE + 1}–{Math.min(filtered.length, (page + 1) * PAGE_SIZE)} of {filtered.length}</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="px-3 h-[30px] rounded-lg border border-white/15 disabled:opacity-40 hover:border-white/30">Prev</button>
-                  <span>{page + 1} / {pageCount}</span>
-                  <button onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={page >= pageCount - 1} className="px-3 h-[30px] rounded-lg border border-white/15 disabled:opacity-40 hover:border-white/30">Next</button>
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Sticky pager — stays on screen while scrolling the table. */}
+          {filtered.length > PAGE_SIZE && (
+            <div className="sticky bottom-3 z-20 mt-3 flex items-center justify-between px-4 py-3 rounded-2xl border border-white/10 bg-[#0c0c0c]/95 backdrop-blur text-[12px] text-zinc-400 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+              <span>Showing {page * PAGE_SIZE + 1}–{Math.min(filtered.length, (page + 1) * PAGE_SIZE)} of {filtered.length}</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="px-3 h-[30px] rounded-lg border border-white/15 disabled:opacity-40 hover:border-white/30">Prev</button>
+                <span>{page + 1} / {pageCount}</span>
+                <button onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={page >= pageCount - 1} className="px-3 h-[30px] rounded-lg border border-white/15 disabled:opacity-40 hover:border-white/30">Next</button>
+              </div>
+            </div>
+          )}
 
           <p className="text-[11px] text-zinc-600 leading-relaxed mt-4">
             View only — the CSV upload that writes to Google Sheets is the owner's sidebar page. In-progress and
