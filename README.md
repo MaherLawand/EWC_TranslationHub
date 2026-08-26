@@ -4,15 +4,13 @@ The web dashboard for managing a large esports translation operation (built arou
 
 This repo is the **frontend**. The API/server lives in **[EWC_TranslationHub_Server](https://github.com/MaherLawand/EWC_TranslationHub_Server)**.
 
-<!-- 📸 SCREENSHOTS PLACEHOLDER
-     Add dashboard screenshots to docs/ (e.g. docs/dashboard.png, docs/orders.png)
-     and uncomment the lines below.
+**Broadcast orders dashboard** — weekly boards by game, live order/video counts, and a filterable order table (tiers, languages, formats, deadlines, status, priority).
 
-![Dashboard](docs/dashboard.png)
-![Orders table](docs/orders.png)
--->
+![Broadcast orders dashboard](docs/dashboard.png)
 
-> 📸 _Screenshots coming soon — add images to `docs/` and enable them in the block above._
+**SRT Checker** — validate subtitle files against the approved terminology glossary, spell-check player/team names against Liquipedia, and look up approved EN→AR/FR translations.
+
+![SRT Checker](docs/srt-checker.png)
 
 ---
 
